@@ -34,8 +34,8 @@ async function handleListReply(message, args) {
     for (const stockId in portfolio){
         const stock = portfolio[stockId];
         const arrow = stock.gainOrLoss < 0 ?
-            "<:stockdown:1117496855870328833>" :
-            "<:stockup:1117496842867982407>";
+            "<:stockdown:1119370974140301352>" :
+            "<:stockup:1119370943240863745>";
         const gainedOrLost = stock.gainOrLoss < 0 ?
             "lost" :
             "gained";

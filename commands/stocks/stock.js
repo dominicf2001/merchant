@@ -51,11 +51,11 @@ async function handleChartReply(message, args) {
     const currentPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
     const difference = currentPrice - previousPrice;
 
-    let arrow = "<:stockup:1117496842867982407>";
+    let arrow = "<:stockup:1119370943240863745>";
     let lineColor = "rgb(0, 195, 76)";
 
     if (difference < 0) {
-        arrow = "<:stockdown:1117496855870328833>";
+        arrow = "<:stockdown:1119370974140301352>";
         lineColor = "rgb(255, 0, 0)";
     }
     const embed = new EmbedBuilder()
@@ -144,8 +144,8 @@ async function handleListReply(message, args) {
         const currentPrice = latestStocks[i].price;
 
         const arrow = (currentPrice - previousPrice) < 0 ?
-            "<:stockdown:1117496855870328833>" :
-            "<:stockup:1117496842867982407>";
+            "<:stockdown:1119370974140301352>" :
+            "<:stockup:1119370943240863745>";
 
         embed.addFields({ name: `${arrow} ${inlineCode(user.username)} - ${tendieIconCode} ${stocks[i].price}`, value: `${"Previous:"} ${tendieIconCode} ${previousPrice}` });
     });

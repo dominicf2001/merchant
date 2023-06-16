@@ -15,6 +15,6 @@ function getRandomFloat(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-const tendieIconCode = "<:tendie:1117239821337890886>"
+const tendieIconCode = "<:tendie:1115074573264764958>"
 
 module.exports = { secondsToHms, getRandomInt, getRandomFloat, tendieIconCode };
