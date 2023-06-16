@@ -9,7 +9,7 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 const Items = require('./models/Items.js')(sequelize, Sequelize.DataTypes);
 const Stocks = require('./models/Stocks.js')(sequelize, Sequelize.DataTypes);
 const UserStocks = require('./models/UserStocks.js')(sequelize, Sequelize.DataTypes);
-require('./models/Users.js')(sequelize, Sequelize.DataTypes);
+const Users = require('./models/Users.js')(sequelize, Sequelize.DataTypes);
 require('./models/UserItems.js')(sequelize, Sequelize.DataTypes);
 require('./models/UserCooldowns.js')(sequelize, Sequelize.DataTypes);
 const faker = require('faker');
@@ -17,8 +17,14 @@ const faker = require('faker');
 const force = process.argv.includes('--force') || process.argv.includes('-f');
 
 sequelize.sync({ force }).then(async () => {
-	const items = [
-		Items.upsert({ name: 'mute', price: 200, icon: ":mute:", description: "Mutes a user for 5 minutes.\n```$use mute @target```" }),
+    const users = await Users.findAll();
+    for(let user of users) {
+        user.activity = 0;
+        await Users.upsert(user);
+    }
+
+    const items = [
+        Items.upsert({ name: 'mute', price: 200, icon: ":mute:", description: "Mutes a user for 5 minutes.\n```$use mute @target```" }),
 		Items.upsert({ name: 'emp', price: 250, icon: ":zap:", description: "Disables Nexxy.\n```$use emp```" }),
 		Items.upsert({ name: 'megaphone', price: 300, icon: ":mega:", description: "Sends your message and/or attachment as an @everyone.\n```$use megaphone [message]```" }),
 		Items.upsert({ name: 'battery', price: 350, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
