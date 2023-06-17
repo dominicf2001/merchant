@@ -4,6 +4,7 @@ const { Collection } = require('discord.js');
 const usersCache = new Collection();
 
 async function addBalance(id, amount) {
+    amount = Math.floor(amount);
 	const user = usersCache.get(id);
 
 	if (user) {
@@ -18,6 +19,7 @@ async function addBalance(id, amount) {
 }
 
 async function setBalance(id, amount) {
+    amount = Math.floor(amount);
 	const user = usersCache.get(id);
 
 	if (user) {
