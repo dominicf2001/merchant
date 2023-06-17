@@ -35,6 +35,7 @@ async function setBalance(id, amount) {
 
 function getBalance(id) {
 	const user = usersCache.get(id);
+    user.balance = Math.floor(user.balance);
 	return user ? user.balance : 0;
 }
 
