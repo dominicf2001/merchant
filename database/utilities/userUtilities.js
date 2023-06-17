@@ -43,10 +43,9 @@ function getActivity(id) {
 
 async function addActivity(id, amount) {
 	const user = usersCache.get(id);
-    console.log(`${amount} added`);
 
     if (user) {
-        user.activity += Number(amount);
+        user.activity += Math.round(Number(amount));
         return user.save();
     }
 

@@ -1,9 +1,10 @@
 const { getBalance, getActivity, setActivity } = require("./database/utilities/userUtilities.js");
-const { getPortfolioValue, getLatestStock, setStockPrice } = require("./database/utilities/stockUtilities.js");
+const { getPortfolioValue, getLatestStock, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
 const { getRandomFloat } = require("./utilities.js");
 const { Users } = require("./database/dbObjects.js");
 
 async function calculateAndUpdateStocks(){
+    console.log("running");
     const shareWeight = 0.01;
     const activityWeight = 0.21;
     const randomWeight = 0.05;
@@ -12,29 +13,39 @@ async function calculateAndUpdateStocks(){
 
     const activityDecay = 0.02;
 
-    const users = await Users.findAll();
-    for (let user of users) {
-	console.log(user);
-        const portfolioValue = await getPortfolioValue(user.dataValues.user_id);
-        const balance = getBalance(user.dataValues.user_id);
-        const netWorth = portfolioValue + balance;
-        const randomFactor = getRandomFloat(1, 50);
-        let activity = getActivity(user.dataValues.user_id);
-        const latestStock = await getLatestStock(user.dataValues.user_id);
-        const stockPrice = latestStock.price;
-        const purchasedShares = latestStock.purchased_shares;
+    try {
+        const latestStocks = await getAllLatestStocks();
+        for (let latestStock of latestStocks) {
+            console.log(latestStock);
+            const user = await Users.findOne({
+                where: {
+                    user_id: latestStock.user_id
+                }
+            });
 
-        activity *= (1 - activityDecay);
+            if (!user) continue;
+            const portfolioValue = await getPortfolioValue(user.user_id);
+            const balance = getBalance(user.user_id);
+            const netWorth = portfolioValue + balance;
+            const randomFactor = getRandomFloat(1, 50);
+            let activity = getActivity(user.user_id);
+            const stockPrice = latestStock.price;
+            const purchasedShares = latestStock.purchased_shares;
 
-        const basePrice = 25;
+            activity *= (1 - activityDecay);
 
-        const amount = basePrice + ((purchasedShares * shareWeight + activity * activityWeight + randomFactor * randomWeight + netWorth * netWorthWeight + stockPrice * priceWeight) / (shareWeight + activityWeight + randomWeight + netWorthWeight + priceWeight));
-        console.log(amount);
+            const basePrice = 25;
 
-        if (amount < 0) amount = 0;
+            const amount = basePrice + ((purchasedShares * shareWeight + activity * activityWeight + randomFactor * randomWeight + netWorth * netWorthWeight + stockPrice * priceWeight) / (shareWeight + activityWeight + randomWeight + netWorthWeight + priceWeight));
+            console.log(amount);
 
-        setStockPrice(user.dataValues.user_id, Math.round(amount));
-        setActivity(user.dataValues.user_id, activity);
+            if (amount < 0) amount = 0;
+
+            setStockPrice(user.user_id, Math.round(amount));
+            setActivity(user.user_id, activity);
+        }
+    } catch (error) {
+        console.error(error);
     }
 }
 

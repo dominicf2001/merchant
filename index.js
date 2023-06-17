@@ -129,7 +129,7 @@ client.on("messageCreate", async message => {
 		}
 		else {
 			await userCooldown.destroy();
-		}  
+		}
 
 		await UserCooldowns.create({
 			user_id: message.author.id,
@@ -156,6 +156,6 @@ client.on("messageCreate", async message => {
     }
 });
 
-let task = cron.schedule('0 * * * *', calculateAndUpdateStocks);
+// let task = cron.schedule('*/5 * * * * *', calculateAndUpdateStocks);
 
 client.login(token);
