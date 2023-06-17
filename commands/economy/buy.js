@@ -50,7 +50,7 @@ module.exports = {
 
 async function buyStock(message, args){
     const stockUser = message.mentions.users.first();
-    const shares = +args.find(arg => !isNaN(arg)) ?? 1;
+    const shares = +(args.find(arg => !isNaN(arg)) ?? 1);
 
     if (shares <= 0){
         return message.reply(`You can only purchase one or more shares.`);

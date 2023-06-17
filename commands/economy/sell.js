@@ -62,7 +62,7 @@ async function sellStock(message, args){
     let promises = [];
 
     let totalSharesSold = 0;
-    let shares = +args.find(arg => !isNaN(arg)) ?? 1;
+    let shares = +(args.find(arg => !isNaN(arg)) ?? 1);
 
     if (shares <= 0){
         return message.reply(`You can only sell one or more stocks.`);

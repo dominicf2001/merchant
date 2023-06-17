@@ -52,6 +52,11 @@ sequelize.sync({ force }).then(async () => {
             date: Date.now(),
             price: 125,
         }),
+	Stocks.upsert({
+            user_id: '252493090529607682',
+            date: Date.now(),
+            price: 125,
+        }),
         Stocks.upsert({
             user_id: '410782585627607040',
             date: Date.now(),

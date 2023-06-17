@@ -156,6 +156,6 @@ client.on("messageCreate", async message => {
     }
 });
 
-// let task = cron.schedule('*/5 * * * * *', calculateAndUpdateStocks);
+let task = cron.schedule('0 7-23 * * *', calculateAndUpdateStocks);
 
 client.login(token);

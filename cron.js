@@ -5,18 +5,17 @@ const { Users } = require("./database/dbObjects.js");
 
 async function calculateAndUpdateStocks(){
     console.log("running");
-    const shareWeight = 0.01;
+    const shareWeight = 0.02;
     const activityWeight = 0.21;
     const randomWeight = 0.05;
-    const netWorthWeight = 0.03;
+    const netWorthWeight = 0.02;
     const priceWeight = 0.70;
 
-    const activityDecay = 0.02;
+    const activityDecay = 0.25;
 
     try {
         const latestStocks = await getAllLatestStocks();
         for (let latestStock of latestStocks) {
-            console.log(latestStock);
             const user = await Users.findOne({
                 where: {
                     user_id: latestStock.user_id
