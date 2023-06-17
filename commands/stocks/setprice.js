@@ -9,7 +9,11 @@ module.exports = {
     },
     async execute(message, args) {
         const id = args[0];
-        const newPrice = args[1];
+        const newPrice = +args[1];
+
+	if (message.author.id != "608852453315837964") {
+	    return message.reply("You do not have permission to use this.");
+	}
 
         try {
             setStockPrice(id, newPrice);

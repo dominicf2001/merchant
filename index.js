@@ -121,23 +121,22 @@ client.on("messageCreate", async message => {
         });
 
         if (userCooldown) {
-            const expirationTime = userCooldown.timestamp + cooldownAmount;
+		const expirationTime = userCooldown.timestamp + cooldownAmount;
 
-            if (now < expirationTime) {
-                const expiredTimestampReadable = secondsToHms(Math.round((expirationTime - now) / 1000));
-                return message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
-            }
-            else {
-                await userCooldown.destroy();
-            }
-        }
+		if (now < expirationTime) {
+			const expiredTimestampReadable = secondsToHms(Math.round((expirationTime - now) / 1000));
+			return message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
+		}
+		else {
+			await userCooldown.destroy();
+		}  
 
-        await UserCooldowns.create({
-            user_id: message.author.id,
-            command_name: command.data.name,
-            timestamp: now
-        });
-
+		await UserCooldowns.create({
+			user_id: message.author.id,
+			command_name: command.data.name,
+			timestamp: now
+		});
+	}
         setTimeout(async () => {
             const userCooldown = await UserCooldowns.findOne({
                 where: { user_id: message.author.id, command_name: command.data.name },

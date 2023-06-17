@@ -50,7 +50,7 @@ module.exports = {
 
 async function buyStock(message, args){
     const stockUser = message.mentions.users.first();
-	const shares = args.find(arg => !isNaN(arg)) ?? 1;
+    const shares = +args.find(arg => !isNaN(arg)) ?? 1;
 
     if (shares <= 0){
         return message.reply(`You can only purchase one or more shares.`);
@@ -88,8 +88,7 @@ async function buyStock(message, args){
             date: latestStock.date
         }
     });
-    console.log(shares);
-    await stock.increment('purchased_shares', { by: shares });
+    await stock.increment('purchased_shares', { by: +shares });
 
     const pluralS = shares > 1 ? "s" : "";
 

@@ -14,6 +14,7 @@ async function calculateAndUpdateStocks(){
 
     const users = await Users.findAll();
     for (let user of users) {
+	console.log(user);
         const portfolioValue = await getPortfolioValue(user.dataValues.user_id);
         const balance = getBalance(user.dataValues.user_id);
         const netWorth = portfolioValue + balance;
