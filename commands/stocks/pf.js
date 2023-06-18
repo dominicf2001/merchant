@@ -34,7 +34,7 @@ async function handleListReply(message, args) {
     let totalChange = 0;
     for (const stockId in portfolio){
         const stock = portfolio[stockId];
-        const arrow = stock.gainOrLoss < 0 ?
+        let arrow = stock.gainOrLoss < 0 ?
             "<:stockdown:1119370974140301352>" :
             "<:stockup:1119370943240863745>";
         const gainedOrLost = stock.gainOrLoss < 0 ?
@@ -48,13 +48,17 @@ async function handleListReply(message, args) {
             value: `Total shares: :receipt: ${formatNumber(stock.total_shares)}\nTotal invested: ${tendieIconCode} ${formatNumber(stock.total_purchase_price)}`});
     }
 
-    embed.setTitle(`Portfolio :page_with_curl: Value: ${tendieIconCode} ${formatNumber(totalValue)} - Change: ${tendieIconCode} ${formatNumber(totalChange)}`);
+    arrow = totalChange < 0 ?
+        "<:stockdown:1119370974140301352>" :
+        "<:stockup:1119370943240863745>";
+
+    embed.setTitle(`Portfolio :page_with_curl: Value: ${tendieIconCode} ${formatNumber(totalValue)} - Change:${arrow} ${tendieIconCode} ${formatNumber(totalChange)}`);
 
     return await message.reply({ embeds: [embed] });
 }
 
 async function handleDetailReply(message, args) {
-	const pageNum = args.find(arg => !isNaN(arg)) ?? 1;
+    const pageNum = args.find(arg => !isNaN(arg)) ?? 1;
     const stockUser = message.mentions.users.first();
     const stockId = stockUser.id;
     const portfolioStock = await getPortfolioStock(message.author.id, stockId, pageNum);

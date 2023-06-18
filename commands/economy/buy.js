@@ -81,13 +81,14 @@ async function buyStock(message, args){
         purchase_price: latestStock.price
     });
 
-    latestStock.purchased_shares += shares;
     const stock = await Stocks.findOne({
         where: {
             user_id: latestStock.user_id,
             date: latestStock.date
         }
-    });
+    }); 
+
+    latestStock.purchased_shares += shares;
     await stock.increment('purchased_shares', { by: +shares });
 
     const pluralS = shares > 1 ? "s" : "";
