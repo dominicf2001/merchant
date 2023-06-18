@@ -16,9 +16,9 @@ async function getPortfolioValue(id){
     let totalValue = 0;
     for (const stockId in portfolio){
         const stock = portfolio[stockId];
-        totalValue += (stock.total_purchase_price + stock.gainOrLoss);
+        totalValue += Number(stock.total_purchase_price) + Number(stock.gainOrLoss);
     }
-    return totalValue;
+    return Math.floor(totalValue);
 }
 
 async function getPortfolio(id) {
@@ -229,7 +229,6 @@ async function getStockHistory(id, interval) {
                         ['date', 'DESC']
                     ],
                 });
-
         }
         return stockHistory;
     } catch (error) {
