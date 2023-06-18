@@ -62,7 +62,7 @@ async function sellStock(message, args){
     let promises = [];
 
     let totalSharesSold = 0;
-    let shares = +(args.find(arg => !isNaN(arg)) ?? 1);
+    let shares = args.find(arg => !isNaN(arg)) ?? 1;
 
     if (shares <= 0){
         return message.reply(`You can only sell one or more stocks.`);
@@ -89,23 +89,23 @@ async function sellStock(message, args){
 
     await Promise.all(promises);
 
-    latestStock.purchased_shares -= totalSharesSold;
+    latestStock.purchased_shares -= Number(totalSharesSold);
     const stock = await Stocks.findOne({
         where: {
             user_id: latestStock.user_id,
             date: latestStock.date
         },
     });
-    await stock.decrement('purchased_shares', { by: totalSharesSold });
+    await stock.decrement('purchased_shares', { by: Number(totalSharesSold) });
 
-    await addBalance(message.author.id, latestStock.price * totalSharesSold);
+    await addBalance(message.author.id, Number(latestStock.price * totalSharesSold));
 
     const pluralS = totalSharesSold > 1 ? "s" : "";
 
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .addFields({
-            name: `${totalSharesSold} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${formatNumber(latestStock.price * totalSharesSold)}`,
+            name: `${formatNumber(totalSharesSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${formatNumber(latestStock.price * totalSharesSold)}`,
             value: ' '
         });
 

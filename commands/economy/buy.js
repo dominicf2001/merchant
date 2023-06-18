@@ -50,7 +50,7 @@ module.exports = {
 
 async function buyStock(message, args){
     const stockUser = message.mentions.users.first();
-    const shares = +(args.find(arg => !isNaN(arg)) ?? 1);
+    const shares = args.find(arg => !isNaN(arg)) ?? 1;
 
     if (shares <= 0){
         return message.reply(`You can only purchase one or more shares.`);
@@ -93,7 +93,7 @@ async function buyStock(message, args){
     const pluralS = shares > 1 ? "s" : "";
 
     embed.addFields({
-        name: `${shares} share${pluralS} of ${inlineCode(stockUser.tag)} bought for ${tendieIconCode} ${latestStock.price * shares}`,
+        name: `${formatNumber(shares)} share${pluralS} of ${inlineCode(stockUser.tag)} bought for ${tendieIconCode} ${formatNumber(latestStock.price * shares)}`,
         value: ' '
     });
 

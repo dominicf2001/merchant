@@ -3,14 +3,14 @@ const { tendieIconCode, getRandomInt } = require("../../utilities.js");
 const { addBalance } = require("../../database/utilities/userUtilities.js");
 
 module.exports = {
-    cooldown: 86400,
+    cooldown: 3600,
 	data: {
         name: 'work',
         description: 'Make some tendies.'
     },
 	async execute(message, args) {
         try {
-            const tendiesMade = getRandomInt(40, 101);
+            const tendiesMade = getRandomInt(5, 30);
             addBalance(message.author.id, tendiesMade);
 
             const embed = new EmbedBuilder()
