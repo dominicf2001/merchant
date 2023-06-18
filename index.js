@@ -126,33 +126,17 @@ client.on("messageCreate", async message => {
             }
         });
 
+        // existing cooldown check
         if (userCooldown) {
             const expirationTime = userCooldown.timestamp + cooldownAmount;
 
             if (now < expirationTime) {
                 const expiredTimestampReadable = secondsToHms(Math.round((expirationTime - now) / 1000));
                 return message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
-            }
-            else {
+            } else {
                 await userCooldown.destroy();
             }
-
-            await UserCooldowns.create({
-                user_id: message.author.id,
-                command_name: command.data.name,
-                timestamp: now
-            });
-
-            setTimeout(async () => {
-                const userCooldown = await UserCooldowns.findOne({
-                    where: { user_id: message.author.id, command_name: command.data.name },
-                });
-                if (userCooldown && userCooldown.timestamp === now) {
-                    await userCooldown.destroy();
-                }
-            }, cooldownAmount);
         }
-        // ---
 
         try {
             await command.execute(message, args);
@@ -160,6 +144,23 @@ client.on("messageCreate", async message => {
             console.error(error);
             await message.reply('There was an error while executing this command!');
         }
+
+        // create new cooldown after command execution
+        await UserCooldowns.create({
+            user_id: message.author.id,
+            command_name: command.data.name,
+            timestamp: now
+        });
+
+        setTimeout(async () => {
+            const userCooldown = await UserCooldowns.findOne({
+                where: { user_id: message.author.id, command_name: command.data.name },
+            });
+            if (userCooldown && userCooldown.timestamp === now) {
+                await userCooldown.destroy();
+            }
+        }, cooldownAmount);
+        // ---
     }
 });
 
