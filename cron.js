@@ -5,13 +5,13 @@ const { Users } = require("./database/dbObjects.js");
 
 async function calculateAndUpdateStocks(){
     console.log("running");
-    const shareWeight = 0.02;
+    const shareWeight = 0.05;
     const activityWeight = 0.21;
-    const randomWeight = 0.05;
+    const randomWeight = 0.02;
     const netWorthWeight = 0.02;
     const priceWeight = 0.70;
 
-    const activityDecay = 0.25;
+    const activityDecay = getRandomFloat(.05, .25);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -29,7 +29,7 @@ async function calculateAndUpdateStocks(){
             const randomFactor = getRandomFloat(1, 50);
             let activity = getActivity(user.user_id);
             const stockPrice = latestStock.price;
-            const purchasedShares = latestStock.purchased_shares;
+            const purchasedShares = 3 * latestStock.purchased_shares;
 
             activity *= (1 - activityDecay);
 

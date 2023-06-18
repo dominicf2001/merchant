@@ -14,7 +14,7 @@ module.exports = {
             sellStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
-            let quantity = args.find(arg => !isNaN(arg)) ?? 1;
+            let quantity = Math.floor(+args.find(arg => !isNaN(arg)) ?? 1);
             const user = await Users.findOne({ where: { user_id: message.author.id } });
             const item = await user.getItem(itemName);
 

@@ -31,17 +31,17 @@ client.once(Events.ClientReady, async () => {
 
 client.on('inviteCreate', (invite) => {
     if (invite.inviter.bot) return;
-    addActivity(invite.inviterId, 8);
+    // addActivity(invite.inviterId, 8);
 });
 
 client.on('messageReactionAdd', (messageReaction, user) => {
     if (user.bot) return;
-    addActivity(user.id, 1);
+    // addActivity(user.id, 1);
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
-        addActivity(newState.member.user.id, 5);
+        // addActivity(newState.member.user.id, 5);
     }
 });
 
@@ -93,11 +93,11 @@ client.on("messageCreate", async message => {
         mentionedUsers.forEach(user => {
             console.log("test");
             if (user.id != message.author.id && !user.bot){
-                addActivity(user.id, 4);
+                // addActivity(user.id, 4);
             }
         });
 
-        addActivity(message.author.id, 2);
+        // addActivity(message.author.id, 2);
 
         // ---
     } else {
@@ -156,6 +156,6 @@ client.on("messageCreate", async message => {
     }
 });
 
-let task = cron.schedule('0 7-23 * * *', calculateAndUpdateStocks);
+// let task = cron.schedule('0 * * * * *', calculateAndUpdateStocks);
 
 client.login(token);

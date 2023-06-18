@@ -15,7 +15,7 @@ module.exports = {
             buyStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
-            const quantity = args.find(arg => !isNaN(arg)) ?? 1;
+            const quantity = Math.floor(+args.find(arg => !isNaN(arg))) ?? 1;
             if (quantity <= 0){
                 return message.reply(`You can only purchase one or more items.`);
             }
