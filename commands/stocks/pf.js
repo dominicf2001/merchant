@@ -1,5 +1,5 @@
 const { EmbedBuilder, inlineCode, AttachmentBuilder } = require('discord.js');
-const { tendieIconCode } = require("../../utilities.js");
+const { tendieIconCode, formatNumber } = require("../../utilities.js");
 const { getPortfolio, getPortfolioStock } = require('../../database/utilities/stockUtilities.js');
 
 module.exports = {
@@ -31,6 +31,7 @@ async function handleListReply(message, args) {
         .setDescription(`To view additional info on a stock: ${inlineCode("$pf @user [page#]")}`);
 
     let totalValue = 0;
+    let totalChange = 0;
     for (const stockId in portfolio){
         const stock = portfolio[stockId];
         const arrow = stock.gainOrLoss < 0 ?
@@ -41,12 +42,13 @@ async function handleListReply(message, args) {
             "gained";
 
         const user = await message.client.users.fetch(stockId);
-        totalValue += (stock.total_purchase_price + stock.gainOrLoss);
-        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} - ${tendieIconCode} ${stock.gainOrLoss} ${gainedOrLost}`,
-            value: `Total shares: :receipt: ${stock.total_shares}\nTotal invested: ${tendieIconCode} ${stock.total_purchase_price}`  });
+        totalValue += Number(stock.total_purchase_price) + Number(stock.gainOrLoss);
+        totalChange += Number(stock.gainOrLoss);
+        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} - ${tendieIconCode} ${formatNumber(stock.gainOrLoss)} ${gainedOrLost}`,
+            value: `Total shares: :receipt: ${formatNumber(stock.total_shares)}\nTotal invested: ${tendieIconCode} ${formatNumber(stock.total_purchase_price)}`});
     }
 
-    embed.setTitle(`Portfolio :page_with_curl: - Value: ${tendieIconCode} ${totalValue}`)
+    embed.setTitle(`Portfolio :page_with_curl: Value: ${tendieIconCode} ${formatNumber(totalValue)} - Change: ${tendieIconCode} ${formatNumber(totalChange)}`);
 
     return await message.reply({ embeds: [embed] });
 }
@@ -76,7 +78,7 @@ async function handleDetailReply(message, args) {
 
     for (const stock of portfolioStock) {
         const formattedDate = stock.purchase_date.toLocaleString('en-US', options);
-        embed.addFields({ name: `${formattedDate}`, value: `Shares purchased: :receipt: ${stock.shares}\nPurchase price: ${tendieIconCode} ${stock.purchase_price}` });
+        embed.addFields({ name: `${formattedDate}`, value: `Shares purchased: :receipt: ${formatNumber(stock.shares)}\nPurchase price: ${tendieIconCode} ${formatNumber(stock.purchase_price)}` });
     }
 
     return await message.reply({ embeds: [embed] });

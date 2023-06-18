@@ -1,6 +1,6 @@
 const { usersCache } = require("../../database/utilities/userUtilities.js");
 const { EmbedBuilder, inlineCode } = require('discord.js');
-const { tendieIconCode } = require("../../utilities.js");
+const { tendieIconCode, formatNumber } = require("../../utilities.js");
 
 module.exports = {
 	data: {
@@ -16,7 +16,7 @@ module.exports = {
 
         await Promise.all(topUsers.map(async (user, index) => {
             const fetchedUser = await message.client.users.fetch(user.user_id);
-            embed.addFields({ name: `${index + 1}. ${inlineCode(fetchedUser.tag)}`, value: `${tendieIconCode} ${user.balance}`});
+            embed.addFields({ name: `${index + 1}. ${inlineCode(fetchedUser.tag)}`, value: `${tendieIconCode} ${formatNumber(user.balance)}`});
         }));
 
         return message.reply({ embeds: [embed] });

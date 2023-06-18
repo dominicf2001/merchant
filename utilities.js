@@ -15,6 +15,10 @@ function getRandomFloat(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function formatNumber(num, decimalPlaces=2) {
+  return Math.round(num * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+}
+
 const tendieIconCode = "<:tendie:1115074573264764958>"
 
-module.exports = { secondsToHms, getRandomInt, getRandomFloat, tendieIconCode };
+module.exports = { secondsToHms, getRandomInt, getRandomFloat, tendieIconCode, formatNumber };

@@ -1,5 +1,5 @@
 const { Users, Items, UserStocks, Stocks } = require("../../database/dbObjects.js");
-const { tendieIconCode } = require("../../utilities.js");
+const { tendieIconCode, formatNumber } = require("../../utilities.js");
 const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
 const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
 const { inlineCode, EmbedBuilder } = require('discord.js');
@@ -15,7 +15,7 @@ module.exports = {
             buyStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
-            const quantity = Math.floor(+args.find(arg => !isNaN(arg))) ?? 1;
+            const quantity = Math.floor(args.find(arg => !isNaN(arg))) ?? 1;
             if (quantity <= 0){
                 return message.reply(`You can only purchase one or more items.`);
             }
@@ -28,7 +28,7 @@ module.exports = {
 
             const pluralS = quantity > 1 ? "s" : "";
             if ((item.price * quantity) > getBalance(message.author.id)) {
-                return message.reply(`You only have ${tendieIconCode} ${getBalance(message.author.id)} tendies. ${quantity} ${item.name}${pluralS} costs ${tendieIconCode} ${item.price * quantity} tendies.`);
+                return message.reply(`You only have ${tendieIconCode} ${formatNumber(+getBalance(message.author.id))} tendies. ${formatNumber(quantity)} ${item.name}${pluralS} costs ${tendieIconCode} ${formatNumber(item.price * quantity)} tendies.`);
             }
 
             const user = await Users.findOne({ where: { user_id: message.author.id } });
@@ -40,7 +40,7 @@ module.exports = {
             }
 
             embed.addFields({
-                name: `${quantity} ${item.name}${pluralS} bought for ${tendieIconCode} ${item.price * quantity}`,
+                name: `${formatNumber(quantity)} ${item.name}${pluralS} bought for ${tendieIconCode} ${formatNumber(item.price * quantity)}`,
                 value: ' '
             });
             return message.reply({ embeds: [embed] });

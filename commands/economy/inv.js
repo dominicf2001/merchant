@@ -1,6 +1,7 @@
 const { getBalance } = require("../../database/utilities/userUtilities.js");
 const { Users } = require("../../database/dbObjects.js");
 const { EmbedBuilder } = require('discord.js');
+const { formatNumber } = require("../../utilities.js");
 
 module.exports = {
 	data: {
@@ -18,7 +19,7 @@ module.exports = {
             .setTitle("Inventory");
 
         items.forEach(i => {
-            embed.addFields({ name: `${i.item.icon} ${i.item.name} - Q. ${i.quantity}`, value: ` ` });
+            embed.addFields({ name: `${i.item.icon} ${i.item.name} - Q. ${formatNumber(i.quantity)}`, value: ` ` });
         });
 
         return message.reply({ embeds: [embed] });

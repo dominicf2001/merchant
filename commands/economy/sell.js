@@ -1,5 +1,5 @@
 const { Users, UserStocks, Stocks } = require("../../database/dbObjects.js");
-const { tendieIconCode } = require("../../utilities.js");
+const { tendieIconCode, formatNumber } = require("../../utilities.js");
 const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
 const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
 const { inlineCode, EmbedBuilder } = require('discord.js');
@@ -14,7 +14,7 @@ module.exports = {
             sellStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
-            let quantity = Math.floor(+args.find(arg => !isNaN(arg)) ?? 1);
+            let quantity = Math.floor(args.find(arg => !isNaN(arg)) ?? 1);
             const user = await Users.findOne({ where: { user_id: message.author.id } });
             const item = await user.getItem(itemName);
 
@@ -40,7 +40,7 @@ module.exports = {
             }
 
             embed.addFields({
-                name: `${quantity} ${item.item.name}${pluralS} sold for ${tendieIconCode} ${item.item.price * quantity}`,
+                name: `${formatNumber(quantity)} ${item.item.name}${pluralS} sold for ${tendieIconCode} ${formatNumber(item.item.price * quantity)}`,
                 value: ' '
             });
             return message.reply({ embeds: [embed] });
@@ -73,15 +73,15 @@ async function sellStock(message, args){
 
         let userStock = userStocks[i];
 
-        if (userStock.shares > shares) {
+        if (Number(userStock.shares) > shares) {
             totalSharesSold += shares;
             userStock.shares -= shares;
             shares = 0;
 
             promises.push(userStock.save());
         } else {
-            totalSharesSold += userStock.shares;
-            shares -= userStock.shares;
+            totalSharesSold += Number(userStock.shares);
+            shares -= Number(userStock.shares);
 
             promises.push(userStock.destroy());
         }
@@ -105,7 +105,7 @@ async function sellStock(message, args){
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .addFields({
-            name: `${totalSharesSold} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${latestStock.price * totalSharesSold}`,
+            name: `${totalSharesSold} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${formatNumber(latestStock.price * totalSharesSold)}`,
             value: ' '
         });
 

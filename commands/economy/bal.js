@@ -1,6 +1,6 @@
 const { getBalance } = require("../../database/utilities/userUtilities.js");
 const { EmbedBuilder } = require('discord.js');
-const { tendieIconCode } = require("../../utilities.js");
+const { tendieIconCode, formatNumber } = require("../../utilities.js");
 
 module.exports = {
 	data: {
@@ -11,7 +11,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor("Blurple")
-            .addFields({ value: `${tendieIconCode} ${getBalance(message.author.id)}`, name: `Balance` });
+            .addFields({ value: `${tendieIconCode} ${formatNumber(+getBalance(message.author.id))}`, name: `Balance` });
 
 		return message.reply({ embeds: [embed] });
 	},
