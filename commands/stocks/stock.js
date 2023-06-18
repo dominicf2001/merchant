@@ -1,6 +1,6 @@
 const { EmbedBuilder, inlineCode, AttachmentBuilder } = require('discord.js');
 const { tendieIconCode } = require("../../utilities.js");
-const { getLatestStock, getStockHistory, latestStocksCache } = require("../../database/utilities/stockUtilities.js");
+const { getLatestStock, getStockHistory, latestStocksCache, getStockPurchasedShares } = require("../../database/utilities/stockUtilities.js");
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 const moment = require('moment');
 const { formatNumber } = require("../../utilities.js");
@@ -48,9 +48,10 @@ async function handleChartReply(message, args) {
 
     const highestPrice = Math.round(Math.max(...stockHistory.map(h => Number(h.dataValues.price))));
     const lowestPrice = Math.round(Math.min(...stockHistory.map(h => Number(h.dataValues.price))));
-    const previousPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
+    const previousPrice = stockHistory[stockHistory.length - 2]?.price ?? 0;
     const currentPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
     const difference = Number(currentPrice) - Number(previousPrice);
+    const volume = await getStockPurchasedShares(stockUser.id);
 
     let arrow = "<:stockup:1119370943240863745>";
     let lineColor = "rgb(0, 195, 76)";
@@ -62,7 +63,7 @@ async function handleChartReply(message, args) {
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${tendieIconCode} ${formatNumber(currentPrice)}`)
-        .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(currentStock.purchased_shares)}`);
+        .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`);
 
     const dateFormat = interval === 'hour' ? 'h:mm a' : interval === 'day' ? 'MMM DD' : 'MMM';
 
@@ -141,8 +142,8 @@ async function handleListReply(message, args) {
             return console.error("This stock does not exist");
         }
 
-        const previousPrice = +histories[i][1]?.price ?? 0;
-        const currentPrice = +latestStocks[i].price;
+        const previousPrice = histories[i][1]?.price ?? 0;
+        const currentPrice = latestStocks[i].price;
 
         const arrow = (currentPrice - previousPrice) < 0 ?
             "<:stockdown:1119370974140301352>" :

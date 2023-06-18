@@ -60,6 +60,22 @@ async function getPortfolio(id) {
     }
 }
 
+async function getStockPurchasedShares(id){
+    try {
+        let sum = await UserStocks.sum('shares', {
+            where: {
+                stock_user_id: id
+            }
+        });
+
+        if (!sum) sum = 0;
+
+        return sum;
+    } catch (error) {
+        console.error('Error while calculating the shares sum:', error);
+    }
+}
+
 async function getPortfolioStock(userId, stockId, page=1) {
     const offset = (page - 1) * 5;
     return await UserStocks.findAll({
@@ -236,4 +252,4 @@ async function getStockHistory(id, interval) {
     }
 };
 
-module.exports = { setStockPrice, getLatestStock, getStockHistory, latestStocksCache, getAllLatestStocks, getPortfolio, getPortfolioStock, getPortfolioValue };
+module.exports = { setStockPrice, getLatestStock, getStockHistory, getStockPurchasedShares, latestStocksCache, getAllLatestStocks, getPortfolio, getPortfolioStock, getPortfolioValue };
