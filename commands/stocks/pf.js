@@ -44,7 +44,7 @@ async function handleListReply(message, args) {
         const user = await message.client.users.fetch(stockId);
         totalValue += Number(stock.total_purchase_price) + Number(stock.gainOrLoss);
         totalChange += Number(stock.gainOrLoss);
-        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} - ${tendieIconCode} ${formatNumber(stock.gainOrLoss)} ${gainedOrLost} all time`,
+        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} ${tendieIconCode} ${formatNumber(stock.gainOrLoss)} ${gainedOrLost} all time`,
             value: `Total shares: :receipt: ${formatNumber(stock.total_shares)}\nTotal invested: ${tendieIconCode} ${formatNumber(stock.total_purchase_price)}`});
     }
 

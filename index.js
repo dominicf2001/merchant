@@ -99,11 +99,11 @@ client.on("messageCreate", async message => {
 
         mentionedUsers.forEach(user => {
             if (user.id != message.author.id && !user.bot){
-                addActivity(user.id, 4);
+                addActivity(user.id, 2);
             }
         });
 
-        addActivity(message.author.id, 2);
+        addActivity(message.author.id, 1.5);
 
         // ---
     } else {
