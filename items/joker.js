@@ -29,18 +29,16 @@ module.exports = {
             throw new Error("I couldn't fetch the member list!");
         }
 
+        message.channel.send(`All user nicknames have been changed`);
         for (let [id, member] of members) {
             if (!member.user.bot) {
                 try {
                     let newNickname = getRandomNick();
-                    console.log(newNickname);
                     await member.setNickname(newNickname);
                 } catch (error) {
                     console.error(`Failed to change nickname for member ${id}:`, error);
                 }
             }
         }
-
-        message.channel.send(`All user nicknames have been changed`);
     }
 }

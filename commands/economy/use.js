@@ -14,9 +14,11 @@ module.exports = {
         if (!item) return await message.reply("You do not have this item!");
 
         try {
-            await message.client.items.get(itemName).use(message, args);
             user.removeItem(item.item);
+            await message.client.items.get(itemName).use(message, args);
         } catch (error) {
+            const item = await user.getItem(itemName); 
+            if (!item) await user.addItem(itemName);
             console.error(error);
             await message.reply(error.message);
         }
