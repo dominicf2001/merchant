@@ -17,7 +17,6 @@ const faker = require('faker');
 const force = process.argv.includes('--force') || process.argv.includes('-f');
 
 sequelize.sync({ force }).then(async () => {
-
     const items = [
         Items.upsert({ name: 'mute', price: 400, icon: ":mute:", description: "Mutes a user for 5 minutes.\n```$use mute @target```" }),
 		Items.upsert({ name: 'emp', price: 250, icon: ":zap:", description: "Disables Nexxy.\n```$use emp```" }),
@@ -25,9 +24,9 @@ sequelize.sync({ force }).then(async () => {
 		Items.upsert({ name: 'battery', price: 350, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
 		Items.upsert({ name: 'nametag', price: 500, icon: ":label:", description: "Sets any user's nickname.\n```$use nametag @target [name]```" }),
 		Items.upsert({ name: 'joker', price: 4000, icon: ":black_joker:", description: "???" }),
-	]; 
+	];
 
-	await Promise.all([...items]);
+    	await Promise.all([...items]);
 	console.log('Database synced');
 
 	sequelize.close();

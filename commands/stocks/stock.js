@@ -5,8 +5,8 @@ const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 const moment = require('moment');
 const { formatNumber } = require("../../utilities.js");
 
-const width = 2000;
-const height = 1000;
+const width = 3000;
+const height = 1400;
 const backgroundColour = "white";
 
 module.exports = {
@@ -33,8 +33,8 @@ module.exports = {
 
 async function handleChartReply(message, args) {
     const stockUser = message.mentions.users.first();
-    const interval = args[1] ?? "hour";
-    const intervals = ['hour', 'day', 'month'];
+    const interval = args[1] ?? "now";
+    const intervals = ['now', 'hour', 'day', 'month'];
     if (!intervals.includes(interval) && args[1]){
         return message.reply("Invalid interval.");
     }
@@ -65,7 +65,7 @@ async function handleChartReply(message, args) {
         .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${tendieIconCode} ${formatNumber(currentPrice)}`)
         .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`);
 
-    const dateFormat = interval === 'hour' ? 'h:mm a' : interval === 'day' ? 'MMM DD' : 'MMM';
+    const dateFormat = interval === 'hour' ? 'MMM DD, h:mm a' : interval === 'day' ? 'MMM DD' : interval === 'now' ? 'h:mm:ss a' : 'MMM';
 
     const configuration = {
         type: 'line',
@@ -89,6 +89,8 @@ async function handleChartReply(message, args) {
                     }
                 },
                 y: {
+                    min: lowestPrice * .97,
+                    max: highestPrice * 1.03,
                     ticks: {
                         font: {
                             size: 36

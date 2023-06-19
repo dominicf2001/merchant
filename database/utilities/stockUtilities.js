@@ -108,7 +108,7 @@ async function setStockPrice(id, price) {
     }
 };
 
-async function getLatestStock(id) {
+function getLatestStock(id) {
     try {
         return latestStocksCache.get(id);
     } catch (error) {
@@ -139,7 +139,46 @@ async function getStockHistory(id, interval) {
         let stockHistory;
 
         switch(interval) {
+            case 'now':
+                const today = new Date().toISOString().slice(0, 10);
+                stockHistory = await Stocks.findAll({
+                    attributes: [
+                        'user_id',
+                        [fn('strftime', '%Y-%m-%d %H:%M:%S', col('date')), 'now'],
+                        'price',
+                        'purchased_shares',
+                        'highest_price'
+                    ],
+                    where: {
+                        user_id: id,
+                        date: {
+                            [Op.gte]: `${today} 00:00:00`,
+                        }
+                    },
+                    group: ['now', 'user_id'],
+                    order: [
+                        ['now', 'DESC']
+                    ],
+                    limit: 30,
+                    subQuery: false
+                });
+                break;
             case 'hour':
+                const maxHourDates = await Stocks.findAll({
+                    attributes: [
+                        [fn('strftime', '%Y-%m-%d %H:00', col('date')), 'hour'],
+                        [fn('max', col('date')), 'max_date']
+                    ],
+                    where: {
+                        user_id: id
+                    },
+                    group: ['hour'],
+                    raw: true
+                });
+
+                const hours = maxHourDates.map(date => date.hour);
+                const hourDates = maxHourDates.map(date => date.max_date);
+
                 stockHistory = await Stocks.findAll({
                     attributes: [
                         'user_id',
@@ -149,14 +188,18 @@ async function getStockHistory(id, interval) {
                         'highest_price'
                     ],
                     where: {
-                        user_id: id
+                        user_id: id,
+                        [Op.and]: [
+                            sequelize.where(fn('strftime', '%Y-%m-%d %H:00', col('date')), { [Op.in]: hours }),
+                            { date: { [Op.in]: hourDates } }
+                        ]
                     },
                     group: ['hour', 'user_id'],
                     order: [
                         ['hour', 'DESC']
                     ],
-                    limit: 24,
-                    subQuery: false
+                    subQuery: false,
+                    limit: 24
                 });
                 break;
             case 'day':
@@ -233,7 +276,8 @@ async function getStockHistory(id, interval) {
                     order: [
                         ['month', 'DESC']
                     ],
-                    subQuery: false
+                    subQuery: false,
+                    limit: 6
                 });
                 break;
             default:
