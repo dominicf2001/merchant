@@ -1,5 +1,5 @@
 const { getBalance, getActivity, setActivity } = require("./database/utilities/userUtilities.js");
-const { getPortfolioValue, getLatestStock, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
+const { getPortfolioValue, getStockPurchasedShares, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
 const { getRandomFloat } = require("./utilities.js");
 const { Users } = require("./database/dbObjects.js");
 
@@ -29,7 +29,7 @@ async function calculateAndUpdateStocks(){
             const randomFactor = getRandomFloat(1, 100);
             let activity = getActivity(user.user_id);
             const stockPrice = latestStock.price;
-            const purchasedShares = 2 * latestStock.purchased_shares;
+            const purchasedShares = await getStockPurchasedShares(user.user_id);
 
             activity *= (1 - activityDecay);
 

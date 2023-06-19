@@ -28,7 +28,6 @@ client.once(Events.ClientReady, async () => {
     console.log('Ready as ' + client.user.tag);
 });
 
-
 client.on('inviteCreate', (invite) => {
     if (invite.inviter.bot) return;
     addActivity(invite.inviterId, 8);
@@ -85,9 +84,11 @@ client.on("messageCreate", async message => {
     if (message.author.bot) return;
 
     if (!usersCache.has(message.author.id)){
-        Users.create({
+        const newUser = await Users.create({
             user_id: message.author.id
         });
+
+        usersCache.set(message.author.id, newUser);
     }
 
     const prefix = '$';
@@ -97,7 +98,6 @@ client.on("messageCreate", async message => {
         const mentionedUsers = message.mentions.users;
 
         mentionedUsers.forEach(user => {
-            console.log("test");
             if (user.id != message.author.id && !user.bot){
                 addActivity(user.id, 4);
             }
