@@ -14,7 +14,7 @@ module.exports = {
             sellStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
-            let quantity = Math.floor(args.find(arg => !isNaN(arg)) ?? 1);
+            let quantity = args.find(arg => !isNaN(arg)) ?? 1;
             const user = await Users.findOne({ where: { user_id: message.author.id } });
             const item = await user.getItem(itemName);
 
@@ -90,13 +90,6 @@ async function sellStock(message, args){
     await Promise.all(promises);
 
     latestStock.purchased_shares -= Number(totalSharesSold);
-    const stock = await Stocks.findOne({
-        where: {
-            user_id: latestStock.user_id,
-            date: latestStock.date
-        },
-    });
-    await stock.decrement('purchased_shares', { by: Number(totalSharesSold) });
 
     await addBalance(message.author.id, Number(latestStock.price * totalSharesSold));
 

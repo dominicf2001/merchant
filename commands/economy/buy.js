@@ -15,7 +15,7 @@ module.exports = {
             buyStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
-            const quantity = Math.floor(args.find(arg => !isNaN(arg))) ?? 1;
+            const quantity = args.find(arg => !isNaN(arg)) ?? 1;
             if (quantity <= 0){
                 return message.reply(`You can only purchase one or more items.`);
             }
@@ -81,15 +81,7 @@ async function buyStock(message, args){
         purchase_price: latestStock.price
     });
 
-    const stock = await Stocks.findOne({
-        where: {
-            user_id: latestStock.user_id,
-            date: latestStock.date
-        }
-    }); 
-
     latestStock.purchased_shares += shares;
-    await stock.increment('purchased_shares', { by: +shares });
 
     const pluralS = shares > 1 ? "s" : "";
 
