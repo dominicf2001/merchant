@@ -83,7 +83,7 @@ async function setStockPrice(id, price) {
             user_id: id,
             price: +price,
             purchased_shares: +stock.purchased_shares,
-            highest_price: +price > +stock.highest_price ? +price : +stock.highest_price
+            highest_price: Number(price) > Number(stock.highest_price) ? +price : +stock.highest_price
         });
         latestStocksCache.set(id, newStock);
         return newStock;

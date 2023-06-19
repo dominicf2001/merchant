@@ -10,7 +10,7 @@ module.exports = {
     },
 	async execute(message, args) {
         try {
-            const tendiesMade = getRandomInt(5, 30);
+            const tendiesMade = getRandomInt(10, 60);
             addBalance(message.author.id, tendiesMade);
 
             const embed = new EmbedBuilder()

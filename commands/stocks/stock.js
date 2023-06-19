@@ -48,9 +48,10 @@ async function handleChartReply(message, args) {
 
     const highestPrice = Math.round(Math.max(...stockHistory.map(h => Number(h.dataValues.price))));
     const lowestPrice = Math.round(Math.min(...stockHistory.map(h => Number(h.dataValues.price))));
-    const previousPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
+    const previousPrice = stockHistory[stockHistory.length - 2]?.price ?? 0;
     const currentPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
     const difference = Number(currentPrice) - Number(previousPrice);
+	
 
     let arrow = "<:stockup:1119370943240863745>";
     let lineColor = "rgb(0, 195, 76)";

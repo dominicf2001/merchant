@@ -52,7 +52,7 @@ async function handleListReply(message, args) {
         "<:stockdown:1119370974140301352>" :
         "<:stockup:1119370943240863745>";
 
-    embed.setTitle(`Portfolio :page_with_curl: Value: ${tendieIconCode} ${formatNumber(totalValue)} - Change:${arrow} ${tendieIconCode} ${formatNumber(totalChange)}`);
+    embed.setTitle(`Portfolio :page_with_curl:\nValue: ${tendieIconCode} ${formatNumber(totalValue)}\n${arrow} Change: ${tendieIconCode} ${formatNumber(totalChange)}`);
 
     return await message.reply({ embeds: [embed] });
 }
