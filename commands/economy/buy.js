@@ -3,7 +3,13 @@ const { tendieIconCode, formatNumber } = require("../../utilities.js");
 const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
 const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
 const { inlineCode, EmbedBuilder } = require('discord.js');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require("sequelize");
+const sequelize = new Sequelize('database', 'username', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	storage: './database/database.sqlite'
+});
 
 module.exports = {
 	data: {
@@ -70,25 +76,30 @@ async function buyStock(message, args){
     if ((latestStock.price * shares) > getBalance(message.author.id)) {
         return message.reply(`you only have ${tendieIconCode} ${getBalance(message.author.id)} tendies. ${shares} of this stock costs ${tendieIconCode} ${latestStock.price * shares} tendies.`);
     }
+    const t = await sequelize.transaction();
 
-    addBalance(message.author.id, -(latestStock.price * shares));
+    try {
+        addBalance(message.author.id, -(latestStock.price * shares), t);
 
-    UserStocks.create({
-        user_id: message.author.id,
-        stock_user_id: stockUser.id,
-        purchase_date: Date.now(),
-        shares: shares,
-        purchase_price: latestStock.price
-    });
+        await UserStocks.create({
+            user_id: message.author.id,
+            stock_user_id: stockUser.id,
+            purchase_date: Date.now(),
+            shares: shares,
+            purchase_price: latestStock.price
+        }, { transaction: t });
 
-    latestStock.purchased_shares += shares;
+        const pluralS = shares > 1 ? "s" : "";
 
-    const pluralS = shares > 1 ? "s" : "";
+        embed.addFields({
+            name: `${formatNumber(shares)} share${pluralS} of ${inlineCode(stockUser.tag)} bought for ${tendieIconCode} ${formatNumber(latestStock.price * shares)}`,
+            value: ' '
+        });
 
-    embed.addFields({
-        name: `${formatNumber(shares)} share${pluralS} of ${inlineCode(stockUser.tag)} bought for ${tendieIconCode} ${formatNumber(latestStock.price * shares)}`,
-        value: ' '
-    });
-
-    return message.reply({ embeds: [embed] });
+        await t.commit();
+        return message.reply({ embeds: [embed] });
+    } catch (error) {
+        await t.rollback();
+        throw error;
+    }
 }

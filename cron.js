@@ -30,8 +30,8 @@ async function calculateAndUpdateStocks(interval='default'){
                     user_id: latestStock.user_id
                 }
             });
-
             if (!user) continue;
+
             const portfolioValue = await getPortfolioValue(user.user_id);
             const balance = getBalance(user.user_id);
             const netWorth = portfolioValue + balance;

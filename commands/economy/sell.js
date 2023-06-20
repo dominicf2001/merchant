@@ -3,6 +3,13 @@ const { tendieIconCode, formatNumber } = require("../../utilities.js");
 const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
 const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
 const { inlineCode, EmbedBuilder } = require('discord.js');
+const { Sequelize } = require("sequelize");
+const sequelize = new Sequelize('database', 'username', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	storage: './database/database.sqlite'
+});
 
 module.exports = {
 	data: {
@@ -48,61 +55,63 @@ module.exports = {
 	},
 };
 
-async function sellStock(message, args){
+async function sellStock(message, args) {
     const stockUser = message.mentions.users.first();
     const latestStock = await getLatestStock(stockUser.id);
 
-    let userStocks = await UserStocks.findAll({
-        where: { user_id: message.author.id, stock_user_id: stockUser.id },
-        order: [['purchase_date', 'ASC']],
-    });
+    const t = await sequelize.transaction();
 
-    if (!userStocks.length) return message.reply(`You do not have any shares of this stock.`);
-
-    let promises = [];
-
-    let totalSharesSold = 0;
-    let shares = args.find(arg => !isNaN(arg)) ?? 1;
-
-    if (shares <= 0){
-        return message.reply(`You can only sell one or more stocks.`);
-    }
-
-    for (let i = 0; i < userStocks.length; i++) {
-        if (shares <= 0) break;
-
-        let userStock = userStocks[i];
-
-        if (Number(userStock.shares) > shares) {
-            totalSharesSold += shares;
-            userStock.shares -= shares;
-            shares = 0;
-
-            promises.push(userStock.save());
-        } else {
-            totalSharesSold += Number(userStock.shares);
-            shares -= Number(userStock.shares);
-
-            promises.push(userStock.destroy());
-        }
-    }
-
-    await Promise.all(promises);
-
-    latestStock.purchased_shares -= Number(totalSharesSold);
-
-    await addBalance(message.author.id, Number(latestStock.price * totalSharesSold));
-
-    const pluralS = totalSharesSold > 1 ? "s" : "";
-
-    const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .addFields({
-            name: `${formatNumber(totalSharesSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${formatNumber(latestStock.price * totalSharesSold)}`,
-            value: ' '
+    try {
+        let userStocks = await UserStocks.findAll({
+            where: { user_id: message.author.id, stock_user_id: stockUser.id },
+            order: [['purchase_date', 'ASC']],
+            transaction: t,
         });
 
-    return message.reply({ embeds: [embed] });
+        if (!userStocks.length) throw new Error(`You do not have any shares of this stock.`);
 
+        let shares = args.find(arg => !isNaN(arg)) ?? 1;
 
+        if (shares <= 0) {
+            throw new Error(`You can only sell one or more stocks.`);
+        }
+
+        // sell as many as possible
+        let totalSharesSold = 0;
+        for (let i = 0; i < userStocks.length; i++) {
+            if (shares <= 0) break;
+
+            let userStock = userStocks[i];
+
+            if (Number(userStock.shares) > shares) {
+                totalSharesSold += shares;
+                userStock.shares -= shares;
+                shares = 0;
+                await userStock.save({ transaction: t });
+            } else {
+                totalSharesSold += Number(userStock.shares);
+                shares -= Number(userStock.shares);
+
+                await userStock.destroy({ transaction: t });
+            }
+        }
+
+        await addBalance(message.author.id, Number(latestStock.price * totalSharesSold), t);
+
+        const pluralS = totalSharesSold > 1 ? "s" : "";
+
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .addFields({
+                name: `${formatNumber(totalSharesSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${formatNumber(latestStock.price * totalSharesSold)}`,
+                value: ' '
+            });
+
+        await t.commit();
+        return message.reply({ embeds: [embed] });
+    } catch (error) {
+        await t.rollback();
+        return message.reply(error.message);
+    }
 }
+
