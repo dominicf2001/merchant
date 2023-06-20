@@ -32,7 +32,7 @@ client.once(Events.ClientReady, async () => {
 client.on('inviteCreate', (invite) => {
     if (invite.inviter.bot) return;
     const currentHour = moment().utcOffset('-05:00').format('H');
-    if (currentHour >= 7 && currentHour < 23) {
+    if (currentHour >= 7 && currentHour < 20) {
         addActivity(invite.inviterId, 8);
     }
 });
@@ -40,7 +40,7 @@ client.on('inviteCreate', (invite) => {
 client.on('messageReactionAdd', (messageReaction, user) => {
     if (user.bot) return;
     const currentHour = moment().utcOffset('-05:00').format('H');
-    if (currentHour >= 7 && currentHour < 23) {
+    if (currentHour >= 7 && currentHour < 20) {
         addActivity(user.id, 1);
     }
 });
@@ -48,7 +48,7 @@ client.on('messageReactionAdd', (messageReaction, user) => {
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         const currentHour = moment().utcOffset('-05:00').format('H');
-        if (currentHour >= 7 && currentHour < 23) {
+        if (currentHour >= 7 && currentHour < 20) {
             addActivity(newState.member.user.id, 5);
         }
     }
@@ -107,22 +107,15 @@ client.on("messageCreate", async message => {
         // -- HANDLE USER ACTIVITY UPDATING
 
         const currentHour = moment().utcOffset('-05:00').format('H');
-        if (currentHour >= 7 && currentHour < 23) {
-            const mentionedUsers = message.mentions.users;
-            mentionedUsers.forEach(user => {
-                if (user.id != message.author.id && !user.bot){
-
-                    addActivity(user.id, 3);
-                }
-            });
-
-<<<<<<< HEAD
-        addActivity(message.author.id, 1.25);
-=======
-            addActivity(message.author.id, 1);
-        }
->>>>>>> 8d6fcb98897a39b4316ad83b397daf1be74c4d70
-
+	    if (currentHour >= 7 && currentHour < 20) {
+		    const mentionedUsers = message.mentions.users;
+		    mentionedUsers.forEach(user => {
+			    if (user.id != message.author.id && !user.bot){
+				    addActivity(user.id, 3);
+			    }
+		    });
+		    addActivity(message.author.id, 1.75);
+	    }
         // ---
     } else {
         const args = message.content.slice(prefix.length).trim().split(/ +/);
@@ -184,7 +177,7 @@ client.on("messageCreate", async message => {
 
 
 
-let stockTicker = cron.schedule('*/5 7-23 * * *', () => {
+let stockTicker = cron.schedule('*/5 7-20 * * *', () => {
     let randomMinute = Math.floor(Math.random() * 5);
     setTimeout(() => {
         calculateAndUpdateStocks('5min');

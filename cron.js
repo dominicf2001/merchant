@@ -14,13 +14,13 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 async function calculateAndUpdateStocks(interval='default'){
     console.log("Recalculating stocks...");
 
-    const shareWeight = 0.03;
-    const activityWeight = 0.20;
-    const randomWeight = 0.02;
+    const shareWeight = 0.025;
+    const activityWeight = 0.185;
+    const randomWeight = 0.025;
     const netWorthWeight = 0.01;
-    const priceWeight = 0.81;
+    const priceWeight = 0.825;
 
-    const activityDecay = (interval == '5min') ? getRandomFloat(.055, .075) : getRandomFloat(.15, .40);
+    const activityDecay = (interval == '5min') ? getRandomFloat(.035, .055) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -42,7 +42,7 @@ async function calculateAndUpdateStocks(interval='default'){
 
             activity *= (1 - activityDecay);
 
-            const basePrice = 25;
+            const basePrice = 33;
 
             const amount = basePrice + ((purchasedShares * shareWeight + activity * activityWeight + randomFactor * randomWeight + netWorth * netWorthWeight + stockPrice * priceWeight) / (shareWeight + activityWeight + randomWeight + netWorthWeight + priceWeight));
 
