@@ -5,6 +5,7 @@ const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 const { Users, UserCooldowns } = require("./database/dbObjects.js");
 const { usersCache, addActivity } = require("./database/utilities/userUtilities.js");
+const moment = require('moment');
 const { getAllLatestStocks, latestStocksCache } = require("./database/utilities/stockUtilities.js");
 const { secondsToHms } = require("./utilities.js");
 const { calculateAndUpdateStocks, stockCleanUp } = require("./cron.js");
@@ -30,17 +31,26 @@ client.once(Events.ClientReady, async () => {
 
 client.on('inviteCreate', (invite) => {
     if (invite.inviter.bot) return;
-    addActivity(invite.inviterId, 8);
+    const currentHour = moment().utcOffset('-05:00').format('H');
+    if (currentHour >= 7 && currentHour < 23) {
+        addActivity(invite.inviterId, 8);
+    }
 });
 
 client.on('messageReactionAdd', (messageReaction, user) => {
     if (user.bot) return;
-    addActivity(user.id, 1);
+    const currentHour = moment().utcOffset('-05:00').format('H');
+    if (currentHour >= 7 && currentHour < 23) {
+        addActivity(user.id, 1);
+    }
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
-        addActivity(newState.member.user.id, 5);
+        const currentHour = moment().utcOffset('-05:00').format('H');
+        if (currentHour >= 7 && currentHour < 23) {
+            addActivity(newState.member.user.id, 5);
+        }
     }
 });
 
@@ -95,15 +105,23 @@ client.on("messageCreate", async message => {
 
     if (!message.content.startsWith(prefix)) {
         // -- HANDLE USER ACTIVITY UPDATING
-        const mentionedUsers = message.mentions.users;
 
-        mentionedUsers.forEach(user => {
-            if (user.id != message.author.id && !user.bot){
-                addActivity(user.id, 3);
-            }
-        });
+        const currentHour = moment().utcOffset('-05:00').format('H');
+        if (currentHour >= 7 && currentHour < 23) {
+            const mentionedUsers = message.mentions.users;
+            mentionedUsers.forEach(user => {
+                if (user.id != message.author.id && !user.bot){
 
+                    addActivity(user.id, 3);
+                }
+            });
+
+<<<<<<< HEAD
         addActivity(message.author.id, 1.25);
+=======
+            addActivity(message.author.id, 1);
+        }
+>>>>>>> 8d6fcb98897a39b4316ad83b397daf1be74c4d70
 
         // ---
     } else {
