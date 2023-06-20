@@ -114,7 +114,7 @@ client.on("messageCreate", async message => {
 				    addActivity(user.id, 3);
 			    }
 		    });
-		    addActivity(message.author.id, 1.75);
+		    addActivity(message.author.id, 1.68);
 	    }
         // ---
     } else {

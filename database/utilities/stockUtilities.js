@@ -68,7 +68,7 @@ async function getStockPurchasedShares(id){
             }
         });
 
-        if (!sum) sum = 0;
+        if (!sum || sum < 0) sum = 0;
 
         return sum;
     } catch (error) {
@@ -98,7 +98,6 @@ async function setStockPrice(id, price) {
         const newStock = await Stocks.create({
             user_id: id,
             price: +price,
-            purchased_shares: +stock.purchased_shares,
             highest_price: Number(price) > Number(stock.highest_price) ? +price : +stock.highest_price
         });
         latestStocksCache.set(id, newStock);

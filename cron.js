@@ -20,7 +20,7 @@ async function calculateAndUpdateStocks(interval='default'){
     const netWorthWeight = 0.01;
     const priceWeight = 0.825;
 
-    const activityDecay = (interval == '5min') ? getRandomFloat(.035, .055) : getRandomFloat(.15, .40);
+    const activityDecay = (interval == '5min') ? getRandomFloat(.055, .070) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -35,7 +35,7 @@ async function calculateAndUpdateStocks(interval='default'){
             const portfolioValue = await getPortfolioValue(user.user_id);
             const balance = getBalance(user.user_id);
             const netWorth = portfolioValue + balance;
-            const randomFactor = getRandomFloat(10, 100);
+            const randomFactor = getRandomFloat(10, 20);
             let activity = getActivity(user.user_id);
             const stockPrice = latestStock.price;
             const purchasedShares = 2 * (await getStockPurchasedShares(user.user_id));
