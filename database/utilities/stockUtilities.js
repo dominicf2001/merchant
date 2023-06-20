@@ -140,7 +140,8 @@ async function getStockHistory(id, interval) {
 
         switch(interval) {
             case 'now':
-                const today = new Date().toISOString().slice(0, 10);
+                let nowMinusTenMinutes = new Date(Date.now() - 120 * 60 * 1000);
+
                 stockHistory = await Stocks.findAll({
                     attributes: [
                         'user_id',
@@ -152,7 +153,7 @@ async function getStockHistory(id, interval) {
                     where: {
                         user_id: id,
                         date: {
-                            [Op.gte]: `${today} 00:00:00`,
+                            [Op.gte]: nowMinusTenMinutes,
                         }
                     },
                     group: ['now', 'user_id'],
