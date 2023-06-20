@@ -37,21 +37,3 @@ module.exports = (sequelize, DataTypes) => {
     });
 };
 
-// not needed for now
-/*
-async function maintainStockHistoryLimit(stock) {
-    const Stocks = stock.sequelize.models.stocks;
-    const stockHistories = await Stocks.findAll({
-        where: {
-            user_id: stock.user_id
-        },
-        order: [['date', 'ASC']]
-    });
-
-    if (stockHistories.length >= 18000) {
-        const oldestRecord = stockHistories[0];
-        await oldestRecord.destroy();
-    }
-};
-*/
-

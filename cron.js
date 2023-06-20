@@ -1,17 +1,26 @@
 const { getBalance, getActivity, setActivity } = require("./database/utilities/userUtilities.js");
 const { getPortfolioValue, getStockPurchasedShares, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
 const { getRandomFloat } = require("./utilities.js");
-const { Users } = require("./database/dbObjects.js");
+const { getLatestStock } = require("./database/utilities/stockUtilities.js");
+const { Users, Stocks } = require("./database/dbObjects.js");
+const { Op, Sequelize } = require("sequelize");
+const sequelize = new Sequelize('database', 'username', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	storage: './database/database.sqlite'
+});
 
-async function calculateAndUpdateStocks(){
-    console.log("running");
-    const shareWeight = 0.05;
+async function calculateAndUpdateStocks(interval='default'){
+    console.log("Recalculating stocks...");
+
+    const shareWeight = 0.03;
     const activityWeight = 0.20;
-    const randomWeight = 0.03;
-    const netWorthWeight = 0.02;
-    const priceWeight = 0.79;
+    const randomWeight = 0.02;
+    const netWorthWeight = 0.01;
+    const priceWeight = 0.81;
 
-    const activityDecay = getRandomFloat(.15, .40);
+    const activityDecay = (interval == '5min') ? getRandomFloat(.055, .075) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -36,17 +45,48 @@ async function calculateAndUpdateStocks(){
             const basePrice = 25;
 
             const amount = basePrice + ((purchasedShares * shareWeight + activity * activityWeight + randomFactor * randomWeight + netWorth * netWorthWeight + stockPrice * priceWeight) / (shareWeight + activityWeight + randomWeight + netWorthWeight + priceWeight));
-            console.log(amount);
 
             if (amount < 0) amount = 0;
 
             setStockPrice(user.user_id, Math.round(amount));
             setActivity(user.user_id, activity);
         }
+        console.log("Finished recalculating stocks.");
     } catch (error) {
         console.error(error);
     }
 }
 
-module.exports = { calculateAndUpdateStocks };
+async function stockCleanUp() {
+    const stocks = await Stocks.findAll({
+        attributes: ['user_id'],
+        group: 'user_id'
+    });
+
+    for (let stock of stocks) {
+        const today = new Date().toISOString().slice(0, 10);
+        const latestStock = getLatestStock(stock.user_id);
+        const latestStockDateTime = latestStock.date;
+        const t = await sequelize.transaction();
+
+        try {
+            await Stocks.destroy({
+                where: {
+                    user_id: stock.user_id,
+                    date: {
+                      [Op.gte]: `${today} 00:00:00`,
+                      [Op.lt]: latestStockDateTime,
+                    }
+                },
+                transaction: t,
+            });
+            await t.commit();
+        } catch (error) {
+            await t.rollback();
+            throw error;
+        }
+    }
+}
+
+module.exports = { calculateAndUpdateStocks, stockCleanUp };
 

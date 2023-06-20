@@ -7,7 +7,7 @@ const { Users, UserCooldowns } = require("./database/dbObjects.js");
 const { usersCache, addActivity } = require("./database/utilities/userUtilities.js");
 const { getAllLatestStocks, latestStocksCache } = require("./database/utilities/stockUtilities.js");
 const { secondsToHms } = require("./utilities.js");
-const { calculateAndUpdateStocks } = require("./cron.js");
+const { calculateAndUpdateStocks, stockCleanUp } = require("./cron.js");
 
 const client = new Client({ intents: [
         GatewayIntentBits.Guilds,
@@ -99,11 +99,11 @@ client.on("messageCreate", async message => {
 
         mentionedUsers.forEach(user => {
             if (user.id != message.author.id && !user.bot){
-                addActivity(user.id, 2);
+                addActivity(user.id, 3);
             }
         });
 
-        addActivity(message.author.id, 1.5);
+        addActivity(message.author.id, 1.25);
 
         // ---
     } else {
@@ -164,10 +164,28 @@ client.on("messageCreate", async message => {
     }
 });
 
-let task = cron.schedule('0 7-23 * * *', calculateAndUpdateStocks, {
-  timezone: "America/New_York"
+
+
+let stockTicker = cron.schedule('*/5 7-23 * * *', () => {
+    let randomMinute = Math.floor(Math.random() * 5);
+    setTimeout(() => {
+        calculateAndUpdateStocks('5min');
+        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+    }, randomMinute * 60 * 1000);
+}, {
+    timezone: "America/New_York"
 });
 
-task.start();
+/*
+let dailyCleanup = cron.schedule('0 23 * * *', () => {
+    stockCleanUp();
+    console.log("Cleanup has occurred!");
+}, {
+    timezone: "America/New_York"
+});
+*/
+
+stockTicker.start();
+// dailyCleanup.start();
 
 client.login(token);
