@@ -2,6 +2,8 @@ const { getBalance, getActivity, setActivity } = require("./database/utilities/u
 const { getPortfolioValue, getStockPurchasedShares, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
 const { getRandomFloat } = require("./utilities.js");
 const { getLatestStock } = require("./database/utilities/stockUtilities.js");
+const fs = require('fs');
+const path = require('path');
 const { Users, Stocks } = require("./database/dbObjects.js");
 const { Op, Sequelize } = require("sequelize");
 const sequelize = new Sequelize('database', 'username', 'password', {
@@ -58,35 +60,71 @@ async function calculateAndUpdateStocks(interval='default'){
 }
 
 async function stockCleanUp() {
-    const stocks = await Stocks.findAll({
-        attributes: ['user_id'],
-        group: 'user_id'
+    const distinctDatesAndUsers = await Stocks.findAll({
+        attributes: [
+            [Sequelize.fn('date', Sequelize.col('date')), 'dateOnly'],
+            'user_id'
+        ],
+        group: ['dateOnly', 'user_id'],
+        raw:true
     });
 
-    for (let stock of stocks) {
-        const today = new Date().toISOString().slice(0, 10);
-        const latestStock = getLatestStock(stock.user_id);
-        const latestStockDateTime = latestStock.date;
+    for (let item of distinctDatesAndUsers) {
+        const { user_id, dateOnly } = item;
+
+        const nextDay = new Date(dateOnly);
+        nextDay.setDate(nextDay.getDate() + 1);
+
         const t = await sequelize.transaction();
 
         try {
-            await Stocks.destroy({
+            const latestStock = await Stocks.findOne({
                 where: {
-                    user_id: stock.user_id,
+                    user_id,
                     date: {
-                      [Op.gte]: `${today} 00:00:00`,
-                      [Op.lt]: latestStockDateTime,
+                        [Op.gte]: Sequelize.fn('date', dateOnly),
+                        [Op.lt]: Sequelize.fn('date', nextDay.toISOString())
                     }
                 },
-                transaction: t,
+                order: [['date', 'DESC']],
+                attributes: ['date'],
+                transaction: t
             });
+
+            if(latestStock){
+                await Stocks.destroy({
+                    where: {
+                        user_id,
+                        date: {
+                            [Op.gte]: Sequelize.fn('date', dateOnly),
+                            [Op.lt]: Sequelize.fn('date', nextDay.toISOString()),
+                            [Op.ne]: latestStock.date
+                        }
+                    },
+                    transaction: t
+                });
+            }
+
             await t.commit();
         } catch (error) {
             await t.rollback();
             throw error;
         }
     }
+
+    const srcPath = path.join(__dirname, './database/database.sqlite');
+    const destPath = path.join(__dirname, './database/database_backup.sqlite');
+
+    fs.copyFile(srcPath, destPath, (err) => {
+        if (err) {
+            console.error('Error while creating backup:', err);
+        } else {
+            console.log('Database backup was created successfully.');
+        }
+    });
+
 }
+
 
 module.exports = { calculateAndUpdateStocks, stockCleanUp };
 

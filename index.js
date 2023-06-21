@@ -181,22 +181,21 @@ let stockTicker = cron.schedule('*/5 7-20 * * *', () => {
     let randomMinute = Math.floor(Math.random() * 5);
     setTimeout(() => {
         calculateAndUpdateStocks('5min');
-        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        console.log("tick");
     }, randomMinute * 60 * 1000);
 }, {
     timezone: "America/New_York"
 });
 
-/*
 let dailyCleanup = cron.schedule('0 23 * * *', () => {
     stockCleanUp();
     console.log("Cleanup has occurred!");
 }, {
     timezone: "America/New_York"
 });
-*/
 
 stockTicker.start();
-// dailyCleanup.start();
+dailyCleanup.start();
 
 client.login(token);
