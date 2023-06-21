@@ -9,7 +9,6 @@ const moment = require('moment');
 const { getAllLatestStocks, latestStocksCache } = require("./database/utilities/stockUtilities.js");
 const { secondsToHms } = require("./utilities.js");
 const { calculateAndUpdateStocks, stockCleanUp } = require("./cron.js");
-
 const client = new Client({ intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
@@ -19,6 +18,8 @@ const client = new Client({ intents: [
         GatewayIntentBits.GuildInvites
     ],
 });
+
+module.exports = {client};
 
 client.once(Events.ClientReady, async () => {
     const users = await Users.findAll();

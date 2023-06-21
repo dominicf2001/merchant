@@ -1,9 +1,10 @@
-const { EmbedBuilder, inlineCode, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, inlineCode, AttachmentBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { tendieIconCode } = require("../../utilities.js");
 const { getLatestStock, getStockHistory, latestStocksCache, getStockPurchasedShares } = require("../../database/utilities/stockUtilities.js");
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 const moment = require('moment');
 const { formatNumber } = require("../../utilities.js");
+const { client } = require("../../index.js");
 
 const width = 3000;
 const height = 1400;
@@ -117,8 +118,8 @@ async function handleChartReply(message, args) {
 }
 
 
-async function handleListReply(message, args) {
-    const pageNum = args.find(arg => !isNaN(arg)) ?? 1;
+async function handleListReply(message, args, isUpdate) {
+    let pageNum = args.find(arg => !isNaN(arg)) ?? 1;
     const pageSize = 5;
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
@@ -127,10 +128,27 @@ async function handleListReply(message, args) {
 
     const totalPages = Math.ceil(latestStocksCache.size / pageSize);
 
+    if (pageNum > totalPages || pageNum < 1) return;
+
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .setTitle("Stocks :chart_with_upwards_trend:")
         .setDescription(`Page ${pageNum}/${totalPages}\nTo view additional info on a stock: ${inlineCode("$stock @user")}`);
+
+    const previousBtn = new ButtonBuilder()
+        .setCustomId('stockListPrevious')
+        .setLabel('Previous')
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pageNum == 1);
+
+    const nextBtn = new ButtonBuilder()
+        .setCustomId('stockListNext')
+        .setLabel('Next')
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pageNum == totalPages);
+
+    const buttons = new ActionRowBuilder()
+        .addComponents(previousBtn, nextBtn);
 
     // Fetch all users, histories and latest stocks in parallel
     const usersPromise = Promise.all(stocks.map(s => message.client.users.fetch(s.user_id)));
@@ -154,7 +172,25 @@ async function handleListReply(message, args) {
         embed.addFields({ name: `${arrow} ${inlineCode(user.username)} - ${tendieIconCode} ${formatNumber(stocks[i].price)}`, value: `${"Previous:"} ${tendieIconCode} ${formatNumber(previousPrice)}` });
     });
 
-    return message.reply({ embeds: [embed] });
+    if (isUpdate) {
+        return message.update({ embeds: [embed], components: [buttons] });
+    } else {
+        return message.reply({ embeds: [embed], components: [buttons] });
+    }
 }
 
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+    const { customId } = interaction;
 
+    if (!['stockListPrevious', 'stockListNext'].includes(customId)) return;
+
+    let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
+
+    if (customId === 'stockListPrevious') {
+        pageNum = Math.max(pageNum - 1, 1);
+    } else if (customId === 'stockListNext') {
+        pageNum = pageNum + 1;
+    }
+    handleListReply(interaction, [pageNum], true);
+});
