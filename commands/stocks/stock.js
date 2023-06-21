@@ -185,6 +185,10 @@ client.on('interactionCreate', async interaction => {
 
     if (!['stockListPrevious', 'stockListNext'].includes(customId)) return;
 
+    const authorId = interaction.message.mentions.users.first().id;
+
+    if (interaction.user.id !== authorId) return;
+
     let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
 
     if (customId === 'stockListPrevious') {
@@ -192,5 +196,8 @@ client.on('interactionCreate', async interaction => {
     } else if (customId === 'stockListNext') {
         pageNum = pageNum + 1;
     }
-    handleListReply(interaction, [pageNum], true);
+
+    if (authorId === interaction.user.id) {
+        handleListReply(interaction, [pageNum], true);
+    }
 });
