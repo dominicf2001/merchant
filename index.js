@@ -115,7 +115,7 @@ client.on("messageCreate", async message => {
 				    addActivity(user.id, 3);
 			    }
 		    });
-		    addActivity(message.author.id, 1.68);
+		    addActivity(message.author.id, 1.33);
 	    }
         // ---
     } else {
@@ -176,13 +176,11 @@ client.on("messageCreate", async message => {
     }
 });
 
-
-
 let stockTicker = cron.schedule('*/5 7-20 * * *', () => {
     let randomMinute = Math.floor(Math.random() * 5);
     setTimeout(() => {
         calculateAndUpdateStocks('5min');
-        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
     }, randomMinute * 60 * 1000);
 }, {
