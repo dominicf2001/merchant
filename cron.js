@@ -13,6 +13,8 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 	storage: './database/database.sqlite'
 });
 
+let marketTrend = getRandomFloat(-10, 5);
+
 async function calculateAndUpdateStocks(interval='default'){
     console.log("Recalculating stocks...");
 
@@ -42,6 +44,7 @@ async function calculateAndUpdateStocks(interval='default'){
             let activity = getActivity(user.user_id);
             const stockPrice = latestStock.price;
             const purchasedShares = 2 * (await getStockPurchasedShares(user.user_id));
+            randomFactor += marketTrend;
 
             activity *= (1 - activityDecay);
 
