@@ -9,23 +9,74 @@ const { Op, Sequelize } = require("sequelize");
 const sequelize = new Sequelize('database', 'username', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
-	logging: false,
-	storage: './database/database.sqlite'
+    logging: false,
+    storage: './database/database.sqlite'
 });
 
-let marketTrend = getRandomFloat(-10, 5);
+const WEIGHTS = {
+    share: 0.02,
+    activity: 0.095,
+    random: 0.04,
+    netWorth: 0.01,
+    price: 0.895
+};
+
+const BASE_PRICE = 29;
+const SCALING_FACTOR = 20;
+
+async function getNetWorth(userId) {
+    const portfolioValue = await getPortfolioValue(userId);
+    const balance = getBalance(userId);
+    return SCALING_FACTOR * Math.log(1 + (portfolioValue + balance));
+}
+
+function getRandomFactor() {
+    const direction = Math.random() < 0.5 ? -1 : 1;
+    return getRandomFloat(10, 50) * direction;
+}
+
+function calculateAmount(weights, purchasedShares, activity, randomFactor, netWorth, stockPrice, shockFactor) {
+    const weightedSum = (
+        purchasedShares * weights.share +
+        activity * weights.activity +
+        randomFactor * weights.random +
+        netWorth * weights.netWorth +
+        stockPrice * weights.price +
+        shockFactor
+    );
+
+    const weightedDivisor = (weights.share + weights.activity + weights.random + weights.netWorth + weights.price);
+
+    let amount = BASE_PRICE + weightedSum / weightedDivisor;
+
+    return amount < 0 ? 0 : amount;
+}
+
+let shockFactors = {};
+let shockIntensities = {};
+function getShockFactorForStock(stockId) {
+    const chance = Math.random();
+    if(shockFactors[stockId] === undefined || shockFactors[stockId] === 0) {
+        if(chance < 0.03) {
+            console.log("Shock has occured");
+            shockFactors[stockId] = getRandomFloat(-13, -2);
+            shockIntensities[stockId] = getRandomFloat(0.70, 0.95);
+        } else if(chance < 0.05) {
+            console.log("Shock has occured");
+            shockFactors[stockId] = getRandomFloat(2, 13);
+            shockIntensities[stockId] = getRandomFloat(0.70, 0.95);
+        } else {
+            shockFactors[stockId] = 0;
+            shockIntensities[stockId] = 1;
+        }
+    }
+    return shockFactors[stockId];
+}
 
 async function calculateAndUpdateStocks(interval='default'){
     console.log("Recalculating stocks...");
 
-    const shareWeight = 0.02;
-    const activityWeight = 0.105;
-    const randomWeight = 0.04;
-    const netWorthWeight = 0.01;
-    const priceWeight = 0.885;
-
-    // const activityDecay = (interval == '5min') ? getRandomFloat(.055, .08) : getRandomFloat(.15, .40);
-    const activityDecay = (interval == '5min') ? getRandomFloat(.008, .023) : getRandomFloat(.15, .40);
+    const activityDecay = (interval == '5min') ? getRandomFloat(.006, .021) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -37,25 +88,26 @@ async function calculateAndUpdateStocks(interval='default'){
             });
             if (!user) continue;
 
-	    const scalingFactor = 20; 
-            const portfolioValue = await getPortfolioValue(user.user_id);
-            const balance = getBalance(user.user_id);
-            const netWorth = scalingFactor * Math.log(1 + (portfolioValue + balance));
-            let randomDirection = Math.random() < 0.6 ? -1 : 1;
-            let randomFactor = getRandomFloat(10, 50) * randomDirection;	
             let activity = getActivity(user.user_id);
-            const stockPrice = latestStock.price;
-            const purchasedShares = scalingFactor * Math.log(1 + (await getStockPurchasedShares(user.user_id)));
             activity *= (1 - activityDecay);
 
-            const basePrice = 29;
+            const netWorth = await getNetWorth(user.user_id);
+            const randomFactor = getRandomFactor();
+            const purchasedShares = SCALING_FACTOR * Math.log(1 + (await getStockPurchasedShares(user.user_id)));
 
-            const amount = basePrice + ((purchasedShares * shareWeight + activity * activityWeight + randomFactor * randomWeight + netWorth * netWorthWeight + stockPrice * priceWeight) / (shareWeight + activityWeight + randomWeight + netWorthWeight + priceWeight));
+            let shockFactorForThisStock = getShockFactorForStock(latestStock.id);
 
-            if (amount < 0) amount = 0;
+            const amount = calculateAmount(WEIGHTS, purchasedShares, activity, randomFactor, netWorth, latestStock.price, shockFactorForThisStock);
 
             setStockPrice(user.user_id, Math.round(amount));
             setActivity(user.user_id, activity);
+
+            if (shockFactorForThisStock !== 0) {
+                shockFactors[latestStock.id] *= shockIntensities[latestStock.id];
+                if (Math.abs(shockFactors[latestStock.id]) < 0.01) {
+                    shockFactors[latestStock.id] = 0;
+                }
+            }
         }
         console.log("Finished recalculating stocks.");
     } catch (error) {

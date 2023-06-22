@@ -1,4 +1,5 @@
 config.json
 dvp_notes.md
 database/database.sqlite
+database/database_backup.sqlite
 node_modules/

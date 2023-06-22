@@ -33,7 +33,7 @@ client.once(Events.ClientReady, async () => {
 client.on('inviteCreate', (invite) => {
     if (invite.inviter.bot) return;
     const currentHour = moment().utcOffset('-05:00').format('H');
-    if (currentHour >= 7 && currentHour < 20) {
+    if (currentHour >= 7 && currentHour < 22) {
         addActivity(invite.inviterId, 8);
     }
 });
@@ -41,7 +41,7 @@ client.on('inviteCreate', (invite) => {
 client.on('messageReactionAdd', (messageReaction, user) => {
     if (user.bot) return;
     const currentHour = moment().utcOffset('-05:00').format('H');
-    if (currentHour >= 7 && currentHour < 20) {
+    if (currentHour >= 7 && currentHour < 22) {
         addActivity(user.id, 1);
     }
 });
@@ -49,7 +49,7 @@ client.on('messageReactionAdd', (messageReaction, user) => {
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         const currentHour = moment().utcOffset('-05:00').format('H');
-        if (currentHour >= 7 && currentHour < 20) {
+        if (currentHour >= 7 && currentHour < 22) {
             addActivity(newState.member.user.id, 5);
         }
     }
@@ -108,14 +108,14 @@ client.on("messageCreate", async message => {
         // -- HANDLE USER ACTIVITY UPDATING
 
         const currentHour = moment().utcOffset('-05:00').format('H');
-	    if (currentHour >= 7 && currentHour < 20) {
+	    if (currentHour >= 7 && currentHour < 22) {
 		    const mentionedUsers = message.mentions.users;
 		    mentionedUsers.forEach(user => {
 			    if (user.id != message.author.id && !user.bot){
 				    addActivity(user.id, 2);
 			    }
 		    });
-		    addActivity(message.author.id, 1.8);
+		    addActivity(message.author.id, 2);
 	    }
         // ---
     } else {
@@ -176,10 +176,10 @@ client.on("messageCreate", async message => {
     }
 });
 
-let stockTicker = cron.schedule('*/1 7-20 * * *', () => {
+let stockTicker = cron.schedule('*/1 7-22 * * *', () => {
     let randomMinute = Math.floor(Math.random() * 1);
     setTimeout(() => {
-        calculateAndUpdateStocks('5min');
+        calculateAndUpdateStocks('1min');
         // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
     }, randomMinute * 60 * 1000);
