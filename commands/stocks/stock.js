@@ -66,7 +66,7 @@ async function handleChartReply(message, args) {
         .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${tendieIconCode} ${formatNumber(currentPrice)}`)
         .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`);
 
-    const dateFormat = interval === 'hour' ? 'MMM DD, h:mm a' : interval === 'day' ? 'MMM DD' : interval === 'now' ? 'h:mm:ss a' : 'MMM';
+    const dateFormat = interval === 'hour' ? 'MMM DD, h:mm a' : interval === 'day' ? 'MMM DD' : interval === 'now' ? 'h:mm:ss' : 'MMM';
 
     const configuration = {
         type: 'line',

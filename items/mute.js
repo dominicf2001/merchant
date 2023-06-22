@@ -8,7 +8,7 @@ module.exports = {
             throw new Error('Please specify a target.');
         }
 
-        const duration = 300;
+        const duration = 1800;
 
         let muteRole = (await message.guild.roles.fetch()).find(r => r.name === 'Muted'); 
 

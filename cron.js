@@ -13,16 +13,19 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 	storage: './database/database.sqlite'
 });
 
+let marketTrend = getRandomFloat(-10, 5);
+
 async function calculateAndUpdateStocks(interval='default'){
     console.log("Recalculating stocks...");
 
-    const shareWeight = 0.025;
-    const activityWeight = 0.185;
-    const randomWeight = 0.03;
-    const netWorthWeight = 0.05;
-    const priceWeight = 0.825;
+    const shareWeight = 0.02;
+    const activityWeight = 0.105;
+    const randomWeight = 0.04;
+    const netWorthWeight = 0.01;
+    const priceWeight = 0.885;
 
-    const activityDecay = (interval == '5min') ? getRandomFloat(.055, .08) : getRandomFloat(.15, .40);
+    // const activityDecay = (interval == '5min') ? getRandomFloat(.055, .08) : getRandomFloat(.15, .40);
+    const activityDecay = (interval == '5min') ? getRandomFloat(.008, .023) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -34,20 +37,18 @@ async function calculateAndUpdateStocks(interval='default'){
             });
             if (!user) continue;
 
+	    const scalingFactor = 20; 
             const portfolioValue = await getPortfolioValue(user.user_id);
             const balance = getBalance(user.user_id);
-            const netWorth = portfolioValue + balance;
-            let randomDirection = Math.random() < 0.5 ? -1 : 1;
-            let randomFactor = getRandomFloat(10, 30) * randomDirection;	
+            const netWorth = scalingFactor * Math.log(1 + (portfolioValue + balance));
+            let randomDirection = Math.random() < 0.6 ? -1 : 1;
+            let randomFactor = getRandomFloat(10, 50) * randomDirection;	
             let activity = getActivity(user.user_id);
             const stockPrice = latestStock.price;
-	    const scalingFactor = 20; 
             const purchasedShares = scalingFactor * Math.log(1 + (await getStockPurchasedShares(user.user_id)));
-
-
             activity *= (1 - activityDecay);
 
-            const basePrice = 33;
+            const basePrice = 29;
 
             const amount = basePrice + ((purchasedShares * shareWeight + activity * activityWeight + randomFactor * randomWeight + netWorth * netWorthWeight + stockPrice * priceWeight) / (shareWeight + activityWeight + randomWeight + netWorthWeight + priceWeight));
 

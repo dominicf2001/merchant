@@ -112,10 +112,10 @@ client.on("messageCreate", async message => {
 		    const mentionedUsers = message.mentions.users;
 		    mentionedUsers.forEach(user => {
 			    if (user.id != message.author.id && !user.bot){
-				    addActivity(user.id, 3);
+				    addActivity(user.id, 2);
 			    }
 		    });
-		    addActivity(message.author.id, 1.33);
+		    addActivity(message.author.id, 1.8);
 	    }
         // ---
     } else {
@@ -176,11 +176,11 @@ client.on("messageCreate", async message => {
     }
 });
 
-let stockTicker = cron.schedule('*/5 7-20 * * *', () => {
-    let randomMinute = Math.floor(Math.random() * 5);
+let stockTicker = cron.schedule('*/1 7-20 * * *', () => {
+    let randomMinute = Math.floor(Math.random() * 1);
     setTimeout(() => {
         calculateAndUpdateStocks('5min');
-        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
     }, randomMinute * 60 * 1000);
 }, {

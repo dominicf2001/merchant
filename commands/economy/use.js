@@ -17,10 +17,13 @@ module.exports = {
             user.removeItem(item.item);
             await message.client.items.get(itemName).use(message, args);
         } catch (error) {
-            const item = await user.getItem(itemName); 
-            if (!item) await user.addItem(itemName);
+            const userItem = await user.getItem(itemName); 		
+            if (!userItem){
+            	const item = await Items.findOne({ where: { name: { [Op.like]: itemName } } });
+                await user.addItem(item);
+	    }
             console.error(error);
-            await message.reply(error.message);
+            await message.reply("An error has occurred while attempting to use this item. Please try again.");
         }
     },
 }

@@ -159,7 +159,7 @@ async function getStockHistory(id, interval) {
                     order: [
                         ['now', 'DESC']
                     ],
-                    limit: 30,
+                    limit: 40,
                     subQuery: false
                 });
                 break;
