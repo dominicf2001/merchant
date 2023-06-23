@@ -56,7 +56,7 @@ module.exports = {
 
 async function buyStock(message, args){
     const stockUser = message.mentions.users.first();
-    const shares = args.find(arg => !isNaN(arg)) ?? 1;
+    let shares = args.includes("all") ? 99999 : args.find(arg => !isNaN(arg)) ?? 1;
 
     if (shares <= 0){
         return message.reply(`You can only purchase one or more shares.`);
@@ -73,8 +73,9 @@ async function buyStock(message, args){
         return message.reply(`That stock does not exist.`);
     }
 
-    if ((latestStock.price * shares) > getBalance(message.author.id)) {
-        return message.reply(`you only have ${tendieIconCode} ${getBalance(message.author.id)} tendies. ${shares} of this stock costs ${tendieIconCode} ${latestStock.price * shares} tendies.`);
+    const balance = getBalance(message.author.id);
+    if ((latestStock.price * shares) > balance || args.includes('all')) {
+        shares = Math.floor((balance / latestStock.price) * 100) / 100;
     }
 
     try {
@@ -100,3 +101,4 @@ async function buyStock(message, args){
         console.error(error);
     }
 }
+

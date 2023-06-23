@@ -24,6 +24,10 @@ module.exports = {
 
         const newNickname = newNicknameArgs.join(" ");
 
+        if (newNickname.length > 32) {
+            throw new Error('This name is too long.');
+        }
+
         try {
             await target.setNickname(newNickname);
             message.channel.send(`Nickname of <@${target.id}> has been changed to ${newNickname}`);

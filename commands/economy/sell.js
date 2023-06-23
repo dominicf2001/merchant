@@ -14,7 +14,7 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 module.exports = {
 	data: {
         name: 'sell',
-        description: `sell an item or a stock.\n${inlineCode("$sell [item/@user] [quantity]")}`
+        description: `sell an item or a stock.\n${inlineCode("$sell [item/@user] [quantity/all]")}`
     },
     async execute(message, args) {
         if (message.mentions.users.size == 1){
@@ -31,7 +31,7 @@ module.exports = {
                 return message.reply(`You can only sell one or more items.`);
             }
 
-            if (quantity > item.quantity){
+            if (quantity > item.quantity || args.includes("all")){
                 quantity = item.quantity;
             }
 
@@ -67,7 +67,7 @@ async function sellStock(message, args) {
 
         if (!userStocks.length) throw new Error(`You do not have any shares of this stock.`);
 
-        let shares = args.find(arg => !isNaN(arg)) ?? 1;
+        let shares = args.includes("all") ? 99999 : args.find(arg => !isNaN(arg)) ?? 1;
 
         if (shares <= 0) {
             throw new Error(`You can only sell one or more stocks.`);
