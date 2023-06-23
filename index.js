@@ -187,7 +187,7 @@ let stockTicker = cron.schedule('*/1 7-22 * * *', () => {
     timezone: "America/New_York"
 });
 
-let dailyCleanup = cron.schedule('0 23 * * *', () => {
+let dailyCleanup = cron.schedule('0 5 * * *', () => {
     stockCleanUp();
     console.log("Cleanup has occurred!");
 }, {

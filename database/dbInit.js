@@ -28,7 +28,7 @@ sequelize.sync({ force }).then(async () => {
 
 	const stocks = [
 		Stocks.upsert({
-			user_id: "150676547483729920",
+			user_id: "1085269440012222474",
 			price: 125
 		})
 	]
