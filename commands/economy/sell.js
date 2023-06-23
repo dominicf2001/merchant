@@ -59,13 +59,10 @@ async function sellStock(message, args) {
     const stockUser = message.mentions.users.first();
     const latestStock = await getLatestStock(stockUser.id);
 
-    const t = await sequelize.transaction();
-
     try {
         let userStocks = await UserStocks.findAll({
             where: { user_id: message.author.id, stock_user_id: stockUser.id },
             order: [['purchase_date', 'ASC']],
-            transaction: t,
         });
 
         if (!userStocks.length) throw new Error(`You do not have any shares of this stock.`);
@@ -87,16 +84,16 @@ async function sellStock(message, args) {
                 totalSharesSold += shares;
                 userStock.shares -= shares;
                 shares = 0;
-                await userStock.save({ transaction: t });
+                await userStock.save();
             } else {
                 totalSharesSold += Number(userStock.shares);
                 shares -= Number(userStock.shares);
 
-                await userStock.destroy({ transaction: t });
+                await userStock.destroy();
             }
         }
 
-        await addBalance(message.author.id, Number(latestStock.price * totalSharesSold), t);
+        await addBalance(message.author.id, Number(latestStock.price * totalSharesSold));
 
         const pluralS = totalSharesSold > 1 ? "s" : "";
 
@@ -107,11 +104,9 @@ async function sellStock(message, args) {
                 value: ' '
             });
 
-        await t.commit();
         return message.reply({ embeds: [embed] });
     } catch (error) {
-        await t.rollback();
-        return message.reply(error.message);
+        console.error(error);
     }
 }
 

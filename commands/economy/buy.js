@@ -76,10 +76,9 @@ async function buyStock(message, args){
     if ((latestStock.price * shares) > getBalance(message.author.id)) {
         return message.reply(`you only have ${tendieIconCode} ${getBalance(message.author.id)} tendies. ${shares} of this stock costs ${tendieIconCode} ${latestStock.price * shares} tendies.`);
     }
-    const t = await sequelize.transaction();
 
     try {
-        addBalance(message.author.id, -(latestStock.price * shares), t);
+        addBalance(message.author.id, -(latestStock.price * shares));
 
         await UserStocks.create({
             user_id: message.author.id,
@@ -87,7 +86,7 @@ async function buyStock(message, args){
             purchase_date: Date.now(),
             shares: shares,
             purchase_price: latestStock.price
-        }, { transaction: t });
+        });
 
         const pluralS = shares > 1 ? "s" : "";
 
@@ -96,10 +95,8 @@ async function buyStock(message, args){
             value: ' '
         });
 
-        await t.commit();
         return message.reply({ embeds: [embed] });
     } catch (error) {
-        await t.rollback();
-        throw error;
+        console.error(error);
     }
 }
