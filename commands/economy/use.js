@@ -13,17 +13,19 @@ module.exports = {
 
         if (!item) return await message.reply("You do not have this item!");
 
+        let success = false;
+
         try {
             user.removeItem(item.item);
             await message.client.items.get(itemName).use(message, args);
+            success = true;
         } catch (error) {
-            const userItem = await user.getItem(itemName);
-            if (!userItem){
-            	const item = await Items.findOne({ where: { name: { [Op.like]: itemName } } });
-                await user.addItem(item);
-	    }
             console.error(error);
-            await message.reply("An error has occurred while attempting to use this item. Please try again.");
+            await message.reply(error.message);
+        } finally {
+            if (!success) {
+                await user.addItem(item.item);
+            }
         }
     },
 }
