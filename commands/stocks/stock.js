@@ -5,6 +5,7 @@ const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 const moment = require('moment');
 const { formatNumber } = require("../../utilities.js");
 const { client } = require("../../index.js");
+const { usersCache } = require('../../database/utilities/userUtilities.js');
 
 const width = 3000;
 const height = 1400;
@@ -36,38 +37,32 @@ async function handleChartReply(message, args) {
     const stockUser = message.mentions.users.first();
     const interval = args[1] ?? "now";
     const intervals = ['now', 'hour', 'day', 'month'];
+
     if (!intervals.includes(interval) && args[1]){
         return message.reply("Invalid interval.");
     }
-    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour });
-    const stockHistory = (await getStockHistory(stockUser.id, interval)).reverse();
-    const currentStock = await getLatestStock(stockUser.id);
 
+    const stockHistory = (await getStockHistory(stockUser.id, interval)).reverse();
+    const priceList = stockHistory.map(h => Number(h.dataValues.price));
+    const highestPrice = Math.round(Math.max(...priceList));
+    const lowestPrice = Math.round(Math.min(...priceList));
+
+    const currentStock = await getLatestStock(stockUser.id);
     if (!currentStock) {
         return message.reply("This stock does not exist.");
     }
 
-    const highestPrice = Math.round(Math.max(...stockHistory.map(h => Number(h.dataValues.price))));
-    const lowestPrice = Math.round(Math.min(...stockHistory.map(h => Number(h.dataValues.price))));
     const previousPrice = stockHistory[stockHistory.length - 2]?.price ?? 0;
     const currentPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
     const difference = Number(currentPrice) - Number(previousPrice);
+
+    const arrow = difference < 0 ? "<:stockdown:1119370974140301352>" : "<:stockup:1119370943240863745>";
+    const lineColor = difference < 0 ? "rgb(255, 0, 0)" : "rgb(0, 195, 76)";
+
     const volume = await getStockPurchasedShares(stockUser.id);
-
-    let arrow = "<:stockup:1119370943240863745>";
-    let lineColor = "rgb(0, 195, 76)";
-
-    if (difference < 0) {
-        arrow = "<:stockdown:1119370974140301352>";
-        lineColor = "rgb(255, 0, 0)";
-    }
-    const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${tendieIconCode} ${formatNumber(currentPrice)}`)
-        .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`);
-
     const dateFormat = interval === 'hour' ? 'MMM DD, h:mm a' : interval === 'day' ? 'MMM DD' : interval === 'now' ? 'h:mm:ss' : 'MMM';
 
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour });
     const configuration = {
         type: 'line',
         data: {
@@ -111,11 +106,18 @@ async function handleChartReply(message, args) {
         }
     };
 
-    embed.setImage('attachment://chart.png');
     const image = await chartJSNodeCanvas.renderToBuffer(configuration);
     const attachment = new AttachmentBuilder(image, 'chart.png');
+
+    const embed = new EmbedBuilder()
+        .setColor("Blurple")
+        .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${tendieIconCode} ${formatNumber(currentPrice)}`)
+        .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`)
+        .setImage('attachment://chart.png');
+
     return message.reply({ embeds: [embed], files: [attachment] });
 }
+
 
 
 async function handleListReply(message, args, isUpdate) {
@@ -150,27 +152,22 @@ async function handleListReply(message, args, isUpdate) {
     const buttons = new ActionRowBuilder()
         .addComponents(previousBtn, nextBtn);
 
-    // Fetch all users, histories and latest stocks in parallel
-    const usersPromise = Promise.all(stocks.map(s => message.client.users.fetch(s.user_id)));
     const historiesPromise = Promise.all(stocks.map(s => getStockHistory(s.user_id)));
-    const latestStocksPromise = Promise.all(stocks.map(s => getLatestStock(s.user_id)));
+    const histories = await historiesPromise;
 
-    const [users, histories, latestStocks] = await Promise.all([usersPromise, historiesPromise, latestStocksPromise]);
-
-    users.forEach((user, i) => {
-        if (!latestStocks[i]) {
-            return console.error("This stock does not exist");
-        }
-
+    let i = 0;
+    for (const stock of stocks){
         const previousPrice = histories[i][1]?.price ?? 0;
-        const currentPrice = latestStocks[i].price;
+        const currentPrice = stock.price;
+        const username = (await message.client.users.fetch(stock.user_id)).username;
 
         const arrow = (currentPrice - previousPrice) < 0 ?
             "<:stockdown:1119370974140301352>" :
             "<:stockup:1119370943240863745>";
 
-        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} - ${tendieIconCode} ${formatNumber(stocks[i].price)}`, value: `${"Previous:"} ${tendieIconCode} ${formatNumber(previousPrice)}` });
-    });
+        embed.addFields({ name: `${arrow} ${inlineCode(username)} - ${tendieIconCode} ${formatNumber(stock.price)}`, value: `${"Previous:"} ${tendieIconCode} ${formatNumber(previousPrice)}` });
+        ++i;
+    };
 
     if (isUpdate) {
         return message.update({ embeds: [embed], components: [buttons] });
@@ -178,6 +175,7 @@ async function handleListReply(message, args, isUpdate) {
         return message.reply({ embeds: [embed], components: [buttons] });
     }
 }
+
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isButton()) return;
