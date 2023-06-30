@@ -15,10 +15,10 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 
 const WEIGHTS = {
     share: 0.02,
-    activity: 0.095,
+    activity: 0.09,
     random: 0.04,
     netWorth: 0.01,
-    price: 0.895
+    price: 0.9
 };
 
 const BASE_PRICE = 29;
@@ -76,7 +76,7 @@ function getShockFactorForStock(stockId) {
 async function calculateAndUpdateStocks(interval='default'){
     console.log("Recalculating stocks...");
 
-    const activityDecay = (interval == '5min') ? getRandomFloat(.006, .021) : getRandomFloat(.15, .40);
+    const activityDecay = (interval == '5min') ? getRandomFloat(.025, .085) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();

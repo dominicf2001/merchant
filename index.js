@@ -115,7 +115,7 @@ client.on("messageCreate", async message => {
 				    addActivity(user.id, 2);
 			    }
 		    });
-		    addActivity(message.author.id, 2);
+		    addActivity(message.author.id, 2.5);
 	    }
         // ---
     } else {
@@ -176,11 +176,11 @@ client.on("messageCreate", async message => {
     }
 });
 
-let stockTicker = cron.schedule('*/1 7-22 * * *', () => {
-    let randomMinute = Math.floor(Math.random() * 1);
+let stockTicker = cron.schedule('*/5 7-22 * * *', () => {
+    let randomMinute = Math.floor(Math.random() * 5);
     setTimeout(() => {
         calculateAndUpdateStocks('1min');
-        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
     }, randomMinute * 60 * 1000);
 }, {

@@ -8,8 +8,16 @@ module.exports = {
             throw new Error('Please specify a target.');
         }
 
-        const duration = 1800;
+        const duration = 1800000;
+	try {
+	    target.timeout(duration);
+	    message.channel.send(`<@${target.id}> has been muted.`);
+	} catch (error) {	
+	    message.channel.send(`Error muting <@${target.id}>.`);
+	}
+        
 
+	/*
         let muteRole = (await message.guild.roles.fetch()).find(r => r.name === 'Muted'); 
 
         if (!muteRole) {
@@ -51,6 +59,7 @@ module.exports = {
         } catch (error) {
             throw new Error('Cannot mute this user.');
         }
+	*/
     }
 }
 
