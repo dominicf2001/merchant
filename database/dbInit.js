@@ -12,21 +12,20 @@ const UserStocks = require('./models/UserStocks.js')(sequelize, Sequelize.DataTy
 const Users = require('./models/Users.js')(sequelize, Sequelize.DataTypes);
 require('./models/UserItems.js')(sequelize, Sequelize.DataTypes);
 require('./models/UserCooldowns.js')(sequelize, Sequelize.DataTypes);
-const faker = require('faker');
 
 const force = process.argv.includes('--force') || process.argv.includes('-f');
 
 sequelize.sync({ force }).then(async () => {
     const items = [
-		Items.upsert({ name: 'emp', price: 250, icon: ":zap:", description: "Disables Nexxy.\n```$use emp```" }),
-		Items.upsert({ name: 'battery', price: 350, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
-		Items.upsert({ name: 'nametag', price: 500, icon: ":label:", description: "Sets any user's nickname.\n```$use nametag @target [name]```" }),
-		Items.upsert({ name: 'megaphone', price: 700, icon: ":mega:", description: "Sends your message and/or attachment as an @everyone.\n```$use megaphone [message]```" }),
-        	Items.upsert({ name: 'mute', price: 1000, icon: ":mute:", description: "Mutes a user for 30 minutes.\n```$use mute @target```" }),
-		Items.upsert({ name: 'joker', price: 4000, icon: ":black_joker:", description: "???" }),
-	];
+        Items.upsert({ name: 'emp', price: 250, icon: ":zap:", description: "Disables Nexxy.\n```$use emp```" }),
+        Items.upsert({ name: 'battery', price: 350, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
+        Items.upsert({ name: 'nametag', price: 500, icon: ":label:", description: "Sets any user's nickname.\n```$use nametag @target [name]```" }),
+        Items.upsert({ name: 'megaphone', price: 700, icon: ":mega:", description: "Sends your message and/or attachment as an @everyone.\n```$use megaphone [message]```" }),
+        Items.upsert({ name: 'mute', price: 1000, icon: ":mute:", description: "Mutes a user for 30 minutes.\n```$use mute @target```" }),
+        Items.upsert({ name: 'joker', price: 4000, icon: ":black_joker:", description: "???" }),
+    ];
 
-	/*
+    /*
 	const stocks = [
 		Stocks.upsert({
 			user_id: "1085269440012222474",

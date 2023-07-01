@@ -48,8 +48,10 @@ async function addActivity(id, amount) {
     const user = usersCache.get(id);
 
     if (user) {
+        const now = new Date();
         user.activity += Math.round(Number(amount));
-        return user.save();
+        user.last_active_date = now.toISOString();
+        return user.save({ fields: ['activity', 'last_active_date'] });
     }
 
     const newUser = await Users.create({ user_id: id, activity: amount });

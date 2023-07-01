@@ -23,6 +23,7 @@ const WEIGHTS = {
 
 const BASE_PRICE = 29;
 const SCALING_FACTOR = 20;
+const DECAY_RATE = 0.005;
 
 async function getNetWorth(userId) {
     const portfolioValue = await getPortfolioValue(userId);
@@ -35,10 +36,20 @@ function getRandomFactor() {
     return getRandomFloat(10, 50) * direction;
 }
 
+function calculateDecayedActivity(activity, lastActiveTime) {
+    const currentTime = Date.now();
+    const timeDifference = currentTime - lastActiveTime;
+    const timeDifferenceInHours = timeDifference / 1000 / 60 / 60;
+
+    const decayedActivity = activity * Math.exp(-DECAY_RATE * timeDifferenceInHours);
+
+    return decayedActivity;
+}
+
 function calculateAmount(weights, purchasedShares, activity, randomFactor, netWorth, stockPrice, shockFactor) {
     const weightedSum = (
         purchasedShares * weights.share +
-        activity * weights.activity +
+        activity +
         randomFactor * weights.random +
         netWorth * weights.netWorth +
         stockPrice * weights.price +
@@ -73,10 +84,8 @@ function getShockFactorForStock(stockId) {
     return shockFactors[stockId];
 }
 
-async function calculateAndUpdateStocks(interval='default'){
+async function calculateAndUpdateStocks(){
     console.log("Recalculating stocks...");
-
-    const activityDecay = (interval == '5min') ? getRandomFloat(.025, .085) : getRandomFloat(.15, .40);
 
     try {
         const latestStocks = await getAllLatestStocks();
@@ -89,7 +98,8 @@ async function calculateAndUpdateStocks(interval='default'){
             if (!user) continue;
 
             let activity = getActivity(user.user_id);
-            activity *= (1 - activityDecay);
+            const lastActiveDate = user.last_active_date ? new Date(user.last_active_date) : new Date();
+            activity = calculateDecayedActivity(activity, lastActiveDate);
 
             const netWorth = await getNetWorth(user.user_id);
             const randomFactor = getRandomFactor();
