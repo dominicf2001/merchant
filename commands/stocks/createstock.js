@@ -1,7 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const { Stocks } = require("../../database/dbObjects.js");
 const { latestStocksCache } = require("../../database/utilities/stockUtilities.js");
-
 module.exports = {
     data: {
         name: 'createstock',

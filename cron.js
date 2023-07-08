@@ -1,7 +1,7 @@
 const { getBalance, getActivity, setActivity } = require("./database/utilities/userUtilities.js");
 const { getPortfolioValue, getStockPurchasedShares, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
 const { getRandomFloat } = require("./utilities.js");
-const { getLatestStock } = require("./database/utilities/stockUtilities.js");
+const { getNetWorth } = require("./database/utilities/userUtilities.js");
 const fs = require('fs');
 const path = require('path');
 const { Users, Stocks } = require("./database/dbObjects.js");
@@ -24,12 +24,6 @@ const WEIGHTS = {
 const BASE_PRICE = 29;
 const SCALING_FACTOR = 20;
 const DECAY_RATE = 0.005;
-
-async function getNetWorth(userId) {
-    const portfolioValue = await getPortfolioValue(userId);
-    const balance = getBalance(userId);
-    return SCALING_FACTOR * Math.log(1 + (portfolioValue + balance));
-}
 
 function getRandomFactor() {
     const direction = Math.random() < 0.5 ? -1 : 1;
@@ -86,7 +80,6 @@ function getShockFactorForStock(stockId) {
 
 async function calculateAndUpdateStocks(){
     console.log("Recalculating stocks...");
-
     try {
         const latestStocks = await getAllLatestStocks();
         for (let latestStock of latestStocks) {
@@ -101,7 +94,7 @@ async function calculateAndUpdateStocks(){
             const lastActiveDate = user.last_active_date ? new Date(user.last_active_date) : new Date();
             activity = calculateDecayedActivity(activity, lastActiveDate);
 
-            const netWorth = await getNetWorth(user.user_id);
+            const netWorth = SCALING_FACTOR * Math.log(1 + (await getNetWorth(user.user_id)));
             const randomFactor = getRandomFactor();
             const purchasedShares = SCALING_FACTOR * Math.log(1 + (await getStockPurchasedShares(user.user_id)));
 

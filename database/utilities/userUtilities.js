@@ -1,5 +1,6 @@
 const { Users } = require('../dbObjects.js');
 const { Collection } = require('discord.js');
+const { getPortfolioValue } = require("./stockUtilities.js");
 
 const usersCache = new Collection();
 
@@ -39,6 +40,13 @@ function getBalance(id) {
 	return user ? user.balance : 0;
 }
 
+
+async function getNetWorth(userId) {
+    const portfolioValue = await getPortfolioValue(userId);
+    const balance = getBalance(userId);
+    return portfolioValue + balance;
+}
+
 function getActivity(id) {
 	const user = usersCache.get(id);
 	return user ? user.activity : 0;
@@ -74,5 +82,5 @@ async function setActivity(id, amount) {
     return newUser;
 }
 
-module.exports = { setBalance, addBalance, getBalance, getActivity, usersCache, addActivity, setActivity };
+module.exports = { setBalance, addBalance, getBalance, getActivity, usersCache, addActivity, setActivity, getNetWorth };
 
