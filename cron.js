@@ -23,7 +23,7 @@ const WEIGHTS = {
 
 const BASE_PRICE = 29;
 const SCALING_FACTOR = 20;
-const DECAY_RATE = 0.005;
+const DECAY_RATE = 0.003;
 
 function getRandomFactor() {
     const direction = Math.random() < 0.5 ? -1 : 1;

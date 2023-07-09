@@ -8,14 +8,18 @@ module.exports = {
             throw new Error('Please specify a target.');
         }
 
-        const duration = 1800000;
+        if (target.isCommunicationDisabled()){
+	        throw new Error(`<@${target.id}> has already been muted.`);
+        }
+
+        const duration = 300000;
 	try {
 	    target.timeout(duration);
-	    message.channel.send(`<@${target.id}> has been muted for 30 minutes.`);
+	    message.channel.send(`<@${target.id}> has been muted for 5 minutes.`);
 	} catch (error) {
+        console.error(error);
 	    message.channel.send(`<@${target.id}> could not be muted.`);
 	}
-
    }
 }
 

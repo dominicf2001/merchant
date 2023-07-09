@@ -27,6 +27,7 @@ client.once(Events.ClientReady, async () => {
 
     const allLatestStocks = await getAllLatestStocks();
     allLatestStocks.forEach(stock => latestStocksCache.set(stock.user_id, stock));
+
     console.log('Ready as ' + client.user.tag);
 });
 
@@ -115,7 +116,7 @@ client.on("messageCreate", async message => {
 				    addActivity(user.id, .1);
 			    }
 		    });
-		    addActivity(message.author.id, getRandomFloat(.1, .2));
+		    addActivity(message.author.id, getRandomFloat(.5, 1));
 	    }
         // ---
     } else {

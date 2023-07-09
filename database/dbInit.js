@@ -21,7 +21,8 @@ sequelize.sync({ force }).then(async () => {
         Items.upsert({ name: 'battery', price: 350000, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
         Items.upsert({ name: 'nametag', price: 100000, icon: ":label:", description: "Sets any user's nickname.\n```$use nametag @target [name]```" }),
         Items.upsert({ name: 'megaphone', price: 200000, icon: ":mega:", description: "Sends your message and/or attachment as an @everyone.\n```$use megaphone [message]```" }),
-        Items.upsert({ name: 'mute', price: 500000, icon: ":mute:", description: "Mutes a user for 30 minutes.\n```$use mute @target```" }),
+        Items.upsert({ name: 'mute', price: 500000, icon: ":mute:", description: "Mutes a user for 5 minutes.\n```$use mute @target```" }),
+        Items.upsert({ name: 'unmute', price: 250000, icon: ":loud_sound:", description: "Unmutes a user.\n```$use unmute @target```" }),
         Items.upsert({ name: 'joker', price: 1000000, icon: ":black_joker:", description: "???" }),
     ];
 
