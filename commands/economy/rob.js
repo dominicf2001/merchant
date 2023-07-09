@@ -3,9 +3,9 @@ const { tendieIconCode, formatNumber, getRandomInt, getRandomFloat } = require("
 const { EmbedBuilder, inlineCode } = require('discord.js');
 
 module.exports = {
+    cooldown: 7200,
 	data: {
         name: 'rob',
-        cooldown: 7200,
         description: `Rob a user of their tendies. Chance to fail and lose tendies.\n${inlineCode("$rob @target")}`
     },
 	async execute(message, args) {

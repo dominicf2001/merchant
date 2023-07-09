@@ -6,6 +6,7 @@ const usersCache = new Collection();
 
 async function addBalance(id, amount, t) {
     amount = Number(amount);
+    if (amount < 0) amount = 0;
     const user = usersCache.get(id);
 
     if (user) {
