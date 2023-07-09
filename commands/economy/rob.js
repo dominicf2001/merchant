@@ -15,14 +15,15 @@ module.exports = {
             return message.reply("Please specify a target.");
         }
 
-        const amount = getBalance(target.id) * getRandomFloat(.01, .10);
 
         let reply = "";
         if (getRandomInt(1,100) > 70){
+            const amount = getBalance(target.id) * getRandomFloat(.01, .10);
             addBalance(message.author.id, +amount);
             addBalance(target.id, -amount);
             reply = `You have robbed ${tendieIconCode} ${formatNumber(amount)} from: ${inlineCode(target.username)}.`;
         } else {
+            const amount = getBalance(message.author.id) * getRandomFloat(.03, .15);
             addBalance(message.author.id, -amount);
             reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${tendieIconCode} ${formatNumber(amount)} `;
         }
