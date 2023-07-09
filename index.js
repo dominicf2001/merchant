@@ -43,7 +43,7 @@ client.on('messageReactionAdd', (messageReaction, user) => {
     if (user.bot) return;
     const currentHour = moment().utcOffset('-05:00').format('H');
     if (currentHour >= 7 && currentHour < 22) {
-        addActivity(user.id, .1);
+        addActivity(user.id, .3);
     }
 });
 
@@ -113,10 +113,10 @@ client.on("messageCreate", async message => {
 		    const mentionedUsers = message.mentions.users;
 		    mentionedUsers.forEach(user => {
 			    if (user.id != message.author.id && !user.bot){
-				    addActivity(user.id, .1);
+				    addActivity(user.id, .5);
 			    }
 		    });
-		    addActivity(message.author.id, getRandomFloat(.5, 1));
+		    addActivity(message.author.id, getRandomFloat(.3, .75));
 	    }
         // ---
     } else {
