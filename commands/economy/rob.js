@@ -12,7 +12,7 @@ module.exports = {
 		const target = message.mentions.users.first();
 
         if (!target){
-            throw Error("Please specify a target.");
+            return message.reply("Please specify a target.");
         }
 
         const amount = getBalance(target.id) * getRandomFloat(.01, .10);

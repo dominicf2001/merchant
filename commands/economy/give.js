@@ -13,7 +13,7 @@ module.exports = {
 		const transferTarget = message.mentions.users.first();
 
         if (!transferTarget){
-            throw Error("Please specify a target.");
+            return message.reply("Please specify a target.");
         }
 
 		if (!transferAmount) return message.reply(`Specify how many tendies, ${message.author.username}.`);
