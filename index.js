@@ -153,27 +153,16 @@ client.on("messageCreate", async message => {
 
         try {
             await command.execute(message, args);
+            // create new cooldown after command execution
+            await UserCooldowns.create({
+                user_id: message.author.id,
+                command_name: command.data.name,
+                timestamp: now
+            });
         } catch (error) {
             console.error(error);
             await message.reply('There was an error while executing this command!');
         }
-
-        // create new cooldown after command execution
-        await UserCooldowns.create({
-            user_id: message.author.id,
-            command_name: command.data.name,
-            timestamp: now
-        });
-
-        setTimeout(async () => {
-            const userCooldown = await UserCooldowns.findOne({
-                where: { user_id: message.author.id, command_name: command.data.name },
-            });
-            if (userCooldown && userCooldown.timestamp === now) {
-                await userCooldown.destroy();
-            }
-        }, cooldownAmount);
-        // ---
     }
 });
 
