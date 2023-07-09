@@ -12,6 +12,10 @@ module.exports = {
 		const transferAmount = args.find(arg => !isNaN(arg));
 		const transferTarget = message.mentions.users.first();
 
+        if (!transferTarget){
+            throw Error("Please specify a target.");
+        }
+
 		if (!transferAmount) return message.reply(`Specify how many tendies, ${message.author.username}.`);
 		if (!transferTarget) return message.reply(`Mention the user to whom you want to give tendies, ${message.author.username}.`);
 		if (transferAmount > currentAmount) return message.reply(`You only have ${tendieIconCode} ${formatNumber(currentAmount)} tendies.`);
