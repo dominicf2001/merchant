@@ -17,25 +17,16 @@ const force = process.argv.includes('--force') || process.argv.includes('-f');
 
 sequelize.sync({ force }).then(async () => {
     const items = [
-        Items.upsert({ name: 'emp', price: 250, icon: ":zap:", description: "Disables Nexxy.\n```$use emp```" }),
-        Items.upsert({ name: 'battery', price: 350, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
-        Items.upsert({ name: 'nametag', price: 500, icon: ":label:", description: "Sets any user's nickname.\n```$use nametag @target [name]```" }),
-        Items.upsert({ name: 'megaphone', price: 700, icon: ":mega:", description: "Sends your message and/or attachment as an @everyone.\n```$use megaphone [message]```" }),
-        Items.upsert({ name: 'mute', price: 1000, icon: ":mute:", description: "Mutes a user for 30 minutes.\n```$use mute @target```" }),
-        Items.upsert({ name: 'joker', price: 4000, icon: ":black_joker:", description: "???" }),
+        Items.upsert({ name: 'emp', price: 400000, icon: ":zap:", description: "Disables Nexxy.\n```$use emp```" }),
+        Items.upsert({ name: 'battery', price: 350000, icon: ":battery:", description: "Enables Nexxy.\n```$use battery```" }),
+        Items.upsert({ name: 'nametag', price: 100000, icon: ":label:", description: "Sets any user's nickname.\n```$use nametag @target [name]```" }),
+        Items.upsert({ name: 'megaphone', price: 200000, icon: ":mega:", description: "Sends your message and/or attachment as an @everyone.\n```$use megaphone [message]```" }),
+        Items.upsert({ name: 'mute', price: 500000, icon: ":mute:", description: "Mutes a user for 30 minutes.\n```$use mute @target```" }),
+        Items.upsert({ name: 'joker', price: 1000000, icon: ":black_joker:", description: "???" }),
     ];
 
-    /*
-	const stocks = [
-		Stocks.upsert({
-			user_id: "1085269440012222474",
-			price: 125
-		})
-	]
-	*/
-
-    	await Promise.all([...items ]);
-	console.log('Database synced');
+    await Promise.all([...items ]);
+    console.log('Database synced');
 
 	sequelize.close();
 }).catch(console.error);
