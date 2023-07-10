@@ -36,7 +36,7 @@ module.exports = {
             await target.roles.add(colorRole);
 
             const highestPosition = message.guild.roles.highest.position;
-            await colorRole.setPosition(highestPosition - 1);
+            colorRole.setPosition(highestPosition - 1);
 
             message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
         } catch (error) {
