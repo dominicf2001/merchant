@@ -4,7 +4,7 @@ const { EmbedBuilder, inlineCode } = require('discord.js');
 
 module.exports = {
     cooldown: 7200,
-	data: {
+    data: {
         name: 'rob',
         description: `Rob a user of their tendies. Chance to fail and lose tendies.\n${inlineCode("$rob @target")}`
     },

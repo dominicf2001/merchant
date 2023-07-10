@@ -15,15 +15,15 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 
 const WEIGHTS = {
     share: 0.02,
-    activity: 0.09,
+    activity: 0.07,
     random: 0.04,
     netWorth: 0.01,
-    price: 0.9
+    price: 0.92
 };
 
 const BASE_PRICE = 29;
 const SCALING_FACTOR = 20;
-const DECAY_RATE = 0.003;
+const DECAY_RATE = 0.006;
 
 function getRandomFactor() {
     const direction = Math.random() < 0.5 ? -1 : 1;
