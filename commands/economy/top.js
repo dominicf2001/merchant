@@ -15,11 +15,15 @@ module.exports = {
             .setColor("Blurple")
             .setTitle("Goodest Boys");
 
-        await Promise.all(topUsers.map(async (user, index) => {
-            const fetchedUser = await message.client.users.fetch(user.user_id);
-            const netWorth = await getNetWorth(user.user_id);
+        const fetchedUsers = await Promise.all(topUsers.map(user => message.client.users.fetch(user.user_id)));
+        const netWorths = await Promise.all(topUsers.map(user => getNetWorth(user.user_id)));
+
+        for (let index = 0; index < topUsers.length; index++) {
+            const fetchedUser = fetchedUsers[index];
+            const netWorth = netWorths[index];
             embed.addFields({ name: `${index + 1}. ${inlineCode(fetchedUser.tag)}`, value: `${tendieIconCode} ${formatNumber(netWorth)}`});
-        }));
+        }
+
 
         return message.reply({ embeds: [embed] });
     },
