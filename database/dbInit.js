@@ -24,6 +24,7 @@ sequelize.sync({ force }).then(async () => {
         Items.upsert({ name: 'mute', price: 500000, icon: ":mute:", description: "Mutes a user for 5 minutes.\n```$use mute @target```" }),
         Items.upsert({ name: 'unmute', price: 250000, icon: ":loud_sound:", description: "Unmutes a user.\n```$use unmute @target```" }),
         Items.upsert({ name: 'joker', price: 1000000, icon: ":black_joker:", description: "???" }),
+        Items.upsert({ name: 'dye', price: 75000, icon: ":art:", description: "Sets the color of any user's nickname." }),
     ];
 
     await Promise.all([...items ]);
