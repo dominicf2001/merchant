@@ -65,12 +65,12 @@ async function sellStock(message, args) {
             order: [['purchase_date', 'ASC']],
         });
 
-        if (!userStocks.length) throw new Error(`You do not have any shares of this stock.`);
+        if (!userStocks.length) return message.reply(`You do not have any shares of this stock.`);
 
-        let shares = args.includes("all") ? 99999 : args.find(arg => !isNaN(arg)) ?? 1;
+        let shares = args.includes("all") ? 99999999 : args.find(arg => !isNaN(arg)) ?? 1;
 
         if (shares <= 0) {
-            throw new Error(`You can only sell one or more stocks.`);
+            return message.reply(`You can only sell one or more stocks.`);
         }
 
         // sell as many as possible
