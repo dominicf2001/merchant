@@ -67,7 +67,8 @@ async function sellStock(message, args) {
 
         if (!userStocks.length) return message.reply(`You do not have any shares of this stock.`);
 
-        let shares = args.includes("all") ? 99999999 : args.find(arg => !isNaN(arg)) ?? 1;
+        let totalShares = userStocks.reduce((total, stock) => total + Number(stock.shares), 0);
+        let shares = args.includes("all") ? totalShares : args.find(arg => !isNaN(arg)) ?? 1;
 
         if (shares <= 0) {
             return message.reply(`You can only sell one or more stocks.`);
