@@ -39,6 +39,18 @@ module.exports = {
 
             const user = await Users.findOne({ where: { user_id: message.author.id } });
 
+            const items = await user.getItems();
+
+            const totalQuantity = items.reduce((previous, current) => {
+                return previous + current["quantity"];
+            }, quantity);
+
+            const maxInventorySize = 5;
+
+            if (totalQuantity > maxInventorySize){
+                return message.reply(`You can only store 5 items at a time.`);
+            }
+
             addBalance(message.author.id, -(item.price * quantity));
 
             for (let i = 0; i < quantity; ++i){

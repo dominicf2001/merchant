@@ -8,7 +8,6 @@
     - $top sometimes out of order
 - Role hierarchy
 - New items
-    - Dye (can change anyones color)
     - Armor (protects against nametag/mute) (can stack) (one time use each)
     - Morph-stone
         - Lets you change the server icon/server name/server banner/a channel name
