@@ -20,8 +20,8 @@ module.exports = {
         if (message.mentions.users.size == 1){
             sellStock(message, args);
         } else {
-            const itemName = args.find(arg => isNaN(arg));
-            let quantity = args.find(arg => !isNaN(arg)) ?? 1;
+            const itemName = args.find(arg => isNaN(arg) && arg !== "all");
+            let quantity = args.includes("all") ? 10 : args.find(arg => !isNaN(arg)) ?? 1;
             const user = await Users.findOne({ where: { user_id: message.author.id } });
             const item = await user.getItem(itemName);
 

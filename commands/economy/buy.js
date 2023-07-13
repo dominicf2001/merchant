@@ -14,7 +14,8 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 module.exports = {
 	data: {
         name: 'buy',
-        description: `Buy an item or a stock.\n${inlineCode("$buy [item/@user] [quantity]")}`
+        description: `Buy an item or a stock.`,
+        usage: `${inlineCode("$buy [item/@user] [quantity/all]")}\n For stocks only $buy will always purchase as many as possible and "$buy all" is available.`
     },
     async execute(message, args) {
         if (message.mentions.users.size == 1){
@@ -22,6 +23,7 @@ module.exports = {
         } else {
             const itemName = args.find(arg => isNaN(arg));
             const quantity = args.find(arg => !isNaN(arg)) ?? 1;
+
             if (quantity <= 0){
                 return message.reply(`You can only purchase one or more items.`);
             }
@@ -43,7 +45,7 @@ module.exports = {
 
             const totalQuantity = items.reduce((previous, current) => {
                 return previous + current["quantity"];
-            }, quantity);
+            }, +quantity);
 
             const maxInventorySize = 5;
 

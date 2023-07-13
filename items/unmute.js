@@ -1,6 +1,10 @@
 module.exports = {
     data: {
         name: 'unmute',
+        price: 250000,
+        icon: ":loud_sound:",
+        description: "Unmutes a user.",
+        usage: "$use unmute @target"
     },
     async use(message, args) {
         let target = message.mentions.members.first();

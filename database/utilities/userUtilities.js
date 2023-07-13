@@ -6,15 +6,15 @@ const usersCache = new Collection();
 
 async function addBalance(id, amount, t) {
     amount = Number(amount);
-    if (amount < 0) amount = 0;
     const user = usersCache.get(id);
 
     if (user) {
         user.balance = Number(user.balance) + amount;
+        if (user.balance < 0) user.balance = 0;
         return t ? user.save({ transaction: t }) : user.save();
     }
 
-    const newUser = await (t ? Users.create({ user_id: id, balance: amount }, { transaction: t }) : Users.create({ user_id: id, balance: amount }));
+    const newUser = await (t ? Users.create({ user_id: id, balance: (amount < 0 ? 0 : amount) }, { transaction: t }) : Users.create({ user_id: id, balance: amount }));
     usersCache.set(id, newUser);
 
     return newUser;
@@ -41,6 +41,15 @@ function getBalance(id) {
 	return user ? user.balance : 0;
 }
 
+async function addArmor(id, amount) {
+	const user = usersCache.get(id);
+    if (user) {
+        user.armor += amount;
+        if (user.armor < 0) user.armor = 0;
+        if (user.armor > 1) user.armor = 1;
+        return user.save();
+    }
+}
 
 async function getNetWorth(userId) {
     const portfolioValue = await getPortfolioValue(userId);
@@ -83,5 +92,5 @@ async function setActivity(id, amount) {
     return newUser;
 }
 
-module.exports = { setBalance, addBalance, getBalance, getActivity, usersCache, addActivity, setActivity, getNetWorth };
+module.exports = { setBalance, addBalance, getBalance, getActivity, usersCache, addActivity, setActivity, getNetWorth, addArmor};
 

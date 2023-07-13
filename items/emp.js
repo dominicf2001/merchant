@@ -1,6 +1,10 @@
 module.exports = {
     data: {
         name: 'emp',
+        price: 400000,
+        icon: ":zap:",
+        description: 'Disables nexxy.',
+        usage: '$use emp'
     },
     async use(message, args) {
         let target;

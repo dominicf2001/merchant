@@ -5,7 +5,6 @@ const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 const moment = require('moment');
 const { formatNumber } = require("../../utilities.js");
 const { client } = require("../../index.js");
-const { usersCache } = require('../../database/utilities/userUtilities.js');
 
 const width = 3000;
 const height = 1400;
@@ -138,7 +137,7 @@ async function handleListReply(message, args, isUpdate) {
         .setDescription(`Page ${pageNum}/${totalPages}\nTo view additional info on a stock: ${inlineCode("$stock @user")}`);
 
     const previousBtn = new ButtonBuilder()
-        .setCustomId('stockListPrevious')
+        .setCustomId('shopPrevious')
         .setLabel('Previous')
         .setStyle(ButtonStyle.Primary)
         .setDisabled(pageNum == 1);

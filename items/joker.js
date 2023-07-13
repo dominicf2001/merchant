@@ -20,6 +20,10 @@ function getRandomNick(){
 module.exports = {
     data: {
         name: 'joker',
+        price: 1000000,
+        icon: ":black_joker:",
+        description: "???",
+        usage: "$use joker"
     },
     async use(message, args) {
         let members;

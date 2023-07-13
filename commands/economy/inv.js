@@ -11,19 +11,18 @@ module.exports = {
 	async execute(message, args) {
         const user = await Users.findOne({ where: { user_id: message.author.id } });
         const items = user ? await user.getItems() : [];
+        const armor = user.armor;
 
         const totalQuantity = items.reduce((previous, current) => {
                 return previous + current["quantity"];
             }, 0);
 
-        if (!items.length) return message.reply(`You have nothing!`);
-
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .setTitle("Inventory")
-            .setDescription(`${totalQuantity}/5`);
+            .setDescription(`:school_satchel: ${totalQuantity}/5 - - :shield: ${armor}/1\n------------------------`);
 
-        items.forEach(i => {
+        items?.forEach(i => {
             embed.addFields({ name: `${i.item.icon} ${i.item.name} - Q. ${formatNumber(i.quantity)}`, value: ` ` });
         });
 

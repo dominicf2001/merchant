@@ -18,6 +18,12 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.DATE,
             allowNull: false,
             defaultValue: DataTypes.NOW,
+        },
+        armor: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+            max: 4
         }
 	}, {
 		timestamps: false,

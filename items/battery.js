@@ -1,6 +1,10 @@
 module.exports = {
     data: {
         name: 'battery',
+        price: 350000,
+        icon: ":battery:",
+        description: 'Enables nexxy.',
+        usage: '$use battery'
     },
     async use(message, args) {
         let target;
