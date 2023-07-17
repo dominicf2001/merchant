@@ -26,7 +26,7 @@ async function updateRoles() {
             role = "Normie";
         }
 
-        const guild = client.guilds.cache.get("608853914535854101");
+        const guild = client.guilds.cache.get("991943318093172827");
         const user = await Users.findOne({ where: { user_id: cachedUser.user_id } });
 
         updateUserRoleLevel(guild, user, role);
