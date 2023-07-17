@@ -25,13 +25,21 @@ async function handleShopReply(message, args, isUpdate) {
 
     const totalPages = Math.ceil(items.length / pageSize);
 
+    const roles = [
+        "Truecel",
+        "Incel",
+        "Chud",
+        "Fakecel",
+        "Normie"
+    ];
+
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .setTitle("Shop")
         .setDescription(`Page ${pageNum}/${totalPages}\n----\nTo view additional info on an item, see $help [item].\n----\n`);
 
     items.forEach(item => {
-        embed.addFields({ name: `${item.data.icon} ${item.data.name} - ${tendieIconCode} ${item.data.price}`, value: `${item.data.description}` });
+        embed.addFields({ name: `${item.data.icon} ${item.data.name} - ${tendieIconCode} - ${item.data.price} (${roles[item.data.role]})`, value: `${item.data.description}` });
     })
 
     if (pageNum > totalPages || pageNum < 1) return;

@@ -22,6 +22,7 @@ module.exports = {
             .setTitle("Inventory")
             .setDescription(`:school_satchel: ${totalQuantity}/5 - - :shield: ${armor}/1\n------------------------`);
 
+        console.log(items);
         items?.forEach(i => {
             embed.addFields({ name: `${i.item.icon} ${i.item.name} - Q. ${formatNumber(i.quantity)}`, value: ` ` });
         });

@@ -1,10 +1,11 @@
 module.exports = {
     data: {
         name: 'hammer',
-        price: 100000,
+        price: 3000,
         icon: ":hammer:",
         description: "Destroys a channel or emoji.",
-        usage: "$use hammer [channel/emoji] [name]"
+        usage: "$use hammer [channel/emoji] [name]",
+        role: 3
     },
     async use(message, args) {
         const hammerObject = args[0];

@@ -1,10 +1,11 @@
 module.exports = {
     data: {
         name: 'wrench',
-        price: 100000,
+        price: 4000,
         icon: ":wrench:",
         description: "Creates a new channel or emoji.",
-        usage: "$use wrench [channel/emoji] [name] [attachment (emoji only)]"
+        usage: "$use wrench [channel/emoji] [name] [attachment (emoji only)]",
+        role: 4
     },
     async use(message, args) {
         const wrenchObject = args[0];

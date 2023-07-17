@@ -1,15 +1,8 @@
-const { Users, UserStocks, Stocks } = require("../../database/dbObjects.js");
+const { Users, UserStocks } = require("../../database/dbObjects.js");
 const { tendieIconCode, formatNumber } = require("../../utilities.js");
-const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
+const { addBalance } = require("../../database/utilities/userUtilities.js");
 const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
 const { inlineCode, EmbedBuilder } = require('discord.js');
-const { Sequelize } = require("sequelize");
-const sequelize = new Sequelize('database', 'username', 'password', {
-	host: 'localhost',
-	dialect: 'sqlite',
-	logging: false,
-	storage: './database/database.sqlite'
-});
 
 module.exports = {
 	data: {

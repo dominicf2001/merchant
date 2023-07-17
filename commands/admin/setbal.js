@@ -5,7 +5,7 @@ const { EmbedBuilder, inlineCode } = require('discord.js');
 module.exports = {
 	data: {
         name: 'setbal',
-        description: `(ADMIN) Set a users balance.\n${inlineCode("$addbalance @target amount")}`
+        description: `(ADMIN) Set a users role.\n${inlineCode("$setbal @target [role]")}`
     },
 	async execute(message, args) {
         if (message.author.id != "608852453315837964") {

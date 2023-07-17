@@ -5,10 +5,11 @@ const { Users } = require("../database/dbObjects.js");
 module.exports = {
     data: {
         name: 'armor',
-        price: 50000,
+        price: 750,
         icon: ":shield:",
         description: "Protects against nametag, dye, and mute. Can only apply one at a time.",
-        usage: "$use armor"
+        usage: "$use armor",
+        role: 2
     },
     async use(message, args) {
         try {

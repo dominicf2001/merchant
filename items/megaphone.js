@@ -4,7 +4,8 @@ module.exports = {
         price: 200000,
         icon: ":mega:",
         description: "Sends your message and/or attachment as an @everyone.",
-        usage: "$use megaphone [message/attachment]"
+        usage: "$use megaphone [message/attachment]",
+        role: 2
     },
     async use(message, args) {
         const toSend = args.join(" ");

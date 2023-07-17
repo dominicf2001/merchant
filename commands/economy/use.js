@@ -19,6 +19,7 @@ module.exports = {
         try {
             user.removeItem(item.item);
             const cachedItem = await message.client.items.get(itemName);
+
             if (cachedItem["data"].attack)
                 await handleAttackItem(message, args, cachedItem);
              else

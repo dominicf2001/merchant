@@ -2,10 +2,11 @@ module.exports = {
     data: {
         name: 'dye',
         description: "Sets the color of any user's nickname.",
-        price: 75000,
+        price: 1500,
         icon: ":art:",
         attack: 1,
-        usage: `$use dye [color] @user\n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`
+        usage: `$use dye [color] @user\n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`,
+        role: 1
     },
     async use(message, args) {
         let target = message.mentions.members.first();

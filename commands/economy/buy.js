@@ -1,15 +1,9 @@
-const { Users, Items, UserStocks, Stocks } = require("../../database/dbObjects.js");
+const { Users, Items, UserStocks } = require("../../database/dbObjects.js");
 const { tendieIconCode, formatNumber } = require("../../utilities.js");
-const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
+const { getBalance, addBalance, usersCache } = require("../../database/utilities/userUtilities.js");
 const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
 const { inlineCode, EmbedBuilder } = require('discord.js');
-const { Op, Sequelize } = require("sequelize");
-const sequelize = new Sequelize('database', 'username', 'password', {
-	host: 'localhost',
-	dialect: 'sqlite',
-	logging: false,
-	storage: './database/database.sqlite'
-});
+const { Op } = require("sequelize");
 
 module.exports = {
 	data: {
@@ -19,6 +13,8 @@ module.exports = {
     },
     async execute(message, args) {
         if (message.mentions.users.size == 1){
+            const author = usersCache.get(message.author.id);
+            if (author.role < 1) throw new Error(`Your role is too low to buy stocks. Minimum role is: ${inlineCode("Fakecel")}`);
             buyStock(message, args);
         } else {
             const itemName = args.find(arg => isNaN(arg));
@@ -28,8 +24,12 @@ module.exports = {
                 return message.reply(`You can only purchase one or more items.`);
             }
 
+            const user = await Users.findOne({ where: { user_id: message.author.id } });
             const item = await Items.findOne({ where: { name: { [Op.like]: itemName } } });
+
             if (!item) return message.reply(`That item doesn't exist.`);
+
+            if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
 
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
@@ -38,8 +38,6 @@ module.exports = {
             if ((item.price * quantity) > getBalance(message.author.id)) {
                 return message.reply(`You only have ${tendieIconCode} ${formatNumber(+getBalance(message.author.id))} tendies. ${formatNumber(quantity)} ${item.name}${pluralS} costs ${tendieIconCode} ${formatNumber(item.price * quantity)} tendies.`);
             }
-
-            const user = await Users.findOne({ where: { user_id: message.author.id } });
 
             const items = await user.getItems();
 

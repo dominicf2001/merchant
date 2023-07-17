@@ -164,7 +164,7 @@ client.on("messageCreate", async message => {
             });
         } catch (error) {
             console.error(error);
-            await message.reply('There was an error while executing this command!');
+            await message.reply(error.message);
         }
     }
 });

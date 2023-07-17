@@ -92,5 +92,38 @@ async function setActivity(id, amount) {
     return newUser;
 }
 
-module.exports = { setBalance, addBalance, getBalance, getActivity, usersCache, addActivity, setActivity, getNetWorth, addArmor};
+async function updateUserRoleLevel(guild, user, newRole){
+    if (!user) return;
+
+    const roles = {
+        Truecel: { id: '1129183359482994738', rank: 4 },
+        Incel: { id: '1129183827760250930', rank: 3 },
+        Chud: { id: '1129183683417485362', rank: 2 },
+        Fakecel: { id: '1129183977526272100', rank: 1 },
+        Normie: { id: '1129184078785159229', rank: 0 }
+    };
+
+    if (!roles[newRole]) throw new Error("Invalid role.");
+
+    const userExists = await guild.members.resolve(user.user_id);
+
+    if (!userExists) return;
+
+    const member = await guild.members.fetch(user.user_id);
+
+    for (const role in roles) {
+        if (member.roles.cache.has(roles[role]["id"])) {
+            await member.roles.remove(roles[role]["id"]);
+        }
+    }
+
+    await member.roles.add(roles[newRole]["id"]);
+
+    usersCache.get(user.user_id).role = roles[newRole]["rank"];
+
+    user.role = roles[newRole]["rank"];
+    await user.save();
+}
+
+module.exports = { setBalance, addBalance, getBalance, getActivity, usersCache, addActivity, updateUserRoleLevel, setActivity, getNetWorth, addArmor};
 

@@ -1,10 +1,11 @@
 module.exports = {
     data: {
         name: 'morphstone',
-        price: 50000,
+        price: 5000,
         icon: ":rock:",
         description: "Allows you to set the server name, banner, icon or channel name.",
-        usage: "$use morphstone [name/channel/icon/banner] [name/attachment]"
+        usage: "$use morphstone [name/channel/icon/banner] [name/attachment]",
+        role: 4
     },
     async use(message, args) {
         const morphObject = args[0];

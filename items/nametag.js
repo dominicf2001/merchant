@@ -2,10 +2,11 @@ module.exports = {
     data: {
         name: 'nametag',
         description: "Sets any user's nickname.",
-        price: 100000,
+        price: 2000,
         icon: ":label:",
         attack: 1,
-        usage: '$use nametag @target [name]'
+        usage: '$use nametag @target [name]',
+        role: 2
     },
     async use(message, args) {
         const targetArg = args.filter(arg => arg.startsWith('<@') && arg.endsWith('>'))[0];

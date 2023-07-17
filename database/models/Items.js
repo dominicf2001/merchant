@@ -15,6 +15,11 @@ module.exports = (sequelize, DataTypes) => {
 		},
         icon: {
             type: DataTypes.STRING,
+        },
+        role: {
+            type: DataTypes.INTEGER,
+			allowNull: false,
+            defaultValue: 0
         }
 	}, {
 		timestamps: false,
