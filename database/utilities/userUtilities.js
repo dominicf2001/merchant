@@ -96,11 +96,11 @@ async function updateUserRoleLevel(guild, user, newRole){
     if (!user) return;
 
     const roles = {
-        Truecel: { id: '1129183359482994738', rank: 4 },
-        Incel: { id: '1129183827760250930', rank: 3 },
-        Chud: { id: '1129183683417485362', rank: 2 },
-        Fakecel: { id: '1129183977526272100', rank: 1 },
-        Normie: { id: '1129184078785159229', rank: 0 }
+        Truecel: { id: '1130640195641954374', rank: 4 },
+        Incel: { id: '1130640351565189141', rank: 3 },
+        Chud: { id: '1130640517118562344', rank: 2 },
+        Fakecel: { id: '1130640761302552707', rank: 1 },
+        Normie: { id: '1130640850771251250', rank: 0 }
     };
 
     if (!roles[newRole]) throw new Error("Invalid role.");
