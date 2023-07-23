@@ -27,8 +27,9 @@ module.exports = {
                     message.channel.send("A new emoji has been constructed.");
                     break;
                 case "channel":
+                    console.log(message.mentions.channels.first());
                     const newChannelName = wrenchArgs.join(" ");
-                    await message.guild.channels.create({ name: newChannelName });
+                    await message.guild.channels.create({ name: newChannelName, parent: "608853914535854102" });
                     message.channel.send("A new channel has been constructed.");
                     break;
                 default:

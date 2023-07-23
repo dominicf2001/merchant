@@ -3,7 +3,8 @@ const { client } = require("./index.js");
 const { Users } = require("./database/dbObjects.js");
 
 async function updateRoles() {
-    const topUsers = Array.from(usersCache.values()).sort((a, b) => getNetWorth(b.user_id) - getNetWorth(a.user_id));
+    const topUsers = Array.from(usersCache.values()).sort(async (a, b) =>
+        (await getNetWorth(b.user_id)) - (await getNetWorth(a.user_id)));
     const totalUsers = topUsers.length;
     const cutoffs = [1, 2, 4, 8];
     const totalCutoffs = cutoffs.reduce((a, b) => a + b, 0);
