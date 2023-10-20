@@ -12,11 +12,17 @@
     "chart.js": "^3.9.1",
     "chartjs-node-canvas": "^4.1.6",
     "discord.js": "^14.9.0",
+    "eslint": "^8.51.0",
     "faker": "^5.5.3",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "node-cron": "^3.0.2",
     "sequelize": "^6.30.0",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "typescript-eslint-language-service": "^5.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.7",
+    "typescript": "^5.2.2"
   }
 }

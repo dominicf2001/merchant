@@ -1,28 +1,57 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const cron = require('node-cron');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const { token } = require('./config.json');
-const { Users, UserCooldowns } = require("./database/dbObjects.js");
-const { usersCache, addActivity } = require("./database/utilities/userUtilities.js");
-const moment = require('moment');
-const { getAllLatestStocks, latestStocksCache } = require("./database/utilities/stockUtilities.js");
-const { secondsToHms, getRandomFloat } = require("./utilities.js");
-const { calculateAndUpdateStocks, stockCleanUp } = require("./cron.js");
-const client = new Client({ intents: [
+import fs from 'fs';
+import path from 'path';
+import cron from 'node-cron';
+import { Client as DiscordClient, Collection, Events, GatewayIntentBits } from 'discord.js';
+import token from '../config.json';
+import { Users, UserCooldowns } from "./database/dbObjects";
+import { usersCache, addActivity } from "./database/utilIties/userUtilities";
+import moment from 'moment';
+import { getAllLatestStocks, latestStocksCache } from "./database/utilities/stockUtilities";
+import { secondsToHms, getRandomFloat } from "./utilities";
+import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
+
+interface Item {
+  // define your Item type here
+}
+
+// Extend Client type
+class Client extends DiscordClient {
+  items: Collection<string, Item>;
+
+  constructor() {
+    super({
+      intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMember,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildIntegrations,
+        GatewayIntentBits.GuildPresences
+      ]
+    });
+    this.items = new Collection<string, Item>();
+  }
+}
+
+const client: Client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMember,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildModeration,
         GatewayIntentBits.GuildIntegrations,
         GatewayIntentBits.GuildPresences
     ],
+    items: new Collection<string, Item>()
 });
 
-module.exports = {client};
+export { client };
 
 client.once(Events.ClientReady, async () => {
     const users = await Users.findAll();
@@ -36,7 +65,7 @@ client.once(Events.ClientReady, async () => {
 
 client.on('inviteCreate', (invite) => {
     if (invite.inviter.bot) return;
-    const currentHour = moment().utcOffset('-05:00').format('H');
+    const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
     if (currentHour >= 7 && currentHour < 22) {
         addActivity(invite.inviterId, 2);
     }
@@ -44,7 +73,7 @@ client.on('inviteCreate', (invite) => {
 
 client.on('messageReactionAdd', (messageReaction, user) => {
     if (user.bot) return;
-    const currentHour = moment().utcOffset('-05:00').format('H');
+    const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
     if (currentHour >= 7 && currentHour < 22) {
         addActivity(user.id, .3);
     }
@@ -52,7 +81,7 @@ client.on('messageReactionAdd', (messageReaction, user) => {
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
-        const currentHour = moment().utcOffset('-05:00').format('H');
+        const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
         if (currentHour >= 7 && currentHour < 22) {
             addActivity(newState.member.user.id, 1);
         }
@@ -60,7 +89,6 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 });
 
 // ITEM COLLECTION
-client.items = new Collection();
 
 const itemsPath = path.join(__dirname, 'items');
 const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
@@ -98,7 +126,7 @@ for (const folder of commandFolders) {
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
 
-    if (!usersCache.has(message.author.id)){
+    if (!usersCache.has(message.author.id)) {
         const newUser = await Users.create({
             user_id: message.author.id
         });
@@ -112,15 +140,15 @@ client.on("messageCreate", async message => {
         // -- HANDLE USER ACTIVITY UPDATING
 
         const currentHour = moment().utcOffset('-05:00').format('H');
-	    if (currentHour >= 7 && currentHour < 22) {
-		    const mentionedUsers = message.mentions.users;
-		    mentionedUsers.forEach(user => {
-			    if (user.id != message.author.id && !user.bot){
-				    addActivity(user.id, .5);
-			    }
-		    });
-		    addActivity(message.author.id, getRandomFloat(.3, .75));
-	    }
+        if (currentHour >= 7 && currentHour < 22) {
+            const mentionedUsers = message.mentions.users;
+            mentionedUsers.forEach(user => {
+                if (user.id != message.author.id && !user.bot) {
+                    addActivity(user.id, .5);
+                }
+            });
+            addActivity(message.author.id, getRandomFloat(.3, .75));
+        }
         // ---
     } else {
         const args = message.content.slice(prefix.length).trim().split(/ +/);

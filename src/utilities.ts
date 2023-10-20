@@ -1,5 +1,4 @@
-function secondsToHms(d) {
-    d = Number(d);
+function secondsToHms(d: number): string {
     var h = Math.floor(d / 3600);
     var m = Math.floor(d % 3600 / 60);
     var s = Math.floor(d % 3600 % 60);
@@ -7,18 +6,18 @@ function secondsToHms(d) {
     return ((h > 0 ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (s < 10 ? "0" : "") + s);
 }
 
-function getRandomInt(min, max) {
+function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function getRandomFloat(min, max) {
+function getRandomFloat(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
-function formatNumber(num, decimalPlaces=2) {
+function formatNumber(num: number, decimalPlaces: number = 2): number {
   return Math.round(num * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
 }
 
-const tendieIconCode = "<:tendie:1115074573264764958>"
+const tendieIconCode: string = "<:tendie:1115074573264764958>"
 
-module.exports = { secondsToHms, getRandomInt, getRandomFloat, tendieIconCode, formatNumber };
+export { secondsToHms, getRandomInt, getRandomFloat, tendieIconCode, formatNumber };
