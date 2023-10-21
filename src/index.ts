@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import sequelize from 'sequelize';
 import cron from 'node-cron';
-import { Client as DiscordClient, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import token from '../config.json';
 import { Users, UserCooldowns } from "./database/dbObjects";
 import { usersCache, addActivity } from "./database/utilIties/userUtilities";
@@ -10,30 +11,67 @@ import { getAllLatestStocks, latestStocksCache } from "./database/utilities/stoc
 import { secondsToHms, getRandomFloat } from "./utilities";
 import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 
-interface Item {
-  // define your Item type here
-}
+// TODO: figure out item and command types
+// database type depends on new sql
+class DataStore {
+    caches: {
+        items: Collection<string, Item>,
+        commands: Collection<string, Command>,
+        users: Collection<string, Command>,
+        stocks: Collection<string, Command>
+    }
+    database: Array<number>
 
-// Extend Client type
-class Client extends DiscordClient {
-  items: Collection<string, Item>;
+    async refreshCaches() {
+        // ITEMS
+        const itemsPath = path.join(process.cwd(), 'items');
+        const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
+        for (const file of itemFiles) {
+            const filePath = path.join(itemsPath, file);
+            const item = require(filePath);
+            if ('data' in item && 'use' in item) {
+                this.caches.items.set(item.data.name, item);
+            } else {
+                console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
+            }
+        }
+        
+        // COMMANDS
+        const foldersPath = path.join(process.cwd(), 'commands');
+        const commandFolders = fs.readdirSync(foldersPath);
 
-  constructor() {
-    super({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMember,
-        GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildInvites,
-        GatewayIntentBits.GuildModeration,
-        GatewayIntentBits.GuildIntegrations,
-        GatewayIntentBits.GuildPresences
-      ]
-    });
-    this.items = new Collection<string, Item>();
-  }
+        for (const folder of commandFolders) {
+            const commandsPath = path.join(foldersPath, folder);
+            const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+            for (const file of commandFiles) {
+                const filePath = path.join(commandsPath, file);
+                const command = require(filePath);
+                if ('data' in command && 'execute' in command) {
+                    this.caches.commands.set(command.data.name, command);
+                } else {
+                    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+                }
+            }
+        }
+
+        // USERS
+        const users = await Users.findAll();
+        users.forEach(user => this.caches.users.set(user.user_id, user));
+
+        // STOCKS
+        const allLatestStocks = await getAllLatestStocks();
+        allLatestStocks.forEach(stock => this.caches.stocks.set(stock.user_id, stock));
+    }
+    
+    constructor() {
+        this.caches = {
+            items: new Collection<string, Item>,
+            commands: new Collection<string, Item>,
+            users: new Collection<string, Item>,
+            stocks: new Collection<string, Item>
+        },
+        this.database = []
+    }
 }
 
 const client: Client = new Client({
@@ -48,18 +86,16 @@ const client: Client = new Client({
         GatewayIntentBits.GuildIntegrations,
         GatewayIntentBits.GuildPresences
     ],
-    items: new Collection<string, Item>()
 });
+
+const dataStore: DataStore = new DataStore();
 
 export { client };
 
 client.once(Events.ClientReady, async () => {
-    const users = await Users.findAll();
-    users.forEach(user => usersCache.set(user.user_id, user));
-
-    const allLatestStocks = await getAllLatestStocks();
-    allLatestStocks.forEach(stock => latestStocksCache.set(stock.user_id, stock));
-
+    
+    dataStore.refreshCaches();
+    
     console.log('Ready as ' + client.user.tag);
 });
 
@@ -88,39 +124,6 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     }
 });
 
-// ITEM COLLECTION
-
-const itemsPath = path.join(__dirname, 'items');
-const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
-for (const file of itemFiles) {
-    const filePath = path.join(itemsPath, file);
-    const item = require(filePath);
-    if ('data' in item && 'use' in item) {
-        client.items.set(item.data.name, item);
-    } else {
-        console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-    }
-}
-
-// COMMAND COLLECTION
-client.commands = new Collection();
-
-const foldersPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
-
-for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-        } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-        }
-    }
-}
 
 // COMMAND HANDLING
 client.on("messageCreate", async message => {
