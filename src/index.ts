@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+
 import sequelize from 'sequelize';
 import cron from 'node-cron';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
@@ -11,68 +10,7 @@ import { getAllLatestStocks, latestStocksCache } from "./database/utilities/stoc
 import { secondsToHms, getRandomFloat } from "./utilities";
 import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 
-// TODO: figure out item and command types
-// database type depends on new sql
-class DataStore {
-    caches: {
-        items: Collection<string, Item>,
-        commands: Collection<string, Command>,
-        users: Collection<string, Command>,
-        stocks: Collection<string, Command>
-    }
-    database: Array<number>
-
-    async refreshCaches() {
-        // ITEMS
-        const itemsPath = path.join(process.cwd(), 'items');
-        const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
-        for (const file of itemFiles) {
-            const filePath = path.join(itemsPath, file);
-            const item = require(filePath);
-            if ('data' in item && 'use' in item) {
-                this.caches.items.set(item.data.name, item);
-            } else {
-                console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-            }
-        }
-        
-        // COMMANDS
-        const foldersPath = path.join(process.cwd(), 'commands');
-        const commandFolders = fs.readdirSync(foldersPath);
-
-        for (const folder of commandFolders) {
-            const commandsPath = path.join(foldersPath, folder);
-            const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-            for (const file of commandFiles) {
-                const filePath = path.join(commandsPath, file);
-                const command = require(filePath);
-                if ('data' in command && 'execute' in command) {
-                    this.caches.commands.set(command.data.name, command);
-                } else {
-                    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-                }
-            }
-        }
-
-        // USERS
-        const users = await Users.findAll();
-        users.forEach(user => this.caches.users.set(user.user_id, user));
-
-        // STOCKS
-        const allLatestStocks = await getAllLatestStocks();
-        allLatestStocks.forEach(stock => this.caches.stocks.set(stock.user_id, stock));
-    }
-    
-    constructor() {
-        this.caches = {
-            items: new Collection<string, Item>,
-            commands: new Collection<string, Item>,
-            users: new Collection<string, Item>,
-            stocks: new Collection<string, Item>
-        },
-        this.database = []
-    }
-}
+const dataStore: DataStore = new DataStore();
 
 const client: Client = new Client({
     intents: [
@@ -88,9 +26,9 @@ const client: Client = new Client({
     ],
 });
 
-const dataStore: DataStore = new DataStore();
-
 export { client };
+
+// EVENTS
 
 client.once(Events.ClientReady, async () => {
     
@@ -99,7 +37,7 @@ client.once(Events.ClientReady, async () => {
     console.log('Ready as ' + client.user.tag);
 });
 
-client.on('inviteCreate', (invite) => {
+client.on(Events.InviteCreate, (invite) => {
     if (invite.inviter.bot) return;
     const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
     if (currentHour >= 7 && currentHour < 22) {
@@ -107,7 +45,7 @@ client.on('inviteCreate', (invite) => {
     }
 });
 
-client.on('messageReactionAdd', (messageReaction, user) => {
+client.on(Events.MessageReactionAdd, (_, user) => {
     if (user.bot) return;
     const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
     if (currentHour >= 7 && currentHour < 22) {
@@ -115,7 +53,7 @@ client.on('messageReactionAdd', (messageReaction, user) => {
     }
 });
 
-client.on('voiceStateUpdate', (oldState, newState) => {
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
         if (currentHour >= 7 && currentHour < 22) {
@@ -126,23 +64,25 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 
 // COMMAND HANDLING
-client.on("messageCreate", async message => {
+client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
 
+    const usersCache = dataStore.caches["users"];
+    
     if (!usersCache.has(message.author.id)) {
         const newUser = await Users.create({
             user_id: message.author.id
         });
 
-        usersCache.set(message.author.id, newUser);
+        users.set(message.author.id, newUser);
     }
 
-    const prefix = '$';
+    const prefix: string = '$';
 
     if (!message.content.startsWith(prefix)) {
         // -- HANDLE USER ACTIVITY UPDATING
 
-        const currentHour = moment().utcOffset('-05:00').format('H');
+        const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
         if (currentHour >= 7 && currentHour < 22) {
             const mentionedUsers = message.mentions.users;
             mentionedUsers.forEach(user => {
@@ -154,17 +94,17 @@ client.on("messageCreate", async message => {
         }
         // ---
     } else {
-        const args = message.content.slice(prefix.length).trim().split(/ +/);
-        const commandName = args.shift().toLowerCase();
+        const args: string[] = message.content.slice(prefix.length).trim().split(/ +/);
+        const commandName: string = args.shift().toLowerCase();
 
-        const command = client.commands.get(commandName);
+        const command = dataStore.caches["commands"].get(commandName);
 
         if (!command) return;
 
         // --- HANDLE COOLDOWN
-        const now = Date.now();
-        const defaultCooldownDuration = 0;
-        const cooldownAmount = (command.cooldown ?? defaultCooldownDuration) * 1000;
+        const now: number = Date.now();
+        const defaultCooldownDuration: number = 0;
+        const cooldownAmount: number = (command.cooldown ?? defaultCooldownDuration) * 1000;
 
         const userCooldown = await UserCooldowns.findOne({
             where: {
@@ -175,11 +115,11 @@ client.on("messageCreate", async message => {
 
         // existing cooldown check
         if (userCooldown) {
-            const expirationTime = userCooldown.timestamp + cooldownAmount;
+            const expirationTime: number = userCooldown.timestamp + cooldownAmount;
 
             if (now < expirationTime) {
-                const expiredTimestampReadable = secondsToHms(Math.round((expirationTime - now) / 1000));
-                return message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
+                const expiredTimestampReadable: string = secondsToHms(Math.round((expirationTime - now) / 1000));
+                return message.reply({ content:`Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
             } else {
                 await userCooldown.destroy();
             }
@@ -201,7 +141,7 @@ client.on("messageCreate", async message => {
 });
 
 let stockTicker = cron.schedule('*/5 7-22 * * *', () => {
-    let randomMinute = Math.floor(Math.random() * 5);
+    let randomMinute: number = Math.floor(Math.random() * 5);
     setTimeout(() => {
         calculateAndUpdateStocks();
         client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
