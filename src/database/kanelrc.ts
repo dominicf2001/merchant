@@ -1,5 +1,6 @@
 import path from 'path';
-import { Config, TypeDefinition } from 'kanel'
+import { Config } from 'kanel'
+import { makeKyselyHook } from 'kanel-kysely'
 
 const config: Config = {
     connection: {
@@ -9,7 +10,7 @@ const config: Config = {
         database: 'merchant',
     },
     preDeleteOutputFolder: true,
-    outputPath: './schemas',
+    outputPath: './src/database/schemas',
     customTypeMap: {
         'pg_catalog.timestamptz': {
             name: 'DateTime',
@@ -23,7 +24,8 @@ const config: Config = {
                 },
             ],
         }
-    }
+    },
+    preRenderHooks: [makeKyselyHook()]
 };
 
 export default config;

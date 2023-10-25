@@ -21,14 +21,15 @@ const db = new Kysely({
 const args: string[] = process.argv.slice(2);
 const shouldOverwrite: boolean = (args[0] === "-f");
 
-console.log(shouldOverwrite);
-
 async function main() {
     try {
         if (shouldOverwrite) {
-            await db.schema.dropTable("users").ifExists().execute();
+            await db.schema.dropTable("users").ifExists().cascade().execute();
+            await db.schema.dropTable("items").ifExists().cascade().execute();
+            await db.schema.dropTable("stocks").ifExists().cascade().execute();
         }
-        
+
+        // USERS
         await db.schema.createTable('users')
             .addColumn('id', 'varchar', col =>
                 col.notNull().primaryKey())
@@ -36,11 +37,35 @@ async function main() {
                 col.notNull().defaultTo(0).check(sql`balance >= 0`))
             .addColumn('activity_points', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`activity_points >= 0`))
-            .addColumn('last_active_date', 'timestamptz', col =>
+            .addColumn('last_activity_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
             .addColumn('armor', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`armor >= 0`))
-            .addColumn('role', 'integer')
+            .execute();
+
+        // ITEMS 
+        await db.schema.createTable('items')
+            .addColumn('id', 'serial', col =>
+                col.primaryKey())
+            .addColumn('name', 'varchar', col =>
+                col.notNull().unique())
+            .addColumn('price', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`price >= 0`))
+            .addColumn('icon', 'varchar')
+            .execute();
+
+        // STOCKS
+        await db.schema.createTable('stocks')
+            .addColumn('id', 'varchar', col =>
+                col.notNull().unique())
+            .addColumn('created_date', 'timestamptz', col =>
+                col.notNull().defaultTo(DateTime.now().toISO()))
+            .addColumn('total_shares_purchased', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`total_shares_purchased >= 0`))
+            .addColumn('price', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`price >= 0`))
+            .addPrimaryKeyConstraint('stock_pk', ['id', 'created_date'])
+            .addForeignKeyConstraint('stock_fk', ['id'], 'users', ['id'])
             .execute();
  
         await processDatabase(config);

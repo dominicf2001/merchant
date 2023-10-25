@@ -1,40 +1,35 @@
-// const Sequelize = require('sequelize');
-// const sequelize = new Sequelize('database', 'username', 'password', {
-// 	host: 'localhost',
-// 	dialect: 'sqlite',
-// 	logging: false,
-// 	storage: './database/database.sqlite',
-// });
-
-// const Users = require('./models/Users.js')(sequelize, Sequelize.DataTypes);
-// const UserCooldowns = require('./models/UserCooldowns.js')(sequelize, Sequelize.DataTypes);
-
-// const Items = require('./models/Items.js')(sequelize, Sequelize.DataTypes);
-// const UserItems = require('./models/UserItems.js')(sequelize, Sequelize.DataTypes);
-
-// const Stocks = require('./models/Stocks.js')(sequelize, Sequelize.DataTypes);
-// const UserStocks = require('./models/UserStocks.js')(sequelize, Sequelize.DataTypes);
-
-// UserItems.belongsTo(Items, { foreignKey: 'item_id', as: 'item' });
-
-// UserStocks.belongsTo(Users, { foreignKey: 'user_id', as: 'user' });
-// UserStocks.belongsTo(Stocks, { foreignKey: 'stock_user_id', as: 'stock' });
-// Users.hasMany(UserStocks, { foreignKey: 'user_id' });
-// Stocks.hasMany(UserStocks, { foreignKey: 'stock_user_id' });
-
 import { Collection } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
+import { Pool } from 'pg';
+import { Kysely, PostgresDialect } from 'kysely';
+import type { Selectable, Insertable, Updateable } from 'kysely';
+import Database from './schemas/Database';
+import { Items as Item } from './schemas/public/Items';
+import { Stocks as Stock } from './schemas/public/Stocks';
+import { Users as User } from './schemas/public/Users';
 
-// TODO: figure out item and command types
-// database type depends on new sql
-abstract class DataStore<Data> {
-    protected cache: Collection<string, Data>
+const dialect = new PostgresDialect({
+    pool: new Pool({
+        database: 'merchant',
+        host: 'localhost',
+        user: 'dominic',
+        port: 5432,
+        max: 10,
+    }),
+});
+
+const db = new Kysely<Database>({
+    dialect,
+});
+
+abstract class DataStore<T> {
+    protected cache: Collection<string, T>
     protected database: any | null
 
     abstract refreshCache(): Promise<void>;
 
-    async get(id: string): Promise<Data> {
+    async get(id: string): Promise<Selectable<T>> {
         if (this.cache.has(id)) {
             return this.cache.get(id);
         }
@@ -42,13 +37,13 @@ abstract class DataStore<Data> {
         // search for it in db, if it exists set it in cache and return it
     }
 
-    async set(id: string, data: Data): Promise<void> {
+    async set(id: string, data: Insertable<T> | Updateable<T>): Promise<void> {
         this.cache.set(id, data);
         // set in the db
     }
 
     constructor(database: any | null = null) {
-        this.cache = new Collection<string, Data>();
+        this.cache = new Collection<string, T>();
         this.database = database;
     }
 }
