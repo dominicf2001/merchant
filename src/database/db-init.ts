@@ -48,10 +48,8 @@ async function main() {
 
         // ITEMS 
         await db.schema.createTable('items')
-            .addColumn('item_id', 'serial', col =>
-                col.primaryKey())
-            .addColumn('name', 'varchar', col =>
-                col.notNull().unique())
+            .addColumn('item_id', 'varchar', col =>
+                col.notNull().primaryKey())
             .addColumn('price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
             .addColumn('icon', 'varchar')
@@ -75,7 +73,7 @@ async function main() {
         await db.schema.createTable('user_items')
             .addColumn('user_id', 'varchar', col =>
                 col.notNull().unique())
-            .addColumn('item_id', 'integer', col =>
+            .addColumn('item_id', 'varchar', col =>
                 col.notNull())
             .addColumn('quantity', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`quantity >= 0`))

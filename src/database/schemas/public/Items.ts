@@ -4,13 +4,11 @@
 import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
 /** Identifier type for public.items */
-export type ItemsItemId = number & { __brand: 'ItemsItemId' };
+export type ItemsItemId = string & { __brand: 'ItemsItemId' };
 
 /** Represents the table public.items */
 export default interface ItemsTable {
-  item_id: ColumnType<ItemsItemId, ItemsItemId | null, ItemsItemId | null>;
-
-  name: ColumnType<string, string, string | null>;
+  item_id: ColumnType<ItemsItemId, ItemsItemId, ItemsItemId | null>;
 
   price: ColumnType<number, number | null, number | null>;
 

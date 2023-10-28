@@ -3,7 +3,6 @@ import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUse
 import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
 import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
 import Database from './schemas/Database';
-import PublicSchema from './schemas/public/PublicSchema';
 
 import { Collection } from 'discord.js';
 import path from 'path';
@@ -25,26 +24,32 @@ const db = new Kysely<Database>({
 });
 
 type TableName = keyof Database;
-type PrimaryKey = UsersUserId | ItemsItemId;
+type TableID = 'user_id' | 'item_id';
 
-abstract class DataStore<Data extends PublicSchema> {
-    protected cache: Collection<PrimaryKey, Data>;
+abstract class DataStore<Data> {
+    protected cache: Collection<string, Data>;
     protected db: Kysely<Database> | null;
     protected tableName: TableName | null;
-    protected primaryKey: PrimaryKey | null;
+    protected tableID: TableID | null;
 
-    abstract refreshCache(): Promise<void>;
+    async refreshCache(): Promise<void> {
+        const results: any[] = await db.selectFrom(this.tableName).selectAll().execute();
 
-    async get(id: PrimaryKey): Promise<Data | null> {
+        results.forEach(result => {
+            this.cache.set(result[this.tableID], result)
+        });
+    }
+
+    async get(id: string): Promise<Data | null> {
         if (this.cache.has(id)) {
             return this.cache.get(id);
         }
 
-        if (this.db && this.tableName && this.primaryKey) {
+        if (this.db && this.tableName && this.tableID) {
             const result: any = await this.db
                 .selectFrom(this.tableName)
                 .selectAll()
-                .where(this.primaryKey as any, '=', id)
+                .where(this.tableID as any, '=', id)
                 .executeTakeFirst();
             return result;
         }
@@ -52,7 +57,7 @@ abstract class DataStore<Data extends PublicSchema> {
         return null;
     }
 
-    async set(id: PrimaryKey, data: Insertable<Data> | Updateable<Data>): Promise<void> {
+    async set(id: string, data: Insertable<Data> | Updateable<Data>): Promise<void> {
         if (this.cache.has(id)) {
             // merge the data
             const existingData: Data = this.cache.get(id);
@@ -64,13 +69,13 @@ abstract class DataStore<Data extends PublicSchema> {
             result = await this.db
                 .selectFrom(this.tableName)
                 .selectAll()
-                .where(this.primaryKey as any, '=', id)
+                .where(this.tableID as any, '=', id)
                 .executeTakeFirst();
             if (result) {
                 await this.db
                     .updateTable('users')
                     .set(data)
-                    .where(this.primaryKey as any, '=', id)
+                    .where(this.tableID as any, '=', id)
                     .execute();
             } else {
                 result = await this.db
@@ -84,26 +89,18 @@ abstract class DataStore<Data extends PublicSchema> {
         this.cache.set(id, result);
     }
 
-    constructor(db: any | null = null, tableName?: TableName, primaryKey?: PrimaryKey) {
-        this.cache = new Collection<PrimaryKey, Data>();
+    constructor(db: Kysely<Database> | null = null, tableName: TableName | null = null, tableID: TableID | null = null) {
+        this.cache = new Collection<TableID, Data>();
         this.db = db;
         this.tableName = tableName;
-        this.primaryKey = primaryKey;
+        this.tableID = tableID;
     }
 }
 
 class Users extends DataStore<User> {
-    async refreshCache(): Promise<void> {
-        const result: User[] = await db.selectFrom("users").selectAll().execute();
-
-        result.forEach(user => {
-            this.cache.set(user.user_id, user)
-        });
-    }
-
-// TODO: should make a transaction?
-    addBalance(id: string, amount: number): void {
-        const user: User = this.get(id);
+    // TODO: should make a transaction?
+    async addBalance(id: string, amount: number): Promise<void> {
+        const user: User = await this.get(id);
 
         user.balance += amount;
         if (user.balance < 0) user.balance = 0;
@@ -111,6 +108,7 @@ class Users extends DataStore<User> {
         this.set(id, user);
     }
 }
+
 
 class Commands extends DataStore<Command> {
     async refreshCache(): Promise<void> {
@@ -150,12 +148,7 @@ class Items extends DataStore<Item> {
 }
 
 class Stocks extends DataStore<Stock> {
-    async refreshCache(): Promise<void> {
-        // TODO: replace with sql
-        // Move to abstract dataStore class?
-        const allLatestStocks: Stock[] = await getAllLatestStocks();
-        allLatestStocks.forEach(stock => this.cache.set(stock.user_id, stock));
-    }
+
 }
 
 Reflect.defineProperty(Users.prototype, 'addItem', {
