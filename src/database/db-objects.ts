@@ -1,12 +1,14 @@
+import { Kysely, PostgresDialect, Updateable, Insertable } from 'kysely';
+import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
+import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
+import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
+import Database from './schemas/Database';
+import PublicSchema from './schemas/public/PublicSchema';
+
 import { Collection } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
 import { Pool } from 'pg';
-import { Kysely, PostgresDialect } from 'kysely';
-import Database from './schemas/Database';
-import { Items as Item, ItemsItemId } from './schemas/public/Items';
-import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
-import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
 
 const dialect = new PostgresDialect({
     pool: new Pool({
@@ -22,19 +24,71 @@ const db = new Kysely<Database>({
     dialect,
 });
 
-abstract class DataStore<T> {
-    protected cache: Collection<string, T>;
+type TableName = keyof Database;
+type PrimaryKey = UsersUserId | ItemsItemId;
+
+abstract class DataStore<Data extends PublicSchema> {
+    protected cache: Collection<PrimaryKey, Data>;
     protected db: Kysely<Database> | null;
+    protected tableName: TableName | null;
+    protected primaryKey: PrimaryKey | null;
 
     abstract refreshCache(): Promise<void>;
 
-    abstract get(id: string): Promise<T | null>;
+    async get(id: PrimaryKey): Promise<Data | null> {
+        if (this.cache.has(id)) {
+            return this.cache.get(id);
+        }
 
-    abstract set(id: string, data: Partial<T>): Promise<void>;
+        if (this.db && this.tableName && this.primaryKey) {
+            const result: any = await this.db
+                .selectFrom(this.tableName)
+                .selectAll()
+                .where(this.primaryKey as any, '=', id)
+                .executeTakeFirst();
+            return result;
+        }
 
-    constructor(db: any | null = null) {
-        this.cache = new Collection<string, T>();
+        return null;
+    }
+
+    async set(id: PrimaryKey, data: Insertable<Data> | Updateable<Data>): Promise<void> {
+        if (this.cache.has(id)) {
+            // merge the data
+            const existingData: Data = this.cache.get(id);
+            this.cache.set(id, { ...existingData, ...data });
+        }
+
+        let result: any;
+        if (this.db) {
+            result = await this.db
+                .selectFrom(this.tableName)
+                .selectAll()
+                .where(this.primaryKey as any, '=', id)
+                .executeTakeFirst();
+            if (result) {
+                await this.db
+                    .updateTable('users')
+                    .set(data)
+                    .where(this.primaryKey as any, '=', id)
+                    .execute();
+            } else {
+                result = await this.db
+                    .insertInto('users')
+                    .values({ user_id: id, ...data })
+                    .returningAll()
+                    .executeTakeFirst();
+            }
+        }
+
+        this.cache.set(id, result);
+    }
+
+    constructor(db: any | null = null, tableName?: TableName, primaryKey?: PrimaryKey) {
+        this.cache = new Collection<PrimaryKey, Data>();
         this.db = db;
+        this.tableName = tableName;
+        this.primaryKey = primaryKey;
     }
 }
 
@@ -47,60 +101,7 @@ class Users extends DataStore<User> {
         });
     }
 
-    async get(id: string): Promise<User | null> {
-        const userId = id as UsersUserId;
-        
-        if (this.cache.has(id)) {
-            return this.cache.get(id);
-        }
-
-        if (this.db) {
-            const result: User = await this.db
-                .selectFrom("users")
-                .selectAll()
-                .where('user_id', '=', userId)
-                .executeTakeFirst();
-            return result;
-        }
-
-        return null;
-    }
-
-    async set(id: string, data: NewUser | UserUpdate): Promise<void> {
-        const userId = id as UsersUserId;
-
-        if (this.cache.has(userId)) {
-            // merge the data
-            const existingData = this.cache.get(userId);
-            this.cache.set(userId, {...existingData, ...data});
-        }
-
-        let result: User;
-        if (this.db) {
-            result = await this.db
-                .selectFrom('users')
-                .selectAll()
-                .where('user_id', '=', userId)
-                .executeTakeFirst();
-            if (result) {
-                await this.db
-                    .updateTable('users')
-                    .set(data)
-                    .where('user_id', '=', userId)
-                    .execute();
-            } else {
-                result = await this.db
-                    .insertInto('users')
-                    .values({user_id: userId, ...data})
-                    .returningAll()
-                    .executeTakeFirst();                
-            }
-        }
-
-        this.cache.set(userId, result);
-    }
-
-    // TODO: should make a transaction?
+// TODO: should make a transaction?
     addBalance(id: string, amount: number): void {
         const user: User = this.get(id);
 
