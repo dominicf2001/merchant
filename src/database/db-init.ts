@@ -27,11 +27,14 @@ async function main() {
             await db.schema.dropTable("users").ifExists().cascade().execute();
             await db.schema.dropTable("items").ifExists().cascade().execute();
             await db.schema.dropTable("stocks").ifExists().cascade().execute();
+            await db.schema.dropTable("user_items").ifExists().cascade().execute();
+            await db.schema.dropTable("user_stocks").ifExists().cascade().execute();
+            await db.schema.dropTable("user_cooldowns").ifExists().cascade().execute();
         }
 
         // USERS
         await db.schema.createTable('users')
-            .addColumn('id', 'varchar', col =>
+            .addColumn('user_id', 'varchar', col =>
                 col.notNull().primaryKey())
             .addColumn('balance', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`balance >= 0`))
@@ -45,7 +48,7 @@ async function main() {
 
         // ITEMS 
         await db.schema.createTable('items')
-            .addColumn('id', 'serial', col =>
+            .addColumn('item_id', 'serial', col =>
                 col.primaryKey())
             .addColumn('name', 'varchar', col =>
                 col.notNull().unique())
@@ -56,7 +59,7 @@ async function main() {
 
         // STOCKS
         await db.schema.createTable('stocks')
-            .addColumn('id', 'varchar', col =>
+            .addColumn('stock_id', 'varchar', col =>
                 col.notNull().unique())
             .addColumn('created_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
@@ -64,8 +67,50 @@ async function main() {
                 col.notNull().defaultTo(0).check(sql`total_shares_purchased >= 0`))
             .addColumn('price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
-            .addPrimaryKeyConstraint('stock_pk', ['id', 'created_date'])
-            .addForeignKeyConstraint('stock_fk', ['id'], 'users', ['id'])
+            .addPrimaryKeyConstraint('stock_pk', ['stock_id', 'created_date'])
+            .addForeignKeyConstraint('stock_fk_user', ['stock_id'], 'users', ['user_id'])
+            .execute();
+
+        // USER ITEMS
+        await db.schema.createTable('user_items')
+            .addColumn('user_id', 'varchar', col =>
+                col.notNull().unique())
+            .addColumn('item_id', 'integer', col =>
+                col.notNull())
+            .addColumn('quantity', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`quantity >= 0`))
+            .addPrimaryKeyConstraint('user_items_pk', ['user_id', 'item_id'])
+            .addForeignKeyConstraint('user_items_fk_user', ['user_id'], 'users', ['user_id'])
+            .addForeignKeyConstraint('user_items_fk_item', ['item_id'], 'items', ['item_id'])
+            .execute();
+
+        // USER STOCKS
+        await db.schema.createTable('user_stocks')
+            .addColumn('user_id', 'varchar', col =>
+                col.notNull().unique())
+            .addColumn('stock_id', 'varchar', col =>
+                col.notNull())
+            .addColumn('purchase_date', 'timestamptz', col =>
+                col.notNull().defaultTo(DateTime.now().toISO()))
+            .addColumn('quantity', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`quantity >= 0`))
+            .addColumn('purchase_price', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`purchase_price >= 0`))
+            .addPrimaryKeyConstraint('user_stocks_pk', ['user_id', 'stock_id', 'purchase_date'])
+            .addForeignKeyConstraint('user_stocks_fk_user', ['user_id'], 'users', ['user_id'])
+            .addForeignKeyConstraint('user_stocks_fk_stock', ['stock_id'], 'stocks', ['stock_id'])
+            .execute();
+        
+        // USER COOLDOWNS
+        await db.schema.createTable('user_cooldowns')
+            .addColumn('user_id', 'varchar', col =>
+                col.notNull().unique())
+            .addColumn('command_name', 'varchar', col =>
+                col.notNull())
+            .addColumn('start_date', 'timestamptz', col =>
+                col.notNull().defaultTo(DateTime.now().toISO()))
+            .addPrimaryKeyConstraint('user_cooldown_pk', ['user_id', 'command_name'])
+            .addForeignKeyConstraint('user_cooldown_fk_user', ['user_id'], 'users', ['user_id'])
             .execute();
  
         await processDatabase(config);

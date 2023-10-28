@@ -5,11 +5,11 @@ import { DateTime } from 'luxon';
 import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
 /** Identifier type for public.users */
-export type UsersId = string & { __brand: 'UsersId' };
+export type UsersUserId = string & { __brand: 'UsersUserId' };
 
 /** Represents the table public.users */
 export default interface UsersTable {
-  id: ColumnType<UsersId, UsersId, UsersId | null>;
+  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
 
   balance: ColumnType<number, number | null, number | null>;
 

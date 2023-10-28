@@ -4,6 +4,9 @@
 import type UsersTable from './Users';
 import type ItemsTable from './Items';
 import type StocksTable from './Stocks';
+import type UserItemsTable from './UserItems';
+import type UserStocksTable from './UserStocks';
+import type UserCooldownsTable from './UserCooldowns';
 
 export default interface PublicSchema {
   users: UsersTable;
@@ -11,4 +14,10 @@ export default interface PublicSchema {
   items: ItemsTable;
 
   stocks: StocksTable;
+
+  user_items: UserItemsTable;
+
+  user_stocks: UserStocksTable;
+
+  user_cooldowns: UserCooldownsTable;
 }
