@@ -3,11 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import { Pool } from 'pg';
 import { Kysely, PostgresDialect } from 'kysely';
-import type { Selectable, Insertable, Updateable } from 'kysely';
 import Database from './schemas/Database';
-import { Items as Item } from './schemas/public/Items';
-import { Stocks as Stock } from './schemas/public/Stocks';
-import { Users as User } from './schemas/public/Users';
+import { Items as Item, ItemsItemId } from './schemas/public/Items';
+import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
+import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
 
 const dialect = new PostgresDialect({
     pool: new Pool({
@@ -24,27 +23,91 @@ const db = new Kysely<Database>({
 });
 
 abstract class DataStore<T> {
-    protected cache: Collection<string, T>
-    protected database: any | null
+    protected cache: Collection<string, T>;
+    protected db: Kysely<Database> | null;
 
     abstract refreshCache(): Promise<void>;
 
-    async get(id: string): Promise<Selectable<T>> {
+    abstract get(id: string): Promise<T | null>;
+
+    abstract set(id: string, data: Partial<T>): Promise<void>;
+
+    constructor(db: any | null = null) {
+        this.cache = new Collection<string, T>();
+        this.db = db;
+    }
+}
+
+class Users extends DataStore<User> {
+    async refreshCache(): Promise<void> {
+        const result: User[] = await db.selectFrom("users").selectAll().execute();
+
+        result.forEach(user => {
+            this.cache.set(user.user_id, user)
+        });
+    }
+
+    async get(id: string): Promise<User | null> {
+        const userId = id as UsersUserId;
+        
         if (this.cache.has(id)) {
             return this.cache.get(id);
         }
 
-        // search for it in db, if it exists set it in cache and return it
+        if (this.db) {
+            const result: User = await this.db
+                .selectFrom("users")
+                .selectAll()
+                .where('user_id', '=', userId)
+                .executeTakeFirst();
+            return result;
+        }
+
+        return null;
     }
 
-    async set(id: string, data: Insertable<T> | Updateable<T>): Promise<void> {
-        this.cache.set(id, data);
-        // set in the db
+    async set(id: string, data: NewUser | UserUpdate): Promise<void> {
+        const userId = id as UsersUserId;
+
+        if (this.cache.has(userId)) {
+            // merge the data
+            const existingData = this.cache.get(userId);
+            this.cache.set(userId, {...existingData, ...data});
+        }
+
+        let result: User;
+        if (this.db) {
+            result = await this.db
+                .selectFrom('users')
+                .selectAll()
+                .where('user_id', '=', userId)
+                .executeTakeFirst();
+            if (result) {
+                await this.db
+                    .updateTable('users')
+                    .set(data)
+                    .where('user_id', '=', userId)
+                    .execute();
+            } else {
+                result = await this.db
+                    .insertInto('users')
+                    .values({user_id: userId, ...data})
+                    .returningAll()
+                    .executeTakeFirst();                
+            }
+        }
+
+        this.cache.set(userId, result);
     }
 
-    constructor(database: any | null = null) {
-        this.cache = new Collection<string, T>();
-        this.database = database;
+    // TODO: should make a transaction?
+    addBalance(id: string, amount: number): void {
+        const user: User = this.get(id);
+
+        user.balance += amount;
+        if (user.balance < 0) user.balance = 0;
+
+        this.set(id, user);
     }
 }
 
@@ -93,29 +156,6 @@ class Stocks extends DataStore<Stock> {
         allLatestStocks.forEach(stock => this.cache.set(stock.user_id, stock));
     }
 }
-
-
-class Users extends DataStore<User> {
-    async refreshCache(): Promise<void> {
-        const usersData: any[] = [];// db lookup
-        
-        usersData.forEach(userData => {
-            user: User = ;
-            this.cache.set(user.user_id, user)
-        });
-    }
-
-    // TODO: should make a transaction?
-    addBalance(id: string, amount: number): void {
-        const user: User = this.get(id);
-        
-        user.balance += amount;
-        if (user.balance < 0) user.balance = 0;
-        
-        this.set(id, user);
-    }
-}
-
 
 Reflect.defineProperty(Users.prototype, 'addItem', {
 	value: async function(item) {
