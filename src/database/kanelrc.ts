@@ -1,6 +1,5 @@
-import path from 'path';
-import { Config } from 'kanel'
-import { makeKyselyHook } from 'kanel-kysely'
+import { Config } from 'kanel';
+import { makeKyselyHook } from 'kanel-kysely';
 
 const config: Config = {
     connection: {

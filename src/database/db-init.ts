@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import { Pool } from 'pg';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { processDatabase } from 'kanel';
-import config from './kanelrc';
+import config from './kanelrc.js';
 
 const dialect = new PostgresDialect({
     pool: new Pool({

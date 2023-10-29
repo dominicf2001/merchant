@@ -1,9 +1,9 @@
-import { Kysely, PostgresDialect, Updateable, Insertable, sql } from 'kysely';
-import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users.ts';
-import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items.ts';
-import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks.ts';
-import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems.ts';
-import Database from './schemas/Database.ts';
+import { Kysely, PostgresDialect, Updateable, Insertable, sql, Selectable } from 'kysely';
+import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
+import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
+import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
+import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems';
+import Database from './schemas/Database';
 
 import { Collection } from 'discord.js';
 import path from 'path';
@@ -29,16 +29,18 @@ type TableID = 'user_id' | 'item_id';
 
 abstract class DataStore<Data> {
     protected cache: Collection<string, Data>;
-    protected db: Kysely<Database> | null;
-    protected tableName: TableName | null;
-    protected tableID: TableID | null;
+    protected db: Kysely<Database>;
+    protected tableName: TableName;
+    protected tableID: TableID;
 
     async refreshCache(): Promise<void> {
-        const results: any[] = await db.selectFrom(this.tableName as any).selectAll().execute();
+        if (this.db && this.tableName && this.tableID) {
+            const results: Data[] = await db.selectFrom('users').selectAll().execute() as Data[];
 
-        results.forEach(result => {
-            this.cache.set(result[this.tableID], result)
-        });
+            results.forEach(result => {
+                this.cache.set(result[this.tableID], result);
+            });
+        }
     }
 
     async destroyDB() {
@@ -51,7 +53,7 @@ abstract class DataStore<Data> {
         if (this.db && this.tableName && this.tableID) {
             await this.db
                 .deleteFrom(this.tableName as any)
-                .where(this.tableID as any, '=', id)
+                .where(this.tableID, '=', id as any)
                 .executeTakeFirst();
         }
     }
@@ -62,44 +64,44 @@ abstract class DataStore<Data> {
         }
 
         if (this.db && this.tableName && this.tableID) {
-            const result: any = await this.db
-                .selectFrom(this.tableName as any)
+            const result: Data = await this.db
+                .selectFrom(this.tableName)
                 .selectAll()
-                .where(this.tableID as any, '=', id)
-                .executeTakeFirst();
+                .where(this.tableID, '=', id as any)
+                .executeTakeFirst() as Data;
             return result;
         }
 
         return null;
     }
 
-    async set(id: string, data: Insertable<Data> | Updateable<Data>): Promise<void> {
+    async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
         if (this.cache.has(id)) {
             // merge the data
             const existingData: Data = this.cache.get(id);
             this.cache.set(id, { ...existingData, ...data });
         }
 
-        let result: any;
+        let result: Data;
         if (this.db && this.tableName && this.tableID) {
             result = await this.db
                 .selectFrom(this.tableName as any)
                 .selectAll()
-                .where(this.tableID as any, '=', id)
-                .executeTakeFirst();
+                .where(this.tableID, '=', id as any)
+                .executeTakeFirst() as Data;
             
             if (result) {
                 await this.db
-                    .updateTable(this.tableName as any)
+                    .updateTable(this.tableName)
                     .set(data)
-                    .where(this.tableID as any, '=', id)
+                    .where(this.tableID, '=', id as any)
                     .execute();
             } else {
                 result = await this.db
-                    .insertInto(this.tableName as any)
-                    .values({ user_id: id, ...data })
+                    .insertInto(this.tableName)
+                    .values({ [this.tableID]: id, ...data })
                     .returningAll()
-                    .executeTakeFirst();
+                    .executeTakeFirst() as Data;
             }
         }
 
@@ -127,23 +129,22 @@ class Users extends DataStore<User> {
             balance: newBalance
         });
     }
-
+    
     async addItem(user_id: string, item_id: string): Promise<void> {
-        const userItem: UserItem = await this.db
+        const userItem = await this.db
             .selectFrom('user_items')
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .where('item_id', '=', item_id as ItemsItemId)
+            .where('user_id', '=', user_id as any)
+            .where('item_id', '=', item_id as any)
             .executeTakeFirst();
-        
         if (userItem) {
             await this.db
                 .updateTable('user_items')
                 .set({
                     quantity: (++userItem.quantity)
                 })
-                .where('user_id', '=', user_id as UsersUserId)
-                .where('item_id', '=', item_id as ItemsItemId)
+                .where('user_id', '=', user_id as any)
+                .where('item_id', '=', item_id as any)
                 .execute();
         } else {
             await this.db
@@ -154,11 +155,11 @@ class Users extends DataStore<User> {
     }
 
     async removeItem(user_id: string, item_id: string): Promise<void> {
-        const userItem: UserItem = await this.db
+        const userItem = await this.db
             .selectFrom('user_items')
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .where('item_id', '=', item_id as ItemsItemId)
+            .where('user_id', '=', user_id as any)
+            .where('item_id', '=', item_id as any)
             .executeTakeFirst();
 
         if (userItem) {
@@ -166,8 +167,8 @@ class Users extends DataStore<User> {
             if (userItem.quantity <= 0) {
                 await this.db
                     .deleteFrom('user_items')
-                    .where('user_id', '=', user_id as UsersUserId)
-                    .where('item_id', '=', item_id as ItemsItemId)
+                    .where('user_id', '=', user_id as any)
+                    .where('item_id', '=', item_id as any)
                     .execute();               
             } else {
                 await this.db
@@ -175,8 +176,8 @@ class Users extends DataStore<User> {
                     .set({
                         quantity: userItem.quantity
                     })
-                    .where('user_id', '=', user_id as UsersUserId)
-                    .where('item_id', '=', item_id as ItemsItemId)
+                    .where('user_id', '=', user_id as any)
+                    .where('item_id', '=', item_id as any)
                     .execute();
             }
         }
@@ -186,9 +187,10 @@ class Users extends DataStore<User> {
         const userItem: UserItem = await this.db
             .selectFrom('user_items')
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .where('item_id', '=', item_id as ItemsItemId)
-            .executeTakeFirst();
+            .where('user_id', '=', user_id as any)
+            .where('item_id', '=', item_id as any)
+            .executeTakeFirst() as UserItem;
+        
         return userItem;
     }
 
@@ -196,8 +198,8 @@ class Users extends DataStore<User> {
         const userItems: UserItem[] = await this.db
             .selectFrom('user_items')
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .execute();
+            .where('user_id', '=', user_id as any)
+            .execute() as UserItem[];
         return userItems;
     }
 
