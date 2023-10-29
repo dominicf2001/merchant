@@ -76,7 +76,7 @@ async function main() {
             .addColumn('item_id', 'varchar', col =>
                 col.notNull())
             .addColumn('quantity', 'integer', col =>
-                col.notNull().defaultTo(0).check(sql`quantity >= 0`))
+                col.notNull().defaultTo(1).check(sql`quantity > 0`))
             .addPrimaryKeyConstraint('user_items_pk', ['user_id', 'item_id'])
             .addForeignKeyConstraint('user_items_fk_user', ['user_id'], 'users', ['user_id'])
             .addForeignKeyConstraint('user_items_fk_item', ['item_id'], 'items', ['item_id'])
@@ -91,7 +91,7 @@ async function main() {
             .addColumn('purchase_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
             .addColumn('quantity', 'integer', col =>
-                col.notNull().defaultTo(0).check(sql`quantity >= 0`))
+                col.notNull().defaultTo(1).check(sql`quantity > 0`))
             .addColumn('purchase_price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`purchase_price >= 0`))
             .addPrimaryKeyConstraint('user_stocks_pk', ['user_id', 'stock_id', 'purchase_date'])

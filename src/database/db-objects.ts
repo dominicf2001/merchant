@@ -1,7 +1,8 @@
-import { Kysely, PostgresDialect, Updateable, Insertable } from 'kysely';
+import { Kysely, PostgresDialect, Updateable, Insertable, sql } from 'kysely';
 import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
 import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
 import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
+import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems';
 import Database from './schemas/Database';
 
 import { Collection } from 'discord.js';
@@ -98,14 +99,106 @@ abstract class DataStore<Data> {
 }
 
 class Users extends DataStore<User> {
+    private async createUserIfNotExists(user_id: string) {
+        const user: User | null = await this.get(user_id);
+        if (!user) {
+            await this.set(user_id, {user_id: user_id as UsersUserId});
+        }
+    }
+    
     // TODO: should make a transaction?
-    async addBalance(id: string, amount: number): Promise<void> {
-        const user: User = await this.get(id);
+    async addBalance(user_id: string, amount: number): Promise<void> {
+        this.createUserIfNotExists(user_id);
+        
+        const user: User | null = await this.get(user_id);
 
-        user.balance += amount;
-        if (user.balance < 0) user.balance = 0;
+        let newBalance = user ? user.balance + amount : amount;
+        if (newBalance < 0) newBalance = 0;
 
-        this.set(id, user);
+        await this.set(user_id, {
+            user_id: user_id as UsersUserId,
+            balance: newBalance
+        });
+    }
+
+    async addItem(user_id: string, item_id: string): Promise<void> {
+        this.createUserIfNotExists(user_id);
+
+        const userItem: UserItem = await this.db
+            .selectFrom('user_items')
+            .selectAll()
+            .where('user_id', '=', user_id as UsersUserId)
+            .where('item_id', '=', item_id as ItemsItemId)
+            .executeTakeFirst();
+        
+        if (userItem) {
+            await this.db
+                .updateTable('user_items')
+                .set({
+                    quantity: (++userItem.quantity)
+                })
+                .where('user_id', '=', user_id as UsersUserId)
+                .where('item_id', '=', item_id as ItemsItemId)
+                .execute();
+        } else {
+            await this.db
+                .insertInto('user_items')
+                .values({ user_id: user_id as UsersUserId, item_id: item_id as ItemsItemId })
+                .execute();
+        }
+    }
+
+    async removeItem(user_id: string, item_id: string): Promise<void> {
+        const userItem: UserItem = await this.db
+            .selectFrom('user_items')
+            .selectAll()
+            .where('user_id', '=', user_id as UsersUserId)
+            .where('item_id', '=', item_id as ItemsItemId)
+            .executeTakeFirst();
+
+        if (userItem) {
+            userItem.quantity -= 1;
+            if (userItem.quantity <= 0) {
+                await this.db
+                    .deleteFrom('user_items')
+                    .where('user_id', '=', user_id as UsersUserId)
+                    .where('item_id', '=', item_id as ItemsItemId)
+                    .execute();               
+            } else {
+                await this.db
+                    .updateTable('user_items')
+                    .set({
+                        quantity: userItem.quantity
+                    })
+                    .where('user_id', '=', user_id as UsersUserId)
+                    .where('item_id', '=', item_id as ItemsItemId)
+                    .execute();
+            }
+        }
+    }
+
+    async getItem(user_id: string, item_id: string): Promise<UserItem | null> {
+        const userItem: UserItem = await this.db
+            .selectFrom('user_items')
+            .selectAll()
+            .where('user_id', '=', user_id as UsersUserId)
+            .where('item_id', '=', item_id as ItemsItemId)
+            .executeTakeFirst();
+        return userItem;
+    }
+
+    async getItems(user_id: string): Promise<UserItem[]> {
+        const userItems: UserItem[] = await this.db
+            .selectFrom('user_items')
+            .selectAll()
+            .where('user_id', '=', user_id as UsersUserId)
+            .where('item_id', '=', item_id as ItemsItemId)
+            .execute();
+        return userItems;
+    }
+
+    constructor(db: Kysely<Database> | null) {
+        super(db, 'users', 'user_id');
     }
 }
 
@@ -151,61 +244,5 @@ class Stocks extends DataStore<Stock> {
 
 }
 
-Reflect.defineProperty(Users.prototype, 'addItem', {
-	value: async function(item) {
-		const userItem = await UserItems.findOne({
-			where: { user_id: this.user_id, item_id: item.id },
-		});
-
-		if (userItem) {
-			userItem.quantity += 1;
-			return userItem.save();
-		}
-
-		return UserItems.create({ user_id: this.user_id, item_id: item.id, quantity: 1 });
-	},
-});
-
-Reflect.defineProperty(Users.prototype, 'removeItem', {
-	value: async function(item) {
-		const userItem = await UserItems.findOne({
-			where: { user_id: this.user_id, item_id: item.id },
-		});
-
-		if (userItem) {
-			userItem.quantity -= 1;
-            if (userItem.quantity <= 0) {
-                return userItem.destroy();
-            } else {
-			    return userItem.save();
-            }
-		}
-	},
-});
-
-Reflect.defineProperty(Users.prototype, 'getItems', {
-	value: function() {
-		return UserItems.findAll({
-			where: { user_id: this.user_id },
-			include: ['item'],
-		});
-	},
-});
-
-Reflect.defineProperty(Users.prototype, 'getItem', {
-	value: function(itemName) {
-		return UserItems.findOne({
-			where: {
-				user_id: this.user_id,
-				'$item.name$': itemName
-			},
-			include: [{
-				model: Items,
-				as: 'item',
-			}],
-		});
-	},
-});
-
-export { Users, Items, UserItems, UserCooldowns, Stocks, UserStocks };
+export { Users, Items, Stocks };
 
