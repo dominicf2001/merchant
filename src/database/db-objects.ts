@@ -34,13 +34,11 @@ abstract class DataStore<Data> {
     protected tableID: TableID;
 
     async refreshCache(): Promise<void> {
-        if (this.db && this.tableName && this.tableID) {
-            const results: Data[] = await db.selectFrom(this.tableName).selectAll().execute() as Data[];
+        const results: Data[] = await db.selectFrom(this.tableName).selectAll().execute() as Data[];
 
-            results.forEach(result => {
-                this.cache.set(result[this.tableID], result);
-            });
-        }
+        results.forEach(result => {
+            this.cache.set(result[this.tableID], result);
+        });
     }
 
     async destroyDB() {
@@ -49,61 +47,54 @@ abstract class DataStore<Data> {
 
     async delete(id: string): Promise<void> {
         this.cache.delete(id);
-
-        // TODO: get rid of if db is required
-        if (this.db && this.tableName && this.tableID) {
-            await this.db
-                .deleteFrom(this.tableName as any)
-                .where(this.tableID, '=', id as any)
-                .executeTakeFirst();
-        }
+        console.log(this.tableName);
+        await this.db
+            .deleteFrom(this.tableName as any)
+            .where(this.tableID, '=', id as any)
+            .execute();
     }
 
-    async get(id: string): Promise<Data | null> {
+    async get(id: string): Promise<Data | undefined> {
         if (this.cache.has(id)) {
+            // cache hit
             return this.cache.get(id);
         }
 
-        if (this.db && this.tableName && this.tableID) {
-            const result: Data = await this.db
-                .selectFrom(this.tableName)
-                .selectAll()
-                .where(this.tableID, '=', id as any)
-                .executeTakeFirst() as Data;
-            return result;
-        }
-
-        return null;
+        // cache miss
+        const result: Data = await this.db
+            .selectFrom(this.tableName)
+            .selectAll()
+            .where(this.tableID, '=', id as any)
+            .executeTakeFirst() as Data;
+        
+        return result;
     }
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
-        let result: Data;
-        if (this.db && this.tableName && this.tableID) {
-            result = await this.db
-                .selectFrom(this.tableName as any)
-                .selectAll()
-                .where(this.tableID, '=', id as any)
-                .executeTakeFirst() as Data;
-            
-            if (result) {
-                await this.db
-                    .updateTable(this.tableName)
-                    .set({ [this.tableID]: id, ...data })
-                    .where(this.tableID, '=', id as any)
-                    .execute();
-            } else {
-                result = await this.db
-                    .insertInto(this.tableName)
-                    .values({ [this.tableID]: id, ...data })
-                    .returningAll()
-                    .executeTakeFirst() as Data;
-            }
-        }
+        let result: Data = await this.db
+            .selectFrom(this.tableName)
+            .selectAll()
+            .where(this.tableID, '=', id as any)
+            .executeTakeFirst() as Data;
         
+        if (result) {
+            await this.db
+                .updateTable(this.tableName)
+                .set({ [this.tableID]: id, ...data })
+                .where(this.tableID, '=', id as any)
+                .execute();
+        } else {
+            result = await this.db
+                .insertInto(this.tableName)
+                .values({ [this.tableID]: id, ...data })
+                .returningAll()
+                .executeTakeFirst() as Data;
+        }
+
         this.cache.set(id, { ...result, ...data });
     }
 
-    constructor(db: Kysely<Database> | null = null, tableName: TableName | null = null, tableID: TableID | null = null) {
+    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
         this.cache = new Collection<TableID, Data>();
         this.db = db;
         this.tableName = tableName;
@@ -124,63 +115,51 @@ class Users extends DataStore<User> {
             balance: newBalance
         });
     }
-    
-    async addItem(user_id: string, item_id: string): Promise<void> {
-        this.set(user_id);
-        
+
+    async addItem(user_id: string, item_id: string, amount: number): Promise<void> {
         const userItem = await this.db
             .selectFrom('user_items')
             .selectAll()
             .where('user_id', '=', user_id as any)
             .where('item_id', '=', item_id as any)
             .executeTakeFirst();
-        if (userItem) {
+
+        if (!userItem && amount > 0) {
+            this.set(user_id);
+            
             await this.db
-                .updateTable('user_items')
-                .set({
-                    quantity: (++userItem.quantity)
+                .insertInto('user_items')
+                .values({
+                    user_id: user_id as UsersUserId,
+                    item_id: item_id as ItemsItemId,
+                    quantity: amount
                 })
+                .execute();
+            return;
+        } else if (!userItem && amount <= 0) {
+            return;
+        }
+
+        const newQuantity = userItem.quantity + amount;
+        if (newQuantity <= 0) {
+            await this.db
+                .deleteFrom('user_items')
                 .where('user_id', '=', user_id as any)
                 .where('item_id', '=', item_id as any)
                 .execute();
         } else {
             await this.db
-                .insertInto('user_items')
-                .values({ user_id: user_id as UsersUserId, item_id: item_id as ItemsItemId })
+                .updateTable('user_items')
+                .set({
+                    quantity: newQuantity
+                })
+                .where('user_id', '=', user_id as any)
+                .where('item_id', '=', item_id as any)
                 .execute();
         }
     }
 
-    async removeItem(user_id: string, item_id: string): Promise<void> {
-        const userItem = await this.db
-            .selectFrom('user_items')
-            .selectAll()
-            .where('user_id', '=', user_id as any)
-            .where('item_id', '=', item_id as any)
-            .executeTakeFirst();
-
-        if (userItem) {
-            userItem.quantity -= 1;
-            if (userItem.quantity <= 0) {
-                await this.db
-                    .deleteFrom('user_items')
-                    .where('user_id', '=', user_id as any)
-                    .where('item_id', '=', item_id as any)
-                    .execute();               
-            } else {
-                await this.db
-                    .updateTable('user_items')
-                    .set({
-                        quantity: userItem.quantity
-                    })
-                    .where('user_id', '=', user_id as any)
-                    .where('item_id', '=', item_id as any)
-                    .execute();
-            }
-        }
-    }
-
-    async getItem(user_id: string, item_id: string): Promise<UserItem | null> {
+    async getItem(user_id: string, item_id: string): Promise<UserItem | undefined> {
         const userItem: UserItem = await this.db
             .selectFrom('user_items')
             .selectAll()
@@ -200,7 +179,7 @@ class Users extends DataStore<User> {
         return userItems;
     }
 
-    constructor(db: Kysely<Database> | null) {
+    constructor(db: Kysely<Database>) {
         super(db, 'users', 'user_id');
     }
 }
