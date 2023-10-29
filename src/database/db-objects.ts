@@ -76,12 +76,6 @@ abstract class DataStore<Data> {
     }
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
-        if (this.cache.has(id)) {
-            // merge the data
-            const existingData: Data = this.cache.get(id);
-            this.cache.set(id, { ...existingData, ...data });
-        }
-
         let result: Data;
         if (this.db && this.tableName && this.tableID) {
             result = await this.db
@@ -104,8 +98,8 @@ abstract class DataStore<Data> {
                     .executeTakeFirst() as Data;
             }
         }
-
-        this.cache.set(id, result);
+        
+        this.cache.set(id, { ...result, ...data });
     }
 
     constructor(db: Kysely<Database> | null = null, tableName: TableName | null = null, tableID: TableID | null = null) {
@@ -120,8 +114,8 @@ class Users extends DataStore<User> {
     // TODO: should make a transaction?
     async addBalance(user_id: string, amount: number): Promise<void> {
         const user: User | null = await this.get(user_id);
-
-        let newBalance = user ? user.balance + amount : amount;
+        
+        let newBalance = user ? (user.balance + amount) : amount;
         if (newBalance < 0) newBalance = 0;
 
         await this.set(user_id, {
