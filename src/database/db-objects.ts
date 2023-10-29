@@ -1,9 +1,9 @@
 import { Kysely, PostgresDialect, Updateable, Insertable, sql } from 'kysely';
-import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
-import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
-import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
-import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems';
-import Database from './schemas/Database';
+import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users.ts';
+import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items.ts';
+import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks.ts';
+import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems.ts';
+import Database from './schemas/Database.ts';
 
 import { Collection } from 'discord.js';
 import path from 'path';
@@ -34,11 +34,26 @@ abstract class DataStore<Data> {
     protected tableID: TableID | null;
 
     async refreshCache(): Promise<void> {
-        const results: any[] = await db.selectFrom(this.tableName).selectAll().execute();
+        const results: any[] = await db.selectFrom(this.tableName as any).selectAll().execute();
 
         results.forEach(result => {
             this.cache.set(result[this.tableID], result)
         });
+    }
+
+    async destroyDB() {
+        db.destroy();
+    }
+
+    async delete(id: string): Promise<void> {
+        this.cache.delete(id);
+
+        if (this.db && this.tableName && this.tableID) {
+            await this.db
+                .deleteFrom(this.tableName as any)
+                .where(this.tableID as any, '=', id)
+                .executeTakeFirst();
+        }
     }
 
     async get(id: string): Promise<Data | null> {
@@ -48,7 +63,7 @@ abstract class DataStore<Data> {
 
         if (this.db && this.tableName && this.tableID) {
             const result: any = await this.db
-                .selectFrom(this.tableName)
+                .selectFrom(this.tableName as any)
                 .selectAll()
                 .where(this.tableID as any, '=', id)
                 .executeTakeFirst();
@@ -66,21 +81,22 @@ abstract class DataStore<Data> {
         }
 
         let result: any;
-        if (this.db) {
+        if (this.db && this.tableName && this.tableID) {
             result = await this.db
-                .selectFrom(this.tableName)
+                .selectFrom(this.tableName as any)
                 .selectAll()
                 .where(this.tableID as any, '=', id)
                 .executeTakeFirst();
+            
             if (result) {
                 await this.db
-                    .updateTable('users')
+                    .updateTable(this.tableName as any)
                     .set(data)
                     .where(this.tableID as any, '=', id)
                     .execute();
             } else {
                 result = await this.db
-                    .insertInto('users')
+                    .insertInto(this.tableName as any)
                     .values({ user_id: id, ...data })
                     .returningAll()
                     .executeTakeFirst();
@@ -99,17 +115,8 @@ abstract class DataStore<Data> {
 }
 
 class Users extends DataStore<User> {
-    private async createUserIfNotExists(user_id: string) {
-        const user: User | null = await this.get(user_id);
-        if (!user) {
-            await this.set(user_id, {user_id: user_id as UsersUserId});
-        }
-    }
-    
     // TODO: should make a transaction?
     async addBalance(user_id: string, amount: number): Promise<void> {
-        this.createUserIfNotExists(user_id);
-        
         const user: User | null = await this.get(user_id);
 
         let newBalance = user ? user.balance + amount : amount;
@@ -122,8 +129,6 @@ class Users extends DataStore<User> {
     }
 
     async addItem(user_id: string, item_id: string): Promise<void> {
-        this.createUserIfNotExists(user_id);
-
         const userItem: UserItem = await this.db
             .selectFrom('user_items')
             .selectAll()
@@ -202,46 +207,48 @@ class Users extends DataStore<User> {
 }
 
 
-class Commands extends DataStore<Command> {
-    async refreshCache(): Promise<void> {
-        const foldersPath: string = path.join(process.cwd(), 'commands');
-        const commandFolders: string[] = fs.readdirSync(foldersPath);
+// class Commands extends DataStore<Command> {
+//     async refreshCache(): Promise<void> {
+//         const foldersPath: string = path.join(process.cwd(), 'commands');
+//         const commandFolders: string[] = fs.readdirSync(foldersPath);
 
-        for (const folder of commandFolders) {
-            const commandsPath: string = path.join(foldersPath, folder);
-            const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-            for (const file of commandFiles) {
-                const filePath: string = path.join(commandsPath, file);
-                const command: Command = await import(filePath);
-                if ('data' in command && 'execute' in command) {
-                    this.cache.set(command.data.name, command);
-                } else {
-                    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-                }
-            }
-        }
-    }
-}
+//         for (const folder of commandFolders) {
+//             const commandsPath: string = path.join(foldersPath, folder);
+//             const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+//             for (const file of commandFiles) {
+//                 const filePath: string = path.join(commandsPath, file);
+//                 const command: Command = await import(filePath);
+//                 if ('data' in command && 'execute' in command) {
+//                     this.cache.set(command.data.name, command);
+//                 } else {
+//                     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+//                 }
+//             }
+//         }
+//     }
+// }
 
-class Items extends DataStore<Item> {
-    async refreshCache(): Promise<void> {
-        const itemsPath = path.join(process.cwd(), 'items');
-        const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
-        for (const file of itemFiles) {
-            const filePath = path.join(itemsPath, file);
-            const item: Item = await import(filePath);
-            if ('data' in item && 'use' in item) {
-                this.cache.set(item.data.name, item);
-            } else {
-                console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-            }
-        }
-    }
-}
+// class Items extends DataStore<Item> {
+//     async refreshCache(): Promise<void> {
+//         const itemsPath = path.join(process.cwd(), 'items');
+//         const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
+//         for (const file of itemFiles) {
+//             const filePath = path.join(itemsPath, file);
+//             const item: Item = await import(filePath);
+//             if ('data' in item && 'use' in item) {
+//                 this.cache.set(item.data., item);
+//             } else {
+//                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
+//             }
+//         }
+//     }
+// }
 
-class Stocks extends DataStore<Stock> {
+// class Stocks extends DataStore<Stock> {
 
-}
+// }
 
-export { Users, Items, Stocks };
+const users = new Users(db);
+
+export { users as Users };
 

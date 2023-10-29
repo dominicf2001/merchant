@@ -1,9 +1,11 @@
 {
     "compilerOptions": {
+        "moduleResolution": "nodenext",
+        "allowImportingTsExtensions": true,
         "outDir": "./built",
         "allowJs": true,
         "target": "es5",
-        "module": "commonJS",
+        "module": "ESNEXT",
         "resolveJsonModule": true,
         "esModuleInterop": true,
     },
@@ -14,6 +16,8 @@
         {
             "name": "typescript-eslint-language-service"
         }
-    ]
-
+    ],
+    "ts-node": {
+        "esm": true,
+    }
 }

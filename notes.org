@@ -1,0 +1,10 @@
+* Commands
+** Postgresql CLI
+*** psql
+** Starting the postgresql server
+*** sudo sv start postgresql
+** Switching to the postgres user
+*** sudo -i -u postgres
+
+* Postgresql info
+** The data cluster is stored in /var/lib/postgres/data
