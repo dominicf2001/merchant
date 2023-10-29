@@ -34,7 +34,7 @@ async function main() {
 
         // USERS
         await db.schema.createTable('users')
-            .addColumn('user_id', 'varchar', col =>
+            .addColumn('user_id', 'varchar(30)', col =>
                 col.notNull().primaryKey())
             .addColumn('balance', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`balance >= 0`))
@@ -48,16 +48,16 @@ async function main() {
 
         // ITEMS 
         await db.schema.createTable('items')
-            .addColumn('item_id', 'varchar', col =>
+            .addColumn('item_id', 'varchar(30)', col =>
                 col.notNull().primaryKey())
             .addColumn('price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
-            .addColumn('icon', 'varchar')
+            .addColumn('icon', 'varchar(30)')
             .execute();
 
         // STOCKS
         await db.schema.createTable('stocks')
-            .addColumn('stock_id', 'varchar', col =>
+            .addColumn('stock_id', 'varchar(30)', col =>
                 col.notNull().unique())
             .addColumn('created_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
@@ -69,11 +69,17 @@ async function main() {
             .addForeignKeyConstraint('stock_fk_user', ['stock_id'], 'users', ['user_id'])
             .execute();
 
+        await db.schema
+            .createIndex('stock_history')
+            .on('stocks')
+            .columns(['stock_id'])
+            .execute();
+
         // USER ITEMS
         await db.schema.createTable('user_items')
-            .addColumn('user_id', 'varchar', col =>
-                col.notNull().unique())
-            .addColumn('item_id', 'varchar', col =>
+            .addColumn('user_id', 'varchar(30)', col =>
+                col.notNull())
+            .addColumn('item_id', 'varchar(30)', col =>
                 col.notNull())
             .addColumn('quantity', 'integer', col =>
                 col.notNull().defaultTo(1).check(sql`quantity > 0`))
@@ -84,9 +90,9 @@ async function main() {
 
         // USER STOCKS
         await db.schema.createTable('user_stocks')
-            .addColumn('user_id', 'varchar', col =>
-                col.notNull().unique())
-            .addColumn('stock_id', 'varchar', col =>
+            .addColumn('user_id', 'varchar(30)', col =>
+                col.notNull())
+            .addColumn('stock_id', 'varchar(30)', col =>
                 col.notNull())
             .addColumn('purchase_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
@@ -101,9 +107,9 @@ async function main() {
         
         // USER COOLDOWNS
         await db.schema.createTable('user_cooldowns')
-            .addColumn('user_id', 'varchar', col =>
-                col.notNull().unique())
-            .addColumn('command_name', 'varchar', col =>
+            .addColumn('user_id', 'varchar(30)', col =>
+                col.notNull())
+            .addColumn('command_name', 'varchar(30)', col =>
                 col.notNull())
             .addColumn('start_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))

@@ -192,7 +192,6 @@ class Users extends DataStore<User> {
             .selectFrom('user_items')
             .selectAll()
             .where('user_id', '=', user_id as UsersUserId)
-            .where('item_id', '=', item_id as ItemsItemId)
             .execute();
         return userItems;
     }
