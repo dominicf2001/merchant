@@ -35,7 +35,7 @@ abstract class DataStore<Data> {
 
     async refreshCache(): Promise<void> {
         if (this.db && this.tableName && this.tableID) {
-            const results: Data[] = await db.selectFrom('users').selectAll().execute() as Data[];
+            const results: Data[] = await db.selectFrom(this.tableName).selectAll().execute() as Data[];
 
             results.forEach(result => {
                 this.cache.set(result[this.tableID], result);
@@ -50,6 +50,7 @@ abstract class DataStore<Data> {
     async delete(id: string): Promise<void> {
         this.cache.delete(id);
 
+        // TODO: get rid of if db is required
         if (this.db && this.tableName && this.tableID) {
             await this.db
                 .deleteFrom(this.tableName as any)
@@ -87,7 +88,7 @@ abstract class DataStore<Data> {
             if (result) {
                 await this.db
                     .updateTable(this.tableName)
-                    .set(data)
+                    .set({ [this.tableID]: id, ...data })
                     .where(this.tableID, '=', id as any)
                     .execute();
             } else {
@@ -125,6 +126,8 @@ class Users extends DataStore<User> {
     }
     
     async addItem(user_id: string, item_id: string): Promise<void> {
+        this.set(user_id);
+        
         const userItem = await this.db
             .selectFrom('user_items')
             .selectAll()
@@ -202,6 +205,29 @@ class Users extends DataStore<User> {
     }
 }
 
+class Items extends DataStore<Item> {
+    async refreshCache(): Promise<void> {
+        // const itemsPath = path.join(process.cwd(), 'items');
+        // const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
+        // for (const file of itemFiles) {
+        //     const filePath = path.join(itemsPath, file);
+        //     const item: Item = await import(filePath);
+        //     if ('data' in item && 'use' in item) {
+        //         this.cache.set(item.data., item);
+        //     } else {
+        //         console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
+        //     }
+        // }
+    }
+
+    constructor(db: Kysely<Database> | null) {
+        super(db, 'items', 'item_id');
+    }
+}
+
+// class Stocks extends DataStore<Stock> {
+
+// }
 
 // class Commands extends DataStore<Command> {
 //     async refreshCache(): Promise<void> {
@@ -224,27 +250,8 @@ class Users extends DataStore<User> {
 //     }
 // }
 
-// class Items extends DataStore<Item> {
-//     async refreshCache(): Promise<void> {
-//         const itemsPath = path.join(process.cwd(), 'items');
-//         const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
-//         for (const file of itemFiles) {
-//             const filePath = path.join(itemsPath, file);
-//             const item: Item = await import(filePath);
-//             if ('data' in item && 'use' in item) {
-//                 this.cache.set(item.data., item);
-//             } else {
-//                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-//             }
-//         }
-//     }
-// }
-
-// class Stocks extends DataStore<Stock> {
-
-// }
-
 const users = new Users(db);
+const items = new Items(db);
 
-export { users as Users };
+export { users as Users, items as Items};
 

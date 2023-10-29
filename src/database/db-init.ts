@@ -54,7 +54,7 @@ async function main() {
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
             .addColumn('icon', 'varchar(30)')
             .execute();
-
+        
         // STOCKS
         await db.schema.createTable('stocks')
             .addColumn('stock_id', 'varchar(30)', col =>
@@ -66,7 +66,7 @@ async function main() {
             .addColumn('price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
             .addPrimaryKeyConstraint('stock_pk', ['stock_id', 'created_date'])
-            .addForeignKeyConstraint('stock_fk_user', ['stock_id'], 'users', ['user_id'])
+            .addForeignKeyConstraint('stock_fk_user', ['stock_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
             .execute();
 
         await db.schema
@@ -84,8 +84,8 @@ async function main() {
             .addColumn('quantity', 'integer', col =>
                 col.notNull().defaultTo(1).check(sql`quantity > 0`))
             .addPrimaryKeyConstraint('user_items_pk', ['user_id', 'item_id'])
-            .addForeignKeyConstraint('user_items_fk_user', ['user_id'], 'users', ['user_id'])
-            .addForeignKeyConstraint('user_items_fk_item', ['item_id'], 'items', ['item_id'])
+            .addForeignKeyConstraint('user_items_fk_user', ['user_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
+            .addForeignKeyConstraint('user_items_fk_item', ['item_id'], 'items', ['item_id'], (cb) => cb.onDelete('cascade'))
             .execute();
 
         // USER STOCKS
@@ -101,8 +101,8 @@ async function main() {
             .addColumn('purchase_price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`purchase_price >= 0`))
             .addPrimaryKeyConstraint('user_stocks_pk', ['user_id', 'stock_id', 'purchase_date'])
-            .addForeignKeyConstraint('user_stocks_fk_user', ['user_id'], 'users', ['user_id'])
-            .addForeignKeyConstraint('user_stocks_fk_stock', ['stock_id'], 'stocks', ['stock_id'])
+            .addForeignKeyConstraint('user_stocks_fk_user', ['user_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
+            .addForeignKeyConstraint('user_stocks_fk_stock', ['stock_id'], 'stocks', ['stock_id'], (cb) => cb.onDelete('cascade'))
             .execute();
         
         // USER COOLDOWNS
@@ -114,7 +114,7 @@ async function main() {
             .addColumn('start_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
             .addPrimaryKeyConstraint('user_cooldown_pk', ['user_id', 'command_name'])
-            .addForeignKeyConstraint('user_cooldown_fk_user', ['user_id'], 'users', ['user_id'])
+            .addForeignKeyConstraint('user_cooldown_fk_user', ['user_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
             .execute();
  
         await processDatabase(config);
