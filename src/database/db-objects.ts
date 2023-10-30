@@ -1,9 +1,10 @@
 import { Kysely, PostgresDialect, Updateable, Insertable, sql, Selectable } from 'kysely';
 import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
 import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
-import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate } from './schemas/public/Stocks';
+import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate, StocksCreatedDate } from './schemas/public/Stocks';
 import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems';
 import Database from './schemas/Database';
+import { DateTime } from 'luxon';
 
 import { Collection } from 'discord.js';
 import path from 'path';
@@ -324,11 +325,39 @@ class Stocks extends DataStore<Stock> {
         
         switch (interval) {
             case 'now':
+                const nowMinusTenMinutes: string = DateTime.now().minus({ minutes: 10 }).toISO();
                 
+                stockHistory = await this.db
+                        .selectFrom('stocks')
+                        .selectAll()
+                        .where('stock_id', '=', stock_id as UsersUserId)
+                        .where('created_date', '>=', nowMinusTenMinutes as StocksCreatedDate)
+                        .orderBy('created_date desc')
+                        .limit(30)
+                        .execute();
                 break;
-
             case 'hour':
-                
+                stockHistory = await this.db
+                    .selectFrom('stocks as s1')
+                    .selectAll()
+                    .innerJoin(
+                        eb => eb
+                            .selectFrom('stocks')
+                            .select([
+                                'stock_id',
+                                eb => eb.fn.max('created_date').as('max_created_date'),
+                                    (eb) => {
+                                        const createdDate = eb.ref('created_date');
+                                        const createdHour = sql<string>`extract(hour from ${createdDate})`;
+                                        return createdHour.as('created_hour')
+                                    }
+                            ])
+                            .groupBy('created_hour')
+                            .as('s2'),
+                        join => join.onRef('s1.stock_id', '=', 's2.stock_id').onRef('s1.created_date', '=', 's2.max_created_date')
+                    )
+                    .orderBy('s1.created_date', 'desc')
+                    .execute();
                 break;
 
             case 'day':

@@ -11,18 +11,7 @@ const config: Config = {
     preDeleteOutputFolder: true,
     outputPath: './src/database/schemas',
     customTypeMap: {
-        'pg_catalog.timestamptz': {
-            name: 'DateTime',
-            typeImports: [
-                {
-                    name: 'DateTime',
-                    path: 'luxon',
-                    isAbsolute: true,
-                    isDefault: false,
-                    importAsType: false
-                },
-            ],
-        }
+        'pg_catalog.timestamptz': 'string'
     },
     preRenderHooks: [makeKyselyHook()]
 };
