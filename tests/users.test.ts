@@ -1,6 +1,6 @@
-import { Users, Items } from "../src/database/db-objects";
+import { Users, Items } from "@alias/db-objects";
 
-describe('Users Database BALANCE Operations', () => {
+describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     const testUserId = '123';
 
@@ -12,31 +12,83 @@ describe('Users Database BALANCE Operations', () => {
         await Users.delete(testUserId);
     });
 
+    // ADDING + NON-EXISTING
     test('Add balance to a non-existing user', async () => {
         await Users.addBalance(testUserId, 5);
-        const testUser = await Users.get(testUserId);
+        const balance = await Users.getBalance(testUserId);
         
-        expect(testUser).toBeDefined();
-        expect(testUser?.balance).toBe(5);
+        expect(balance).toBe(5);
     });
 
+    test('Add armor to a non-existing user', async () => {
+        await Users.addArmor(testUserId, 12);
+        const armor = await Users.getArmor(testUserId);
+        
+        expect(armor).toBe(12);
+    });
+
+    test('Add activity points to a non-existing user', async () => {
+        await Users.addActivityPoints(testUserId, 1);
+        const activityPoints = await Users.getActivityPoints(testUserId);
+
+        expect(activityPoints).toBe(1);
+    });
+
+    // SUBTRACTING + EXISTING
     test('Subtract balance from an existing user', async () => {
-        await Users.set(testUserId, {balance: 12});
+        await Users.set(testUserId, { balance: 12 });
         
         await Users.addBalance(testUserId, -4);
-        const testUser = await Users.get(testUserId);
+        const balance = await Users.getBalance(testUserId);
         
-        expect(testUser?.balance).toBe(8);
+        expect(balance).toBe(8);
     });
+
+    test('Subtract armor from an existing user', async () => {
+        await Users.set(testUserId, { armor: 100 });
+
+        await Users.addArmor(testUserId, -30);
+        const armor = await Users.getArmor(testUserId);
+
+        expect(armor).toBe(70);
+    });
+
+    test('Subtract activity points from an existing user', async () => {
+        await Users.set(testUserId, { activity_points: 2 });
+
+        await Users.addActivityPoints(testUserId, -2);
+        const activityPoints = await Users.getActivityPoints(testUserId);
+
+        expect(activityPoints).toBe(0);
+    });
+
+    // SUBTRACTING BELOW ZERO
 
     test('Subtract balance from an existing user below zero', async () => {
         await Users.set(testUserId, { balance: 101 });
 
         await Users.addBalance(testUserId, -200);
-        const testUser = await Users.get(testUserId);
+        const balance = await Users.getBalance(testUserId);
+        
+        expect(balance).toBe(0);
+    });
 
-        expect(testUser).toBeDefined();
-        expect(testUser?.balance).toBe(0);
+    test('Subtract armor from an existing user below zero', async () => {
+        await Users.set(testUserId, { armor: 20 });
+
+        await Users.addArmor(testUserId, -21);
+        const armor = await Users.getArmor(testUserId);
+
+        expect(armor).toBe(0);
+    });
+
+    test('Subtract activity points from an existing user below zero', async () => {
+        await Users.set(testUserId, { activity_points: 1 });
+
+        await Users.addActivityPoints(testUserId, -1000);
+        const activityPoints = await Users.getActivityPoints(testUserId);
+
+        expect(activityPoints).toBe(0);
     });
 });
 
@@ -50,9 +102,10 @@ describe('Users, UserItems Database ITEMS operations', () => {
         await Items.set(testItemTwoId);
         await Users.delete(testUserId);
     });
-
+    
     afterEach(async () => {
-        await Users.delete(testUserId); 
+        await Users.delete(testUserId);
+        setTimeout(()=>{}, 100);
     });
 
     afterAll(async () => {

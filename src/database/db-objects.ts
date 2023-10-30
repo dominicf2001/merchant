@@ -47,7 +47,6 @@ abstract class DataStore<Data> {
 
     async delete(id: string): Promise<void> {
         this.cache.delete(id);
-        console.log(this.tableName);
         await this.db
             .deleteFrom(this.tableName as any)
             .where(this.tableID, '=', id as any)
@@ -103,9 +102,8 @@ abstract class DataStore<Data> {
 }
 
 class Users extends DataStore<User> {
-    // TODO: should make a transaction?
     async addBalance(user_id: string, amount: number): Promise<void> {
-        const user: User | null = await this.get(user_id);
+        const user = await this.get(user_id);
         
         let newBalance = user ? (user.balance + amount) : amount;
         if (newBalance < 0) newBalance = 0;
@@ -116,6 +114,30 @@ class Users extends DataStore<User> {
         });
     }
 
+    async addArmor(user_id: string, amount: number): Promise<void> {
+        const user = await this.get(user_id);
+
+        let newArmor = user ? (user.armor + amount) : amount;
+        if (newArmor < 0) newArmor = 0;
+
+        await this.set(user_id, {
+            user_id: user_id as UsersUserId,
+            armor: newArmor
+        });
+    }
+
+    async addActivityPoints(user_id: string, amount: number): Promise<void> {
+        const user = await this.get(user_id);
+
+        let newActivityPoints = user ? (user.activity_points + amount) : amount;
+        if (newActivityPoints < 0) newActivityPoints = 0;
+
+        await this.set(user_id, {
+            user_id: user_id as UsersUserId,
+            activity_points: newActivityPoints
+        });
+    }
+    
     async addItem(user_id: string, item_id: string, amount: number): Promise<void> {
         const userItem = await this.db
             .selectFrom('user_items')
@@ -157,6 +179,39 @@ class Users extends DataStore<User> {
                 .where('item_id', '=', item_id as any)
                 .execute();
         }
+    }
+
+    async setBalance(user_id: string, amount: number): Promise<void> {
+        if (amount < 0) amount = 0;
+
+        await this.set(user_id, {
+            user_id: user_id as UsersUserId,
+            balance: amount
+        });
+    }
+
+    async setActivityPoints(user_id: string, amount: number): Promise<void> {
+        if (amount < 0) amount = 0;
+
+        await this.set(user_id, {
+            user_id: user_id as UsersUserId,
+            activity_points: amount
+        });
+    }
+
+    async getBalance(user_id: string): Promise<number> {
+        const user = await this.get(user_id);
+        return user.balance;
+    }
+
+    async getArmor(user_id: string): Promise<number> {
+        const user = await this.get(user_id);
+        return user.armor;
+    }
+
+    async getActivityPoints(user_id: string): Promise<number> {
+        const user = await this.get(user_id);
+        return user.activity_points;
     }
 
     async getItem(user_id: string, item_id: string): Promise<UserItem | undefined> {
