@@ -254,14 +254,37 @@ class Items extends DataStore<Item> {
         // }
     }
 
-    constructor(db: Kysely<Database> | null) {
+    constructor(db: Kysely<Database>) {
         super(db, 'items', 'item_id');
     }
 }
 
-// class Stocks extends DataStore<Stock> {
-
-// }
+class Stocks extends DataStore<Stock> {
+    async getLatestStocks(): Promise<Stock[]> {
+        try {
+            const latestStocks: Stock[] = await this.db
+                .selectFrom('stocks as s1')
+                .selectAll()
+                .innerJoin(
+                    eb => eb
+                        .selectFrom('stocks')
+                        .select(['stock_id', eb => eb.fn.max('created_date').as('max_created_date')])
+                        .groupBy('stock_id')
+                        .as('s2'),
+                    join => join.onRef('s1.stock_id', '=', 's2.stock_id').onRef('s1.created_date', '=', 's2.max_created_date')
+                )
+                .orderBy('s1.created_date', 'desc')
+                .execute();
+            return latestStocks;
+        } catch (error) {
+            console.error("Error getting latest stocks: ", error);
+        }
+    }
+    
+    constructor(db: Kysely<Database>) {
+        super(db, 'stocks', 'user_id');
+    }
+}
 
 // class Commands extends DataStore<Command> {
 //     async refreshCache(): Promise<void> {
