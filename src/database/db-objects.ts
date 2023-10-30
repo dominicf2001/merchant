@@ -26,7 +26,7 @@ const db = new Kysely<Database>({
 });
 
 type TableName = keyof Database;
-type TableID = 'user_id' | 'item_id';
+type TableID = 'user_id' | 'item_id' | 'stock_id';
 
 abstract class DataStore<Data> {
     protected cache: Collection<string, Data>;
@@ -69,7 +69,7 @@ abstract class DataStore<Data> {
     async get(id: string): Promise<Data | undefined> {
         if (this.cache.has(id)) {
             // cache hit
-            return this.cache.get(id);
+            return this.getFromCache(id);
         } else {
             // cache miss
             return await this.getFromDB(id);            
@@ -77,27 +77,33 @@ abstract class DataStore<Data> {
     }
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
-        let result: Data = await this.db
-            .selectFrom(this.tableName)
-            .selectAll()
-            .where(this.tableID, '=', id as any)
-            .executeTakeFirst() as Data;
-        
-        if (result) {
-            await this.db
-                .updateTable(this.tableName)
-                .set({ [this.tableID]: id, ...data })
-                .where(this.tableID, '=', id as any)
-                .execute();
-        } else {
-            result = await this.db
-                .insertInto(this.tableName)
-                .values({ [this.tableID]: id, ...data })
-                .returningAll()
-                .executeTakeFirst() as Data;
-        }
+        const oldData = this.cache.get(id);
+        this.cache.set(id, { ...oldData, ...data });
 
-        this.cache.set(id, { ...result, ...data });
+        try {
+            let result: Data = await this.db
+                .selectFrom(this.tableName)
+                .selectAll()
+                .where(this.tableID, '=', id as any)
+                .executeTakeFirst() as Data;
+
+            if (result) {
+                await this.db
+                    .updateTable(this.tableName)
+                    .set({ [this.tableID]: id, ...data })
+                    .where(this.tableID, '=', id as any)
+                    .execute();
+            } else {
+                await this.db
+                    .insertInto(this.tableName)
+                    .values({ [this.tableID]: id, ...data })
+                    .execute();
+            }   
+        } catch (error) {
+            console.error(error);
+            this.cache.set(id, oldData);
+            throw(error);
+        }
     }
 
     constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
@@ -264,6 +270,7 @@ class Items extends DataStore<Item> {
 type StockInterval = 'now' | 'hour' | 'day' | 'month';
 
 class Stocks extends DataStore<Stock> {
+    // Cache only the LATEST stocks
     async refreshCache(): Promise<void> {
         const latestStocks = await this.getLatestStocks();
 
@@ -272,27 +279,49 @@ class Stocks extends DataStore<Stock> {
         });
     }
 
-    async setStockPrice(stock_id: string, amount: number): Promise<void> {
-        if (amount < 0) amount = 0;
-        
-        await this.set(stock_id, { price: amount });
-    }
-
     async get(id: string): Promise<Stock | undefined> {
         if (this.cache.has(id)) {
             // cache hit
-            return this.cache.get(id);
+            return this.getFromCache(id);
+        } else {
+            // cache miss
+            return await this.getFromDB(id);
         }
+    }
 
-        // cache miss
-        const result: Stock = await this.db
-            .selectFrom(this.tableName)
+    async getFromDB(id: string): Promise<Stock | undefined> {
+        return await this.db
+            .selectFrom('stocks')
             .selectAll()
-            .where(this.tableID, '=', id as any)
+            .where('stock_id', '=', id as UsersUserId)
             .orderBy('created_date desc')
             .executeTakeFirst() as Stock;
+    }
 
-        return result;
+    async set(id: string, data: Insertable<Stock> | Updateable<Stock> = {}): Promise<void> {
+        const oldData = this.cache.get(id);
+        data.created_date = DateTime.now().toISO() as StocksCreatedDate;
+        this.cache.set(id, { ...oldData, ...data});
+
+        try {
+            await this.db
+                .insertInto('stocks')
+                .values({
+                    stock_id: id as UsersUserId,
+                    ...data
+                })
+                .execute();
+        } catch(error){
+            console.error(error);
+            this.cache.set(id, oldData);
+            throw(error);
+        }
+    }
+
+    async updateStockPrice(stock_id: string, amount: number): Promise<void> {
+        if (amount < 0) amount = 0;
+
+        this.set(stock_id, { price: amount });
     }
     
     async getLatestStocks(): Promise<Stock[]> {
@@ -320,63 +349,53 @@ class Stocks extends DataStore<Stock> {
         return await this.get(stock_id);
     }
 
-    async getStockHistory(stock_id: string, interval: StockInterval): Promise<Stock[]> {
-        let stockHistory: Stock[];
-        
+    async getStockHistory(stock_id: string, interval: StockInterval = 'now'): Promise<Stock[]> {
+        let intervalOffset: Object;
         switch (interval) {
             case 'now':
-                const nowMinusTenMinutes: string = DateTime.now().minus({ minutes: 10 }).toISO();
-                
-                stockHistory = await this.db
-                        .selectFrom('stocks')
-                        .selectAll()
-                        .where('stock_id', '=', stock_id as UsersUserId)
-                        .where('created_date', '>=', nowMinusTenMinutes as StocksCreatedDate)
-                        .orderBy('created_date desc')
-                        .limit(30)
-                        .execute();
+                intervalOffset = { minutes: 10 }
                 break;
             case 'hour':
-                stockHistory = await this.db
-                    .selectFrom('stocks as s1')
-                    .selectAll()
-                    .innerJoin(
-                        eb => eb
-                            .selectFrom('stocks')
-                            .select([
-                                'stock_id',
-                                eb => eb.fn.max('created_date').as('max_created_date'),
-                                    (eb) => {
-                                        const createdDate = eb.ref('created_date');
-                                        const createdHour = sql<string>`extract(hour from ${createdDate})`;
-                                        return createdHour.as('created_hour')
-                                    }
-                            ])
-                            .groupBy('created_hour')
-                            .as('s2'),
-                        join => join.onRef('s1.stock_id', '=', 's2.stock_id').onRef('s1.created_date', '=', 's2.max_created_date')
-                    )
-                    .orderBy('s1.created_date', 'desc')
-                    .execute();
-                break;
-
+                intervalOffset = { hours: 24 }
             case 'day':
-
+                intervalOffset = { days: 30 }
                 break;
-
             case 'month':
-
-                break;
-
-            default:
-                
+                intervalOffset = { months: 6 }
+                break;                
         }
+        
+        const oldestStockDate: string = DateTime.now().minus(intervalOffset).toISO();
+
+        const stockHistory: Stock[] = await this.db
+            .selectFrom('stocks as s1')
+            .selectAll()
+            .where('stock_id', '=', stock_id as UsersUserId)
+            .where('created_date', '>=', oldestStockDate as StocksCreatedDate)
+            .innerJoin(
+                eb => eb
+                    .selectFrom('stocks')
+                    .select([
+                        'stock_id',
+                        eb => eb.fn.max('created_date').as('max_created_date'),
+                        eb => {
+                            const createdDate = eb.ref('created_date');
+                            const createdInterval = sql<string>`extract(${interval === 'now' ? 'minute' : interval} from ${createdDate})`;
+                            return createdInterval.as('created_interval')
+                        }
+                    ])
+                    .groupBy('created_interval')
+                    .as('s2'),
+                join => join.onRef('s1.stock_id', '=', 's2.stock_id').onRef('s1.created_date', '=', 's2.max_created_date')
+            )
+            .orderBy('s1.created_date', 'desc')
+            .execute();
 
         return stockHistory;
     }
     
     constructor(db: Kysely<Database>) {
-        super(db, 'stocks', 'user_id');
+        super(db, 'stocks', 'stock_id');
     }
 }
 
@@ -406,4 +425,3 @@ const items = new Items(db);
 const stocks = new Stocks(db);
 
 export { users as Users, items as Items, stocks as Stocks};
-

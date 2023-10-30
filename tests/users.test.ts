@@ -1,6 +1,6 @@
 import { Users, Items } from "@alias/db-objects";
 
-describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
+describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     const testUserId = '123';
 
@@ -138,7 +138,7 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     });
 });
 
-describe('Users, UserItems Database ITEMS operations', () => {
+describe('ITEMS operations', () => {
     const testUserId = '123';
     const testItemOneId = 'test item one';
     const testItemTwoId = 'test item two';
