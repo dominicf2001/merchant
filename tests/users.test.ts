@@ -15,9 +15,15 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     // ADDING + NON-EXISTING
     test('Add balance to a non-existing user', async () => {
         await Users.addBalance(testUserId, 5);
+        
         const balance = await Users.getBalance(testUserId);
         
         expect(balance).toBe(5);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.balance).toBe(5);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.balance).toBe(5);
     });
 
     test('Add armor to a non-existing user', async () => {
@@ -25,6 +31,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const armor = await Users.getArmor(testUserId);
         
         expect(armor).toBe(12);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.armor).toBe(12);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.armor).toBe(12);
     });
 
     test('Add activity points to a non-existing user', async () => {
@@ -32,6 +43,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const activityPoints = await Users.getActivityPoints(testUserId);
 
         expect(activityPoints).toBe(1);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.activity_points).toBe(1);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.activity_points).toBe(1);
     });
 
     // SUBTRACTING + EXISTING
@@ -42,6 +58,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const balance = await Users.getBalance(testUserId);
         
         expect(balance).toBe(8);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.balance).toBe(8);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.balance).toBe(8);
     });
 
     test('Subtract armor from an existing user', async () => {
@@ -51,6 +72,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const armor = await Users.getArmor(testUserId);
 
         expect(armor).toBe(70);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.armor).toBe(70);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.armor).toBe(70);
     });
 
     test('Subtract activity points from an existing user', async () => {
@@ -60,6 +86,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const activityPoints = await Users.getActivityPoints(testUserId);
 
         expect(activityPoints).toBe(0);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.activity_points).toBe(0);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.activity_points).toBe(0);
     });
 
     // SUBTRACTING BELOW ZERO
@@ -71,6 +102,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const balance = await Users.getBalance(testUserId);
         
         expect(balance).toBe(0);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.balance).toBe(0);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.balance).toBe(0);
     });
 
     test('Subtract armor from an existing user below zero', async () => {
@@ -80,6 +116,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const armor = await Users.getArmor(testUserId);
 
         expect(armor).toBe(0);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.armor).toBe(0);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.armor).toBe(0);
     });
 
     test('Subtract activity points from an existing user below zero', async () => {
@@ -89,6 +130,11 @@ describe('Users Database BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         const activityPoints = await Users.getActivityPoints(testUserId);
 
         expect(activityPoints).toBe(0);
+
+        let user = Users.getFromCache(testUserId);
+        expect(user?.activity_points).toBe(0);
+        user = await Users.getFromDB(testUserId);
+        expect(user?.activity_points).toBe(0);
     });
 });
 

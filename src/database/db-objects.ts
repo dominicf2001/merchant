@@ -41,10 +41,6 @@ abstract class DataStore<Data> {
         });
     }
 
-    async destroyDB() {
-        db.destroy();
-    }
-
     async delete(id: string): Promise<void> {
         this.cache.delete(id);
         await this.db
@@ -53,20 +49,30 @@ abstract class DataStore<Data> {
             .execute();
     }
 
-    async get(id: string): Promise<Data | undefined> {
-        if (this.cache.has(id)) {
-            // cache hit
-            return this.cache.get(id);
-        }
+    getFromCache(id: string) : Data | undefined {
+        return this.cache.get(id);        
+    }
 
-        // cache miss
-        const result: Data = await this.db
+    async getFromDB(id: string): Promise<Data | undefined> {
+        return await this.db
             .selectFrom(this.tableName)
             .selectAll()
             .where(this.tableID, '=', id as any)
             .executeTakeFirst() as Data;
-        
-        return result;
+    }
+
+    async destroyDB(): Promise<void> {
+        this.db.destroy();
+    }
+
+    async get(id: string): Promise<Data | undefined> {
+        if (this.cache.has(id)) {
+            // cache hit
+            return this.cache.get(id);
+        } else {
+            // cache miss
+            return await this.getFromDB(id);            
+        }
     }
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
@@ -109,7 +115,6 @@ class Users extends DataStore<User> {
         if (newBalance < 0) newBalance = 0;
 
         await this.set(user_id, {
-            user_id: user_id as UsersUserId,
             balance: newBalance
         });
     }
@@ -121,7 +126,6 @@ class Users extends DataStore<User> {
         if (newArmor < 0) newArmor = 0;
 
         await this.set(user_id, {
-            user_id: user_id as UsersUserId,
             armor: newArmor
         });
     }
@@ -133,7 +137,6 @@ class Users extends DataStore<User> {
         if (newActivityPoints < 0) newActivityPoints = 0;
 
         await this.set(user_id, {
-            user_id: user_id as UsersUserId,
             activity_points: newActivityPoints
         });
     }
@@ -185,7 +188,6 @@ class Users extends DataStore<User> {
         if (amount < 0) amount = 0;
 
         await this.set(user_id, {
-            user_id: user_id as UsersUserId,
             balance: amount
         });
     }
@@ -194,7 +196,6 @@ class Users extends DataStore<User> {
         if (amount < 0) amount = 0;
 
         await this.set(user_id, {
-            user_id: user_id as UsersUserId,
             activity_points: amount
         });
     }
@@ -259,6 +260,8 @@ class Items extends DataStore<Item> {
     }
 }
 
+type StockInterval = 'now' | 'hour' | 'day' | 'month';
+
 class Stocks extends DataStore<Stock> {
     async refreshCache(): Promise<void> {
         const latestStocks = await this.getLatestStocks();
@@ -266,6 +269,12 @@ class Stocks extends DataStore<Stock> {
         latestStocks.forEach(latestStock => {
             this.cache.set(latestStock[this.tableID], latestStock);
         });
+    }
+
+    async setStockPrice(stock_id: string, amount: number): Promise<void> {
+        if (amount < 0) amount = 0;
+        
+        await this.set(stock_id, { price: amount });
     }
 
     async get(id: string): Promise<Stock | undefined> {
@@ -308,6 +317,33 @@ class Stocks extends DataStore<Stock> {
 
     async getLatestStock(stock_id: string): Promise<Stock> {
         return await this.get(stock_id);
+    }
+
+    async getStockHistory(stock_id: string, interval: StockInterval): Promise<Stock[]> {
+        let stockHistory: Stock[];
+        
+        switch (interval) {
+            case 'now':
+                
+                break;
+
+            case 'hour':
+                
+                break;
+
+            case 'day':
+
+                break;
+
+            case 'month':
+
+                break;
+
+            default:
+                
+        }
+
+        return stockHistory;
     }
     
     constructor(db: Kysely<Database>) {
