@@ -260,6 +260,31 @@ class Items extends DataStore<Item> {
 }
 
 class Stocks extends DataStore<Stock> {
+    async refreshCache(): Promise<void> {
+        const latestStocks = await this.getLatestStocks();
+
+        latestStocks.forEach(latestStock => {
+            this.cache.set(latestStock[this.tableID], latestStock);
+        });
+    }
+
+    async get(id: string): Promise<Stock | undefined> {
+        if (this.cache.has(id)) {
+            // cache hit
+            return this.cache.get(id);
+        }
+
+        // cache miss
+        const result: Stock = await this.db
+            .selectFrom(this.tableName)
+            .selectAll()
+            .where(this.tableID, '=', id as any)
+            .orderBy('created_date desc')
+            .executeTakeFirst() as Stock;
+
+        return result;
+    }
+    
     async getLatestStocks(): Promise<Stock[]> {
         try {
             const latestStocks: Stock[] = await this.db
@@ -279,6 +304,10 @@ class Stocks extends DataStore<Stock> {
         } catch (error) {
             console.error("Error getting latest stocks: ", error);
         }
+    }
+
+    async getLatestStock(stock_id: string): Promise<Stock> {
+        return await this.get(stock_id);
     }
     
     constructor(db: Kysely<Database>) {
@@ -309,6 +338,7 @@ class Stocks extends DataStore<Stock> {
 
 const users = new Users(db);
 const items = new Items(db);
+const stocks = new Stocks(db);
 
-export { users as Users, items as Items};
+export { users as Users, items as Items, stocks as Stocks};
 
