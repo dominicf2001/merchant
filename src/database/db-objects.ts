@@ -77,11 +77,14 @@ abstract class DataStore<Data> {
     }
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
-        const oldData = this.cache.get(id);
-        this.cache.set(id, { ...oldData, ...data });
+        const oldData: Data = this.cache.get(id);
+        
+        const mergedData: Data = { ...(oldData || {[this.tableID]: id as any}), ...data } as Data;
+        
+        this.cache.set(id, mergedData);
 
         try {
-            let result: Data = await this.db
+            const result: Data = await this.db
                 .selectFrom(this.tableName)
                 .selectAll()
                 .where(this.tableID, '=', id as any)
@@ -90,21 +93,23 @@ abstract class DataStore<Data> {
             if (result) {
                 await this.db
                     .updateTable(this.tableName)
-                    .set({ [this.tableID]: id, ...data })
+                    .set(mergedData)
                     .where(this.tableID, '=', id as any)
                     .execute();
             } else {
                 await this.db
                     .insertInto(this.tableName)
-                    .values({ [this.tableID]: id, ...data })
+                    .values(mergedData)
                     .execute();
-            }   
+            }
         } catch (error) {
+            // Revert the cache to its old state if the database operation fails
+            oldData ? this.cache.set(id, oldData) : this.cache.delete(id);
             console.error(error);
-            this.cache.set(id, oldData);
-            throw(error);
+            throw error;
         }
     }
+
 
     constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
         this.cache = new Collection<TableID, Data>();
@@ -157,7 +162,7 @@ class Users extends DataStore<User> {
             .executeTakeFirst();
 
         if (!userItem && amount > 0) {
-            this.set(user_id);
+            await this.set(user_id);
             
             await this.db
                 .insertInto('user_items')
@@ -299,24 +304,26 @@ class Stocks extends DataStore<Stock> {
     }
 
     async set(id: string, data: Insertable<Stock> | Updateable<Stock> = {}): Promise<void> {
-        const oldData = this.cache.get(id);
-        data.created_date = DateTime.now().toISO() as StocksCreatedDate;
-        this.cache.set(id, { ...oldData, ...data});
+        const oldData: Stock | undefined = this.cache.get(id);
+        const currentDate = DateTime.now().toISO() as StocksCreatedDate;
+        
+        const mergedData: Stock = { ...(oldData || { 'stock_id': id as UsersUserId }), ...data, created_date: currentDate } as Stock;
+        
+        this.cache.set(id, mergedData);
 
         try {
             await this.db
                 .insertInto('stocks')
-                .values({
-                    stock_id: id as UsersUserId,
-                    ...data
-                })
+                .values(mergedData)
                 .execute();
-        } catch(error){
+        } catch (error) {
+            // Revert the cache to its old state if the database operation fails
+            oldData ? this.cache.set(id, oldData) : this.cache.delete(id);
             console.error(error);
-            this.cache.set(id, oldData);
-            throw(error);
+            throw error;
         }
     }
+
 
     async updateStockPrice(stock_id: string, amount: number): Promise<void> {
         if (amount < 0) amount = 0;

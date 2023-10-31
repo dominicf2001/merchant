@@ -1,20 +1,29 @@
 import { Users, Items } from "@alias/db-objects";
 
+async function sleep(duration: number): Promise<void> {
+    await new Promise(r => setTimeout(r, duration));
+}
+
+const sleepDuration: number = 25;
+
 describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     const testUserId = '123';
 
     beforeAll(async () => {
         await Users.delete(testUserId);
+        await sleep(sleepDuration);
     });
     
     afterEach(async () => {
         await Users.delete(testUserId);
+        await sleep(sleepDuration);
     });
 
     // ADDING + NON-EXISTING
     test('Add balance to a non-existing user', async () => {
         await Users.addBalance(testUserId, 5);
+        await sleep(sleepDuration);
         
         const balance = await Users.getBalance(testUserId);
         
@@ -28,6 +37,7 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Add armor to a non-existing user', async () => {
         await Users.addArmor(testUserId, 12);
+        await sleep(sleepDuration);
         const armor = await Users.getArmor(testUserId);
         
         expect(armor).toBe(12);
@@ -40,6 +50,7 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Add activity points to a non-existing user', async () => {
         await Users.addActivityPoints(testUserId, 1);
+        await sleep(sleepDuration);
         const activityPoints = await Users.getActivityPoints(testUserId);
 
         expect(activityPoints).toBe(1);
@@ -53,8 +64,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     // SUBTRACTING + EXISTING
     test('Subtract balance from an existing user', async () => {
         await Users.set(testUserId, { balance: 12 });
+        await sleep(sleepDuration);
         
         await Users.addBalance(testUserId, -4);
+        await sleep(sleepDuration);
         const balance = await Users.getBalance(testUserId);
         
         expect(balance).toBe(8);
@@ -67,8 +80,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Subtract armor from an existing user', async () => {
         await Users.set(testUserId, { armor: 100 });
+        await sleep(sleepDuration);
 
         await Users.addArmor(testUserId, -30);
+        await sleep(sleepDuration);
         const armor = await Users.getArmor(testUserId);
 
         expect(armor).toBe(70);
@@ -81,8 +96,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Subtract activity points from an existing user', async () => {
         await Users.set(testUserId, { activity_points: 2 });
+        await sleep(sleepDuration);
 
         await Users.addActivityPoints(testUserId, -2);
+        await sleep(sleepDuration);
         const activityPoints = await Users.getActivityPoints(testUserId);
 
         expect(activityPoints).toBe(0);
@@ -97,8 +114,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Subtract balance from an existing user below zero', async () => {
         await Users.set(testUserId, { balance: 101 });
+        await sleep(sleepDuration);
 
         await Users.addBalance(testUserId, -200);
+        await sleep(sleepDuration);
         const balance = await Users.getBalance(testUserId);
         
         expect(balance).toBe(0);
@@ -111,8 +130,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Subtract armor from an existing user below zero', async () => {
         await Users.set(testUserId, { armor: 20 });
+        await sleep(sleepDuration);
 
         await Users.addArmor(testUserId, -21);
+        await sleep(sleepDuration);
         const armor = await Users.getArmor(testUserId);
 
         expect(armor).toBe(0);
@@ -125,8 +146,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
     test('Subtract activity points from an existing user below zero', async () => {
         await Users.set(testUserId, { activity_points: 1 });
+        await sleep(sleepDuration);
 
         await Users.addActivityPoints(testUserId, -1000);
+        await sleep(sleepDuration);
         const activityPoints = await Users.getActivityPoints(testUserId);
 
         expect(activityPoints).toBe(0);
@@ -147,20 +170,23 @@ describe('ITEMS operations', () => {
         await Items.set(testItemOneId);
         await Items.set(testItemTwoId);
         await Users.delete(testUserId);
+        await sleep(sleepDuration);
     });
     
     afterEach(async () => {
         await Users.delete(testUserId);
-        setTimeout(()=>{}, 100);
+        await sleep(sleepDuration);
     });
 
     afterAll(async () => {
         await Items.delete(testItemOneId);
         await Items.delete(testItemTwoId);
+        await sleep(sleepDuration);
     });
 
     test('Add item to a non-existing user', async () => {
         await Users.addItem(testUserId, testItemOneId, 1);
+        await sleep(sleepDuration);
         const testItemOne = await Users.getItem(testUserId, testItemOneId);
         const testItems = await Users.getItems(testUserId);
         
@@ -170,11 +196,15 @@ describe('ITEMS operations', () => {
 
     test('Add multiple items to an existing user', async () => {
         await Users.set(testUserId);
+        await sleep(sleepDuration);
         
         await Users.addItem(testUserId, testItemOneId, 1);
+        await sleep(sleepDuration);
         
         await Users.addItem(testUserId, testItemTwoId, 1);
+        await sleep(sleepDuration);
         await Users.addItem(testUserId, testItemTwoId, 1);
+        await sleep(sleepDuration);
         
         const testItemOne = await Users.getItem(testUserId, testItemOneId);
         const testItemTwo = await Users.getItem(testUserId, testItemTwoId);
@@ -192,13 +222,18 @@ describe('ITEMS operations', () => {
 
     test('Delete item from a existing user with items, below zero and non-below zero', async () => {
         await Users.set(testUserId);
+        await sleep(sleepDuration);
         
         await Users.addItem(testUserId, testItemOneId, 5);
+        await sleep(sleepDuration);
 
         await Users.addItem(testUserId, testItemTwoId, 10);
+        await sleep(sleepDuration);
 
         await Users.addItem(testUserId, testItemOneId, -5);
+        await sleep(sleepDuration);
         await Users.addItem(testUserId, testItemTwoId, -9);
+        await sleep(sleepDuration);
 
         const testItemOne = await Users.getItem(testUserId, testItemOneId);
         const testItemTwo = await Users.getItem(testUserId, testItemTwoId);
@@ -209,8 +244,4 @@ describe('ITEMS operations', () => {
         expect(testItems).not.toContainEqual(testItemOne);
         expect(testItems).toContainEqual(testItemTwo);
     });
-});
-
-afterAll(() => {
-    Users.destroyDB();
 });
