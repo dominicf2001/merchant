@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1698718721074" clover="3.2.0">
-  <project timestamp="1698718721074" name="All files">
-    <metrics statements="434" coveredstatements="323" conditionals="52" coveredconditionals="48" methods="32" coveredmethods="25" elements="518" coveredelements="396" complexity="0" loc="434" ncloc="434" packages="1" files="1" classes="1"/>
+<coverage generated="1698806608225" clover="3.2.0">
+  <project timestamp="1698806608225" name="All files">
+    <metrics statements="434" coveredstatements="321" conditionals="51" coveredconditionals="47" methods="32" coveredmethods="24" elements="517" coveredelements="392" complexity="0" loc="434" ncloc="434" packages="1" files="1" classes="1"/>
     <file name="db-objects.ts" path="/home/dominic/Development/merchant/src/database/db-objects.ts">
-      <metrics statements="434" coveredstatements="323" conditionals="52" coveredconditionals="48" methods="32" coveredmethods="25"/>
+      <metrics statements="434" coveredstatements="321" conditionals="51" coveredconditionals="47" methods="32" coveredmethods="24"/>
       <line num="1" count="1" type="stmt"/>
       <line num="2" count="1" type="stmt"/>
       <line num="3" count="1" type="stmt"/>
@@ -68,9 +68,9 @@
       <line num="62" count="12" type="stmt"/>
       <line num="63" count="12" type="stmt"/>
       <line num="64" count="6" type="stmt"/>
-      <line num="65" count="6" type="cond" truecount="1" falsecount="0"/>
-      <line num="66" count="1" type="stmt"/>
-      <line num="67" count="1" type="stmt"/>
+      <line num="65" count="6" type="stmt"/>
+      <line num="66" count="0" type="stmt"/>
+      <line num="67" count="0" type="stmt"/>
       <line num="68" count="6" type="stmt"/>
       <line num="69" count="6" type="cond" truecount="1" falsecount="0"/>
       <line num="70" count="18" type="cond" truecount="1" falsecount="0"/>

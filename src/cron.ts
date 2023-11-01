@@ -118,6 +118,7 @@ async function calculateAndUpdateStocks(){
     }
 }
 
+// TODO: move to a function on Stocks
 async function stockCleanUp() {
     const distinctDatesAndUsers = await Stocks.findAll({
         attributes: [

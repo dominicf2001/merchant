@@ -4,7 +4,7 @@ async function sleep(duration: number): Promise<void> {
     await new Promise(r => setTimeout(r, duration));
 }
 
-const sleepDuration: number = 25;
+const sleepDuration: number = 50;
 
 describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 

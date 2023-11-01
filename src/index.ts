@@ -1,23 +1,16 @@
 
-import sequelize from 'sequelize';
 import cron from 'node-cron';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import token from '../config.json';
-import { Users, UserCooldowns } from "./database/dbObjects";
-import { usersCache, addActivity } from "./database/utilIties/userUtilities";
-import moment from 'moment';
-import { getAllLatestStocks, latestStocksCache } from "./database/utilities/stockUtilities";
+import { Users, Stocks, Items } from "./database/db-objects";
 import { secondsToHms, getRandomFloat } from "./utilities";
 import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
-
-const dataStore: DataStore = new DataStore();
 
 const client: Client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMember,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildModeration,
@@ -31,8 +24,12 @@ export { client };
 // EVENTS
 
 client.once(Events.ClientReady, async () => {
-    
-    dataStore.refreshCaches();
+
+    await Promise.all([
+        Users.refreshCache().catch(err => console.error("Error refreshing Users cache:", err)),
+        Stocks.refreshCache().catch(err => console.error("Error refreshing Stocks cache:", err)),
+        Items.refreshCache().catch(err => console.error("Error refreshing Items cache:", err))
+    ]);
     
     console.log('Ready as ' + client.user.tag);
 });
@@ -41,7 +38,7 @@ client.on(Events.InviteCreate, (invite) => {
     if (invite.inviter.bot) return;
     const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
     if (currentHour >= 7 && currentHour < 22) {
-        addActivity(invite.inviterId, 2);
+        Users.addActivityPoints(invite.inviterId, 2);
     }
 });
 
@@ -49,7 +46,7 @@ client.on(Events.MessageReactionAdd, (_, user) => {
     if (user.bot) return;
     const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
     if (currentHour >= 7 && currentHour < 22) {
-        addActivity(user.id, .3);
+        Users.addActivityPoints(user.id, .3);
     }
 });
 
@@ -57,7 +54,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
         if (currentHour >= 7 && currentHour < 22) {
-            addActivity(newState.member.user.id, 1);
+            Users.addActivityPoints(newState.member.user.id, 1);
         }
     }
 });
@@ -66,34 +63,16 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
 // COMMAND HANDLING
 client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
-
-    const usersCache = dataStore.caches["users"];
     
-    if (!usersCache.has(message.author.id)) {
-        const newUser = await Users.create({
-            user_id: message.author.id
-        });
-
-        users.set(message.author.id, newUser);
+    const userExists: boolean = !!Users.get(message.author.id);
+    if (!userExists) {
+        Users.set(message.author.id);
     }
 
     const prefix: string = '$';
-
-    if (!message.content.startsWith(prefix)) {
-        // -- HANDLE USER ACTIVITY UPDATING
-
-        const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
-        if (currentHour >= 7 && currentHour < 22) {
-            const mentionedUsers = message.mentions.users;
-            mentionedUsers.forEach(user => {
-                if (user.id != message.author.id && !user.bot) {
-                    addActivity(user.id, .5);
-                }
-            });
-            addActivity(message.author.id, getRandomFloat(.3, .75));
-        }
-        // ---
-    } else {
+    const isCommand: boolean = message.content.startsWith(prefix);
+    
+    if (isCommand) {
         const args: string[] = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName: string = args.shift().toLowerCase();
 
@@ -101,6 +80,7 @@ client.on(Events.MessageCreate, async message => {
 
         if (!command) return;
 
+        // TODO: move into a cooldown check function on Users
         // --- HANDLE COOLDOWN
         const now: number = Date.now();
         const defaultCooldownDuration: number = 0;
@@ -119,7 +99,7 @@ client.on(Events.MessageCreate, async message => {
 
             if (now < expirationTime) {
                 const expiredTimestampReadable: string = secondsToHms(Math.round((expirationTime - now) / 1000));
-                return message.reply({ content:`Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
+                return message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`, ephemeral: true });
             } else {
                 await userCooldown.destroy();
             }
@@ -136,6 +116,20 @@ client.on(Events.MessageCreate, async message => {
         } catch (error) {
             console.error(error);
             await message.reply(error.message);
+        }
+    } else {
+        // -- HANDLE USER ACTIVITY UPDATING
+
+        // TODO: convert to luxon
+        const currentHour: number = Number(moment().utcOffset('-05:00').format('H'));
+        if (currentHour >= 7 && currentHour < 22) {
+            const mentionedUsers = message.mentions.users;
+            mentionedUsers.forEach(user => {
+                if (user.id != message.author.id && !user.bot) {
+                    Users.addActivity(user.id, .5);
+                }
+            });
+            Users.addActivity(message.author.id, getRandomFloat(.3, .75));
         }
     }
 });
