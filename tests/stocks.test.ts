@@ -1,4 +1,4 @@
-import { Stocks, Users } from "@alias/db-objects";
+import { Stocks, Users, db } from "@alias/db-objects";
 import { StocksCreatedDate } from "@alias/schemas/public/Stocks";
 import { faker } from '@faker-js/faker';
 import { DateTime } from "luxon";
@@ -91,53 +91,112 @@ describe('UPDATING Operations', () => {
 
 describe('Stock History Operations', () => {
     const testStockId = '123';
-    const testUserId = testStockId;
+    const testStockIdTwo = '4321';
+    const testStockIdThree = '222222';
 
     beforeAll(async () => {
-        await Users.delete(testUserId);
+        await Users.delete(testStockId);
+        await Users.delete(testStockIdTwo);
+        await Users.delete(testStockIdThree);
         await sleep(sleepDuration);
         
-        await Users.set(testUserId);
+        await Users.set(testStockId);
+        await Users.set(testStockIdTwo);
+        await Users.set(testStockIdThree);
         await sleep(sleepDuration);
         
         await Stocks.delete(testStockId);
+        await Stocks.delete(testStockIdTwo);
+        await Stocks.delete(testStockIdThree);
         await sleep(sleepDuration);
     });
     
     afterEach(async () => {
         await Stocks.delete(testStockId);
+        await Stocks.delete(testStockIdTwo);
+        await Stocks.delete(testStockIdThree);
         await sleep(sleepDuration);
     });
 
     afterAll(async () => {
-        await Users.delete(testUserId);
+        await Users.delete(testStockId);
+        await Users.delete(testStockIdTwo);
+        await Users.delete(testStockIdThree);
         await sleep(sleepDuration);
     }); 
     
     test('Get stock history for "now" interval', async () => {
         const baselineDate = DateTime.now();
-        
-        for (let i = 0; i < 10; i++) {
-            const fakeDate = baselineDate.minus({ minutes: i }).toISO();
-            await Stocks.set(testStockId, { price: faker.number.int(100), created_date: fakeDate as StocksCreatedDate });
-            await sleep(50);
-        }
+
+        const stockDataOne = Array.from({ length: 10 }, (_, i) => ({
+            stock_id: testStockId,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataTwo = Array.from({ length: 4 }, (_, i) => ({
+            stock_id: testStockIdTwo,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataThree = Array.from({ length: 15 }, (_, i) => ({
+            stock_id: testStockIdThree,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        await db.transaction().execute(async trx => {
+            await Promise.all([
+                trx.insertInto('stocks').values(stockDataOne).execute(),
+                trx.insertInto('stocks').values(stockDataTwo).execute(),
+                trx.insertInto('stocks').values(stockDataThree).execute(),
+            ]);
+        });
 
         const stockHistory = await Stocks.getStockHistory(testStockId, 'now');
+        const stockHistoryTwo = await Stocks.getStockHistory(testStockIdTwo, 'now');
+        const stockHistoryThree = await Stocks.getStockHistory(testStockIdThree, 'now');
         expect(stockHistory?.length).toBe(10);
+        expect(stockHistoryTwo?.length).toBe(4);
+        expect(stockHistoryThree?.length).toBe(10);
     });
-    
-    // test('Get stock history for "hour" interval', async () => {
-    //     for (let i = 0; i < 3; i++) {
-    //         await Stocks.set(testStockId, { price: faker.number.int(100) });
-    //         await sleep(1000);
-    //     }
 
-    //     const stockHistory = await Stocks.getStockHistory(testStockId, 'hour');
-    //     expect(stockHistory.length).toBeGreaterThanOrEqual(3);
-    // });
-    
-    // test('Get stock history for invalid interval', async () => {
-    //     await expect(Stocks.getStockHistory(testStockId, 'invalid' as any)).rejects.toThrow();
-    // });
+
+    test('Get stock history for "hour" interval', async () => {
+        const baselineDate = DateTime.now();
+        
+        const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            stock_id: testStockId,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            stock_id: testStockIdTwo,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            stock_id: testStockIdThree,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+        
+        await db.transaction().execute(async trx => {
+            await Promise.all([
+                trx.insertInto('stocks').values(stockDataOne).execute(),
+                trx.insertInto('stocks').values(stockDataTwo).execute(),
+                trx.insertInto('stocks').values(stockDataThree).execute(),
+            ]);
+        });
+        
+        const stockHistory = await Stocks.getStockHistory(testStockId, 'hour');
+        const stockHistoryTwo = await Stocks.getStockHistory(testStockIdTwo, 'hour');
+        const stockHistoryThree = await Stocks.getStockHistory(testStockIdThree, 'hour');
+        expect(stockHistory?.length).toBe(24);
+        expect(stockHistoryTwo?.length).toBe(16);
+        expect(stockHistoryThree?.length).toBe(24);
+    });
 });

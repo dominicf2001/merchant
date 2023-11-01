@@ -63,10 +63,6 @@ abstract class DataStore<Data> {
             .executeTakeFirst() as Data;
     }
 
-    async destroyDB(): Promise<void> {
-        this.db.destroy();
-    }
-
     async get(id: string): Promise<Data | undefined> {
         if (this.cache.has(id)) {
             // cache hit
@@ -358,6 +354,7 @@ class Stocks extends DataStore<Stock> {
                 break;
             case 'hour':
                 intervalOffset = { hours: 24 }
+                break;
             case 'day':
                 intervalOffset = { days: 30 }
                 break;
@@ -422,4 +419,4 @@ const users = new Users(db);
 const items = new Items(db);
 const stocks = new Stocks(db);
 
-export { users as Users, items as Items, stocks as Stocks};
+export { users as Users, items as Items, stocks as Stocks, db};

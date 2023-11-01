@@ -1,5 +1,4 @@
 config.json
-dvp_notes.md
-database/database.sqlite
-database/database_backup.sqlite
+notes.org
 node_modules/
+coverage/
