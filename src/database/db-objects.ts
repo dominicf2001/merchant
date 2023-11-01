@@ -17,12 +17,13 @@ const dialect = new PostgresDialect({
         host: 'localhost',
         user: 'dominic',
         port: 5432,
-        max: 10,
-    }),
+        max: 10
+    })
 });
 
 const db = new Kysely<Database>({
     dialect,
+    // log: ['query', 'error']
 });
 
 type TableName = keyof Database;
@@ -77,34 +78,32 @@ abstract class DataStore<Data> {
     }
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
-        const oldData: Data = this.cache.get(id);
-        
-        const mergedData: Data = { ...(oldData || {[this.tableID]: id as any}), ...data } as Data;
-        
-        this.cache.set(id, mergedData);
+        const newData: Data = { [this.tableID]: id as any, ...data } as Data;
 
         try {
-            const result: Data = await this.db
+            let result: Data = await this.db
                 .selectFrom(this.tableName)
                 .selectAll()
                 .where(this.tableID, '=', id as any)
                 .executeTakeFirst() as Data;
 
             if (result) {
-                await this.db
+                result = await this.db
                     .updateTable(this.tableName)
-                    .set(mergedData)
+                    .set(newData)
                     .where(this.tableID, '=', id as any)
-                    .execute();
+                    .returningAll()
+                    .executeTakeFirstOrThrow() as Data;
             } else {
-                await this.db
+                result = await this.db
                     .insertInto(this.tableName)
-                    .values(mergedData)
-                    .execute();
+                    .values(newData)
+                    .returningAll()
+                    .executeTakeFirstOrThrow() as Data;
             }
+
+            this.cache.set(id, result);
         } catch (error) {
-            // Revert the cache to its old state if the database operation fails
-            oldData ? this.cache.set(id, oldData) : this.cache.delete(id);
             console.error(error);
             throw error;
         }
@@ -304,24 +303,19 @@ class Stocks extends DataStore<Stock> {
     }
 
     async set(id: string, data: Insertable<Stock> | Updateable<Stock> = {}): Promise<void> {
-        const oldData: Stock | undefined = this.cache.get(id);
-        const currentDate = DateTime.now().toISO() as StocksCreatedDate;
-        
-        const mergedData: Stock = { ...(oldData || { 'stock_id': id as UsersUserId }), ...data, created_date: currentDate } as Stock;
-        
-        this.cache.set(id, mergedData);
+        const newData: Stock = {
+            stock_id: id as UsersUserId,
+            created_date: data.created_date ?? DateTime.now().toISO() as StocksCreatedDate,
+            ...data } as Stock;
 
-        try {
-            await this.db
+        await db.transaction().execute(async (trx) => {
+            const result: Stock = await trx
                 .insertInto('stocks')
-                .values(mergedData)
-                .execute();
-        } catch (error) {
-            // Revert the cache to its old state if the database operation fails
-            oldData ? this.cache.set(id, oldData) : this.cache.delete(id);
-            console.error(error);
-            throw error;
-        }
+                .values(newData)
+                .returningAll()
+                .executeTakeFirstOrThrow() as Stock;
+            this.cache.set(id, result);            
+        });
     }
 
 
@@ -373,28 +367,25 @@ class Stocks extends DataStore<Stock> {
         }
         
         const oldestStockDate: string = DateTime.now().minus(intervalOffset).toISO();
-
+        
         const stockHistory: Stock[] = await this.db
             .selectFrom('stocks as s1')
-            .selectAll()
-            .where('stock_id', '=', stock_id as UsersUserId)
-            .where('created_date', '>=', oldestStockDate as StocksCreatedDate)
             .innerJoin(
                 eb => eb
                     .selectFrom('stocks')
                     .select([
                         'stock_id',
                         eb => eb.fn.max('created_date').as('max_created_date'),
-                        eb => {
-                            const createdDate = eb.ref('created_date');
-                            const createdInterval = sql<string>`extract(${interval === 'now' ? 'minute' : interval} from ${createdDate})`;
-                            return createdInterval.as('created_interval')
-                        }
+                        eb => sql`extract(${sql.raw(interval === 'now' ? 'minute' : interval)} from ${eb.ref('created_date')})`.as('created_interval')
                     ])
                     .groupBy('created_interval')
+                    .groupBy('stock_id')
                     .as('s2'),
                 join => join.onRef('s1.stock_id', '=', 's2.stock_id').onRef('s1.created_date', '=', 's2.max_created_date')
             )
+            .selectAll()
+            .where('s1.stock_id', '=', stock_id as UsersUserId)
+            .where('s1.created_date', '>=', oldestStockDate as StocksCreatedDate)
             .orderBy('s1.created_date', 'desc')
             .execute();
 
