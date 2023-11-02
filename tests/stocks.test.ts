@@ -89,7 +89,7 @@ describe('UPDATING Operations', () => {
     });
 });
 
-describe('Stock History Operations', () => {
+describe('HISTORY Operations', () => {
     const testStockId = '123';
     const testStockIdTwo = '4321';
     const testStockIdThree = '222222';
@@ -133,7 +133,7 @@ describe('Stock History Operations', () => {
             price: faker.number.int(100),
             created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
         }));
-
+        
         const stockDataTwo = Array.from({ length: 4 }, (_, i) => ({
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
@@ -156,6 +156,8 @@ describe('Stock History Operations', () => {
 
         const stockHistory = await Stocks.getStockHistory(testStockId, 'now');
         const stockHistoryTwo = await Stocks.getStockHistory(testStockIdTwo, 'now');
+        // test cache hit
+        Stocks.refreshCache();
         const stockHistoryThree = await Stocks.getStockHistory(testStockIdThree, 'now');
         expect(stockHistory?.length).toBe(10);
         expect(stockHistoryTwo?.length).toBe(4);
@@ -198,5 +200,43 @@ describe('Stock History Operations', () => {
         expect(stockHistory?.length).toBe(24);
         expect(stockHistoryTwo?.length).toBe(16);
         expect(stockHistoryThree?.length).toBe(24);
+    });
+
+    test('Get latest stocks', async () => {
+        const baselineDate = DateTime.now();
+        
+        const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            stock_id: testStockId,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            stock_id: testStockIdTwo,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            stock_id: testStockIdThree,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+        
+        await db.transaction().execute(async trx => {
+            await Promise.all([
+                trx.insertInto('stocks').values(stockDataOne).execute(),
+                trx.insertInto('stocks').values(stockDataTwo).execute(),
+                trx.insertInto('stocks').values(stockDataThree).execute(),
+            ]);
+        });
+        
+        const latestStocks = await Stocks.getLatestStocks();
+        expect(latestStocks?.length).toBe(3);
+
+        // test cache hit
+        Stocks.refreshCache();
+        const latestStocksFromCache = await Stocks.getLatestStocks();
+        expect(latestStocksFromCache?.length).toBe(3);
     });
 });

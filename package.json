@@ -13,6 +13,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@datastructures-js/deque": "^1.0.4",
         "@faker-js/faker": "^8.2.0",
         "@types/luxon": "^3.3.3",
         "@types/pg": "^8.10.7",
