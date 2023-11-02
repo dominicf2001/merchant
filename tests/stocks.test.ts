@@ -233,10 +233,32 @@ describe('HISTORY Operations', () => {
         
         const latestStocks = await Stocks.getLatestStocks();
         expect(latestStocks?.length).toBe(3);
+        
+        for (const latestStock of latestStocks) {
+            const latestStockDate = DateTime.fromISO(latestStock.created_date);
+            const stockHistory = await Stocks.getStockHistory(latestStock.stock_id, 'now');
+            
+            for (const stock of stockHistory) {
+                const stockDate = DateTime.fromISO(stock.created_date);
+                expect(latestStockDate >= stockDate).toBeTruthy();
+            }
+        }
 
         // test cache hit
         Stocks.refreshCache();
         const latestStocksFromCache = await Stocks.getLatestStocks();
         expect(latestStocksFromCache?.length).toBe(3);
+
+        for (const latestStock of latestStocksFromCache) {
+            const latestStockDate = DateTime.fromISO(latestStock.created_date);
+            const stockHistory = await Stocks.getStockHistory(latestStock.stock_id, 'now');
+
+            for (const stock of stockHistory) {
+                const stockDate = DateTime.fromISO(stock.created_date);
+                expect(latestStockDate >= stockDate).toBeTruthy();
+            }
+        }
     });
 });
+
+jest.setTimeout(10000);

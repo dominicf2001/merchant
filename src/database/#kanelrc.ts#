@@ -1,6 +1,5 @@
 import { Config } from 'kanel';
 import { makeKyselyHook } from 'kanel-kysely';
-import { types } from 'pg';
 
 const config: Config = {
     connection: {

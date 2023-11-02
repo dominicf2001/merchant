@@ -10,7 +10,9 @@ import { Deque } from '@datastructures-js/deque';
 import { Collection } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
+
+types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) => v === null ? null : new Date(v).toISOString());
 
 const dialect = new PostgresDialect({
     pool: new Pool({
