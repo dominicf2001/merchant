@@ -11,6 +11,7 @@ import { Collection } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
 import { Pool, types } from 'pg';
+import { UserStocksPurchaseDate } from './schemas/public/UserStocks';
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) => v === null ? null : new Date(v).toISOString());
 
@@ -35,6 +36,7 @@ type TableID = 'user_id' | 'item_id' | 'stock_id';
 abstract class DataStore<Data> {
     protected cache: Collection<string, Deque<Data>>;
     protected db: Kysely<Database>;
+    protected references: Collection<string, DataStore<any>> = new Collection<string, DataStore<any>>();
     protected tableName: TableName;
     protected tableID: TableID;
 
@@ -109,11 +111,12 @@ abstract class DataStore<Data> {
     }
 
 
-    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
+    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID, references: Collection<string, DataStore<any>>) {
         this.cache = new Collection<TableID, Deque<Data>>();
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;
+        this.references = references;
         this.refreshCache();
     }
 }
@@ -256,8 +259,90 @@ class Users extends DataStore<User> {
         return userItems;
     }
 
-    constructor(db: Kysely<Database>) {
-        super(db, 'users', 'user_id');
+    async getPortfolio(user_id: string): Promise<Stock[]> {
+        const userStocks = await this.db
+            .selectFrom('user_stocks')
+            .selectAll()
+            .where('user_id', '=', user_id as UsersUserId)
+            .execute();
+
+        let portfolio: Stock[];
+        for (const userStock of userStocks) {
+            
+        }
+    }
+
+    async addStock(user_id: string, stock_id: string, amount: number): Promise<void> {
+        await this.db.transaction().execute(async trx => {
+            const stocks = this.references.get('stocks') as Stocks;
+            const currentStockPrice: number = (await stocks.getLatestStock(stock_id)).price;
+            
+            if (amount > 0) {
+                // If amount is positive, insert a new record.
+                await trx
+                    .insertInto('user_stocks')
+                    .values({
+                        user_id: user_id as UsersUserId,
+                        stock_id: stock_id as UsersUserId,
+                        purchase_date: DateTime.now().toISO() as UserStocksPurchaseDate,
+                        quantity: amount,
+                        purchase_price: currentStockPrice
+                    })
+                    .execute();
+                
+                this.addBalance(user_id, -(currentStockPrice * amount));
+            } else if (amount < 0) {
+                // If amount is negative, decrement the existing records.
+                const userStocks = await trx
+                    .selectFrom('user_stocks')
+                    .selectAll()
+                    .where('user_id', '=', user_id as UsersUserId)
+                    .where('stock_id', '=', stock_id as UsersUserId)
+                    .orderBy('purchase_date desc')
+                    .execute();
+
+                // amount is negative, make it positive
+                let remainingAmountToDecrement = -amount;
+
+                for (const userStock of userStocks) {
+                    if (remainingAmountToDecrement <= 0) {
+                        break;
+                    }
+
+                    const decrementedQuantity = userStock.quantity - remainingAmountToDecrement;
+
+                    if (decrementedQuantity <= 0) {
+                        // If decremented quantity is zero or negative, delete the record.
+                        await trx
+                            .deleteFrom('user_stocks')
+                            .where('user_id', '=', user_id as UsersUserId)
+                            .where('stock_id', '=', stock_id as UsersUserId)
+                            .where('purchase_date', '=', userStock.purchase_date)
+                            .execute();
+
+                        remainingAmountToDecrement -= userStock.quantity;  // Deduct the full quantity of this record
+                    } else {
+                        // If decremented quantity is positive, update the record.
+                        await trx
+                            .updateTable('user_stocks')
+                            .set({ quantity: decrementedQuantity })
+                            .where('user_id', '=', user_id as UsersUserId)
+                            .where('stock_id', '=', stock_id as UsersUserId)
+                            .where('purchase_date', '=', userStock.purchase_date)
+                            .execute();
+
+                        remainingAmountToDecrement = 0;  // Stop, as all amount has been decremented
+                    }
+                }
+                
+                this.addBalance(user_id, (currentStockPrice * amount));
+            }
+        });
+    }
+
+
+    constructor(db: Kysely<Database>, references: Collection<string, DataStore<any>>) {
+        super(db, 'users', 'user_id', references);
     }
 }
 
@@ -276,8 +361,8 @@ class Items extends DataStore<Item> {
         // }
     }
 
-    constructor(db: Kysely<Database>) {
-        super(db, 'items', 'item_id');
+    constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {
+        super(db, 'items', 'item_id', references);
     }
 }
 
@@ -426,8 +511,8 @@ class Stocks extends DataStore<Stock> {
         return stockHistory;
     }
     
-    constructor(db: Kysely<Database>) {
-        super(db, 'stocks', 'stock_id');
+    constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {
+        super(db, 'stocks', 'stock_id', references);
     }
 }
 
@@ -452,8 +537,11 @@ class Stocks extends DataStore<Stock> {
 //     }
 // }
 
-const users = new Users(db);
 const items = new Items(db);
-const stocks = new Stocks(db);
+const stocks: DataStore<Stock> = new Stocks(db);
+const userReferences = new Collection<string, DataStore<any>>([
+    ['stocks', stocks]
+]);
+const users = new Users(db, userReferences);
 
 export { users as Users, items as Items, stocks as Stocks, db};
