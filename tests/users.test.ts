@@ -1,4 +1,4 @@
-import { Users, Items } from "@alias/db-objects";
+import { Users, Items, Stocks } from "@alias/db-objects";
 
 async function sleep(duration: number): Promise<void> {
     await new Promise(r => setTimeout(r, duration));
@@ -8,326 +8,380 @@ const sleepDuration: number = 50;
 
 describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
 
-    const testUserId = '123';
+    const userId = '123';
 
     beforeAll(async () => {
-        await Users.delete(testUserId);
+        await Users.delete(userId);
         await sleep(sleepDuration);
     });
     
     afterEach(async () => {
-        await Users.delete(testUserId);
+        await Users.delete(userId);
         await sleep(sleepDuration);
     });
 
     // ADDING + NON-EXISTING
     test('Add balance to a non-existing user', async () => {
-        await Users.addBalance(testUserId, 5);
+        await Users.addBalance(userId, 5);
         await sleep(sleepDuration);
         
-        const balance = await Users.getBalance(testUserId);
+        const balance = await Users.getBalance(userId);
         
         expect(balance).toBe(5);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.balance).toBe(5);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.balance).toBe(5);
     });
 
     test('Add armor to a non-existing user', async () => {
-        await Users.addArmor(testUserId, 12);
+        await Users.addArmor(userId, 12);
         await sleep(sleepDuration);
-        const armor = await Users.getArmor(testUserId);
+        const armor = await Users.getArmor(userId);
         
         expect(armor).toBe(12);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.armor).toBe(12);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.armor).toBe(12);
     });
 
     test('Add activity points to a non-existing user', async () => {
-        await Users.addActivityPoints(testUserId, 1);
+        await Users.addActivityPoints(userId, 1);
         await sleep(sleepDuration);
-        const activityPoints = await Users.getActivityPoints(testUserId);
+        const activityPoints = await Users.getActivityPoints(userId);
 
         expect(activityPoints).toBe(1);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.activity_points).toBe(1);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.activity_points).toBe(1);
     });
 
     // SUBTRACTING + EXISTING
     test('Subtract balance from an existing user', async () => {
-        await Users.set(testUserId, { balance: 12 });
+        await Users.set(userId, { balance: 12 });
         await sleep(sleepDuration);
         
-        await Users.addBalance(testUserId, -4);
+        await Users.addBalance(userId, -4);
         await sleep(sleepDuration);
-        const balance = await Users.getBalance(testUserId);
+        const balance = await Users.getBalance(userId);
         
         expect(balance).toBe(8);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.balance).toBe(8);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.balance).toBe(8);
     });
 
     test('Subtract armor from an existing user', async () => {
-        await Users.set(testUserId, { armor: 100 });
+        await Users.set(userId, { armor: 100 });
         await sleep(sleepDuration);
 
-        await Users.addArmor(testUserId, -30);
+        await Users.addArmor(userId, -30);
         await sleep(sleepDuration);
-        const armor = await Users.getArmor(testUserId);
+        const armor = await Users.getArmor(userId);
 
         expect(armor).toBe(70);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.armor).toBe(70);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.armor).toBe(70);
     });
 
     test('Subtract activity points from an existing user', async () => {
-        await Users.set(testUserId, { activity_points: 2 });
+        await Users.set(userId, { activity_points: 2 });
         await sleep(sleepDuration);
 
-        await Users.addActivityPoints(testUserId, -2);
+        await Users.addActivityPoints(userId, -2);
         await sleep(sleepDuration);
-        const activityPoints = await Users.getActivityPoints(testUserId);
+        const activityPoints = await Users.getActivityPoints(userId);
 
         expect(activityPoints).toBe(0);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.activity_points).toBe(0);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.activity_points).toBe(0);
     });
 
     // SUBTRACTING BELOW ZERO
 
     test('Subtract balance from an existing user below zero', async () => {
-        await Users.set(testUserId, { balance: 101 });
+        await Users.set(userId, { balance: 101 });
         await sleep(sleepDuration);
 
-        await Users.addBalance(testUserId, -200);
+        await Users.addBalance(userId, -200);
         await sleep(sleepDuration);
-        const balance = await Users.getBalance(testUserId);
+        const balance = await Users.getBalance(userId);
         
         expect(balance).toBe(0);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.balance).toBe(0);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.balance).toBe(0);
     });
 
     test('Subtract armor from an existing user below zero', async () => {
-        await Users.set(testUserId, { armor: 20 });
+        await Users.set(userId, { armor: 20 });
         await sleep(sleepDuration);
 
-        await Users.addArmor(testUserId, -21);
+        await Users.addArmor(userId, -21);
         await sleep(sleepDuration);
-        const armor = await Users.getArmor(testUserId);
+        const armor = await Users.getArmor(userId);
 
         expect(armor).toBe(0);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.armor).toBe(0);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.armor).toBe(0);
     });
 
     test('Subtract activity points from an existing user below zero', async () => {
-        await Users.set(testUserId, { activity_points: 1 });
+        await Users.set(userId, { activity_points: 1 });
         await sleep(sleepDuration);
 
-        await Users.addActivityPoints(testUserId, -1000);
+        await Users.addActivityPoints(userId, -1000);
         await sleep(sleepDuration);
-        const activityPoints = await Users.getActivityPoints(testUserId);
+        const activityPoints = await Users.getActivityPoints(userId);
 
         expect(activityPoints).toBe(0);
 
-        let user = Users.getFromCache(testUserId);
+        let user = Users.getFromCache(userId);
         expect(user?.activity_points).toBe(0);
-        user = await Users.getFromDB(testUserId);
+        user = await Users.getFromDB(userId);
         expect(user?.activity_points).toBe(0);
     });
 });
 
 describe('User item operations', () => {
-    const testUserId = '123';
-    const testItemOneId = 'test item one';
-    const testItemTwoId = 'test item two';
+    const userId = '123';
+    const itemId = 'test item one';
+    const itemTwoId = 'test item two';
 
     beforeAll(async () => {
-        await Items.set(testItemOneId);
-        await Items.set(testItemTwoId);
-        await Users.delete(testUserId);
+        await Items.set(itemId);
+        await Items.set(itemTwoId);
+        await Users.delete(userId);
         await sleep(sleepDuration);
     });
     
     afterEach(async () => {
-        await Users.delete(testUserId);
+        await Users.delete(userId);
         await sleep(sleepDuration);
     });
 
     afterAll(async () => {
-        await Items.delete(testItemOneId);
-        await Items.delete(testItemTwoId);
+        await Items.delete(itemId);
+        await Items.delete(itemTwoId);
         await sleep(sleepDuration);
     });
 
     test('Add item to a non-existing user', async () => {
-        await Users.addItem(testUserId, testItemOneId, 1);
+        await Users.addItem(userId, itemId, 1);
         await sleep(sleepDuration);
-        const testItemOne = await Users.getItem(testUserId, testItemOneId);
-        const testItems = await Users.getItems(testUserId);
+        const itemOne = await Users.getItem(userId, itemId);
+        const items = await Users.getItems(userId);
         
-        expect(testItemOne?.quantity).toBe(1);
-        expect(testItems).toContainEqual(testItemOne);
+        expect(itemOne?.quantity).toBe(1);
+        expect(items).toContainEqual(itemOne);
     });
 
     test('Add multiple items to an existing user', async () => {
-        await Users.set(testUserId);
+        await Users.set(userId);
         await sleep(sleepDuration);
         
-        await Users.addItem(testUserId, testItemOneId, 1);
+        await Users.addItem(userId, itemId, 1);
         await sleep(sleepDuration);
         
-        await Users.addItem(testUserId, testItemTwoId, 1);
+        await Users.addItem(userId, itemTwoId, 1);
         await sleep(sleepDuration);
-        await Users.addItem(testUserId, testItemTwoId, 1);
+        await Users.addItem(userId, itemTwoId, 1);
         await sleep(sleepDuration);
         
-        const testItemOne = await Users.getItem(testUserId, testItemOneId);
-        const testItemTwo = await Users.getItem(testUserId, testItemTwoId);
-        const testItems = await Users.getItems(testUserId);
+        const itemOne = await Users.getItem(userId, itemId);
+        const itemTwo = await Users.getItem(userId, itemTwoId);
+        const items = await Users.getItems(userId);
 
-        expect(testItemOne?.quantity).toBe(1);
-        expect(testItemTwo?.quantity).toBe(2);
-        expect(testItems).toContainEqual(testItemOne);
-        expect(testItems).toContainEqual(testItemTwo);
+        expect(itemOne?.quantity).toBe(1);
+        expect(itemTwo?.quantity).toBe(2);
+        expect(items).toContainEqual(itemOne);
+        expect(items).toContainEqual(itemTwo);
     });
 
     test('Delete item from a non-existing user', async () => {
-        await Users.addItem(testUserId, testItemOneId, -1);
+        await Users.addItem(userId, itemId, -1);
+
+        await sleep(sleepDuration);
+        expect((await Users.get(userId))).not.toBeDefined();
     });
 
     test('Delete item from a existing user with items, below zero and non-below zero', async () => {
-        await Users.set(testUserId);
+        await Users.set(userId);
         await sleep(sleepDuration);
         
-        await Users.addItem(testUserId, testItemOneId, 5);
+        await Users.addItem(userId, itemId, 5);
         await sleep(sleepDuration);
 
-        await Users.addItem(testUserId, testItemTwoId, 10);
+        await Users.addItem(userId, itemTwoId, 10);
         await sleep(sleepDuration);
 
-        await Users.addItem(testUserId, testItemOneId, -5);
+        await Users.addItem(userId, itemId, -5);
         await sleep(sleepDuration);
-        await Users.addItem(testUserId, testItemTwoId, -9);
+        await Users.addItem(userId, itemTwoId, -9);
         await sleep(sleepDuration);
 
-        const testItemOne = await Users.getItem(testUserId, testItemOneId);
-        const testItemTwo = await Users.getItem(testUserId, testItemTwoId);
-        const testItems = await Users.getItems(testUserId);
+        const itemOne = await Users.getItem(userId, itemId);
+        const itemTwo = await Users.getItem(userId, itemTwoId);
+        const items = await Users.getItems(userId);
 
-        expect(testItemOne).not.toBeDefined();
-        expect(testItemTwo?.quantity).toBe(1);
-        expect(testItems).not.toContainEqual(testItemOne);
-        expect(testItems).toContainEqual(testItemTwo);
+        expect(itemOne).not.toBeDefined();
+        expect(itemTwo?.quantity).toBe(1);
+        expect(items).not.toContainEqual(itemOne);
+        expect(items).toContainEqual(itemTwo);
     });
 });
 
 describe("User stock operations", () => {
-    const testUserId = '123';
-    const testStockId = '321';
+    const userId = '123';
+    const stockId = '321';
+    const stockTwoId = '4321';
 
     beforeAll(async () => {
-        await Users.delete(testUserId);
-        await Users.delete(testStockId);
+        await Users.delete(userId);
+        await Users.delete(stockId);
+        await Users.delete(stockTwoId);
         await sleep(sleepDuration);
-        await Users.set(testStockId);
+        
+        await Users.set(stockId);
+        await Users.set(stockTwoId);
         await sleep(sleepDuration);
     });
     
     afterEach(async () => {
-        await Stocks.delete(testStockId);
-        await sleep(sleepDuration);
-    });
-
-    afterAll(async () => {
-        await Users.delete(testUserId);
-        await Users.delete(testStockId);
+        await Users.delete(userId);
+        await Stocks.delete(stockId);
+        await Stocks.delete(stockTwoId);
         await sleep(sleepDuration);
     });
 
     test('Add stock to a non-existing user', async () => {
-        await Users.addStock(testUserId, testStockId, 1);
+        // initialize stock
+        await Stocks.updateStockPrice(stockId, 50);
         await sleep(sleepDuration);
-        // TODO: implement get user stock(s)
-        const testStockOne = await Users.getItem(testUserId, testItemOneId);
-        const testItems = await Users.getItems(testUserId);
         
-        expect(testItemOne?.quantity).toBe(1);
-        expect(testItems).toContainEqual(testItemOne);
+        await Users.addStock(userId, stockId, 1);
+        await sleep(sleepDuration);
+        const portfolio = await Users.getPortfolio(userId);
+        const userStocks = await Users.getUserStocks(userId, stockId);
+        
+        expect(portfolio?.length).toBe(1);
+        expect(portfolio[0]?.price).toBe(50);
+        expect((await Users.getPortfolioValue(userId))).toBe(50);
+        expect(userStocks?.length).toBe(1);
+        expect(userStocks[0]?.quantity).toBe(1);
+        expect(userStocks[0]?.purchase_price).toBe(50);
+        expect((await Stocks.getTotalSharesPurchased(stockId))).toBe(1);
     });
 
-    test('Add multiple items to an existing user', async () => {
-        await Users.set(testUserId);
+    test('Add multiple stocks to an existing user', async () => {
+        // initialize stocks
+        await Stocks.updateStockPrice(stockId, 100);
+        await Stocks.updateStockPrice(stockTwoId, 5);
         await sleep(sleepDuration);
         
-        await Users.addItem(testUserId, testItemOneId, 1);
+        await Users.set(userId);
         await sleep(sleepDuration);
-        
-        await Users.addItem(testUserId, testItemTwoId, 1);
-        await sleep(sleepDuration);
-        await Users.addItem(testUserId, testItemTwoId, 1);
-        await sleep(sleepDuration);
-        
-        const testItemOne = await Users.getItem(testUserId, testItemOneId);
-        const testItemTwo = await Users.getItem(testUserId, testItemTwoId);
-        const testItems = await Users.getItems(testUserId);
 
-        expect(testItemOne?.quantity).toBe(1);
-        expect(testItemTwo?.quantity).toBe(2);
-        expect(testItems).toContainEqual(testItemOne);
-        expect(testItems).toContainEqual(testItemTwo);
+        // stock one
+        await Users.addStock(userId, stockId, 4);
+        await sleep(sleepDuration);
+
+        // stock two
+        await Users.addStock(userId, stockTwoId, 1);
+        await sleep(sleepDuration);
+
+        await Stocks.updateStockPrice(stockTwoId, 9)
+        await sleep(sleepDuration);
+        
+        await Users.addStock(userId, stockTwoId, 3);
+        await sleep(sleepDuration);
+
+        // queries
+        const portfolio = await Users.getPortfolio(userId);
+        const portfolioStock = portfolio.find(stock => stock.stock_id === stockId)
+        const portfolioStockTwo = portfolio.find(stock => stock.stock_id === stockTwoId)
+        
+        const userStocks = await Users.getUserStocks(userId, stockId);
+        const userStocksTwo = await Users.getUserStocks(userId, stockTwoId);
+
+        // test portfolio
+        expect(portfolio?.length).toBe(2);
+        expect(portfolioStock?.price).toBe(100);
+        expect(portfolioStockTwo?.price).toBe(9);
+
+        // test value
+        expect((await Users.getPortfolioValue(userId))).toBe(109);
+
+        // test user stocks
+        expect(userStocks?.length).toBe(1);
+        expect(userStocks[0]?.quantity).toBe(4);
+        expect(userStocks[0]?.purchase_price).toBe(100);
+
+        expect(userStocksTwo?.length).toBe(2);
+        expect(userStocksTwo[0]?.quantity).toBe(3);
+        expect(userStocksTwo[0]?.purchase_price).toBe(9);
+        expect(userStocksTwo[1]?.quantity).toBe(1);
+        expect(userStocksTwo[1]?.purchase_price).toBe(5);
+
+        // test total shares purchased
+        expect((await Stocks.getTotalSharesPurchased(stockId))).toBe(4);
+        expect((await Stocks.getTotalSharesPurchased(stockTwoId))).toBe(4);
     });
 
-    test('Delete item from a non-existing user', async () => {
-        await Users.addItem(testUserId, testItemOneId, -1);
-    });
-
-    test('Delete item from a existing user with items, below zero and non-below zero', async () => {
-        await Users.set(testUserId);
+    test('Delete stock from a non-existing user', async () => {
+        await Stocks.updateStockPrice(stockId, 1);
         await sleep(sleepDuration);
         
-        await Users.addItem(testUserId, testItemOneId, 5);
+        await Users.addStock(userId, stockId, -1);
         await sleep(sleepDuration);
 
-        await Users.addItem(testUserId, testItemTwoId, 10);
-        await sleep(sleepDuration);
-
-        await Users.addItem(testUserId, testItemOneId, -5);
-        await sleep(sleepDuration);
-        await Users.addItem(testUserId, testItemTwoId, -9);
-        await sleep(sleepDuration);
-
-        const testItemOne = await Users.getItem(testUserId, testItemOneId);
-        const testItemTwo = await Users.getItem(testUserId, testItemTwoId);
-        const testItems = await Users.getItems(testUserId);
-
-        expect(testItemOne).not.toBeDefined();
-        expect(testItemTwo?.quantity).toBe(1);
-        expect(testItems).not.toContainEqual(testItemOne);
-        expect(testItems).toContainEqual(testItemTwo);
+        expect((await Users.get(userId))).not.toBeDefined();
+        expect((await Users.getPortfolio(userId)).length).toBe(0);
     });
+
+    // test('Delete item from a existing user with items, below zero and non-below zero', async () => {
+    //     await Users.set(userId);
+    //     await sleep(sleepDuration);
+        
+    //     await Users.addItem(userId, itemId, 5);
+    //     await sleep(sleepDuration);
+
+    //     await Users.addItem(userId, itemTwoId, 10);
+    //     await sleep(sleepDuration);
+
+    //     await Users.addItem(userId, itemId, -5);
+    //     await sleep(sleepDuration);
+    //     await Users.addItem(userId, itemTwoId, -9);
+    //     await sleep(sleepDuration);
+
+    //     const itemOne = await Users.getItem(userId, itemId);
+    //     const itemTwo = await Users.getItem(userId, itemTwoId);
+    //     const items = await Users.getItems(userId);
+
+    //     expect(itemOne).not.toBeDefined();
+    //     expect(itemTwo?.quantity).toBe(1);
+    //     expect(items).not.toContainEqual(itemOne);
+    //     expect(items).toContainEqual(itemTwo);
+    // });
+
+    // TODO: tests for non-existing stocks
+    
 });

@@ -61,8 +61,6 @@ async function main() {
                 col.notNull())
             .addColumn('created_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
-            .addColumn('total_shares_purchased', 'integer', col =>
-                col.notNull().defaultTo(0).check(sql`total_shares_purchased >= 0`))
             .addColumn('price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
             .addForeignKeyConstraint('stock_fk_user', ['stock_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))

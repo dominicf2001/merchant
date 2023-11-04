@@ -1,8 +1,9 @@
-import { Kysely, PostgresDialect, Updateable, Insertable, sql, Selectable } from 'kysely';
-import { Users as User, NewUsers as NewUser, UsersUpdate as UserUpdate, UsersUserId } from './schemas/public/Users';
-import { Items as Item, NewItems as NewItem, ItemsUpdate as ItemUpdate, ItemsItemId } from './schemas/public/Items';
-import { Stocks as Stock, NewStocks as NewStock, StocksUpdate as StockUpdate, StocksCreatedDate } from './schemas/public/Stocks';
-import { UserItems as UserItem, NewUserItems as NewUserItem, UserItemsUpdate as UserItemUpdate } from './schemas/public/UserItems';
+import { Kysely, PostgresDialect, Updateable, Insertable, sql } from 'kysely';
+import { Users as User, UsersUserId } from './schemas/public/Users';
+import { Items as Item, ItemsItemId } from './schemas/public/Items';
+import { Stocks as Stock, StocksCreatedDate } from './schemas/public/Stocks';
+import { UserItems as UserItem } from './schemas/public/UserItems';
+import { UserStocks as UserStock  } from './schemas/public/UserStocks';
 import Database from './schemas/Database';
 import { DateTime } from 'luxon';
 import { Deque } from '@datastructures-js/deque';
@@ -11,7 +12,7 @@ import { Collection } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
 import { Pool, types } from 'pg';
-import { UserStocksPurchaseDate } from './schemas/public/UserStocks';
+import { UserStocks, UserStocksPurchaseDate } from './schemas/public/UserStocks';
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) => v === null ? null : new Date(v).toISOString());
 
@@ -34,7 +35,7 @@ type TableName = keyof Database;
 type TableID = 'user_id' | 'item_id' | 'stock_id';
 
 abstract class DataStore<Data> {
-    protected cache: Collection<string, Deque<Data>>;
+    protected cache: Collection<string, Deque<Data>> = new Collection<string, Deque<Data>>();
     protected db: Kysely<Database>;
     protected references: Collection<string, DataStore<any>> = new Collection<string, DataStore<any>>();
     protected tableName: TableName;
@@ -259,25 +260,59 @@ class Users extends DataStore<User> {
         return userItems;
     }
 
+    async getPortfolioValue(user_id: string) {
+        const portfolio = await this.getPortfolio(user_id);
+        return portfolio.reduce((prevValue, currentStock) => prevValue + (currentStock.price), 0);
+    }
+
     async getPortfolio(user_id: string): Promise<Stock[]> {
-        const userStocks = await this.db
+        const stocks = this.references.get('stocks') as Stocks;
+
+        const userStock: UserStock[] = await this.db
+            .selectFrom('user_stocks')
+            .select('stock_id')
+            .where('user_id', '=', user_id as UsersUserId)
+            .distinct()
+            .execute() as UserStock[];
+
+        // Populate with the latest stock information
+        let stockPromises: Promise<Stock>[] = [];
+        for (const stock of userStock) {
+            stockPromises.push(stocks.getLatestStock(stock.stock_id));
+        }
+        
+        return await Promise.all(stockPromises) as Stock[];
+    }
+    
+    async getUserStocks(user_id: string, stock_id?: string): Promise<UserStock[]> {
+        let query = this.db
             .selectFrom('user_stocks')
             .selectAll()
             .where('user_id', '=', user_id as UsersUserId)
-            .execute();
 
-        let portfolio: Stock[];
-        for (const userStock of userStocks) {
-            
-        }
+        query = stock_id ?
+            query.where('stock_id', '=', stock_id as UsersUserId) :
+            query;
+        
+        return (
+            await query
+                .orderBy('purchase_date desc')
+                .execute() as UserStock[]
+        );
     }
 
     async addStock(user_id: string, stock_id: string, amount: number): Promise<void> {
         await this.db.transaction().execute(async trx => {
             const stocks = this.references.get('stocks') as Stocks;
-            const currentStockPrice: number = (await stocks.getLatestStock(stock_id)).price;
+            const currentStockPrice: number = (await stocks.getLatestStock(stock_id))?.price;
+
+            // prevents a user from being created and from inserting a non-existent stock
+            if (!currentStockPrice)
+                return; 
             
             if (amount > 0) {
+                this.set(user_id);
+                
                 // If amount is positive, insert a new record.
                 await trx
                     .insertInto('user_stocks')
@@ -286,7 +321,7 @@ class Users extends DataStore<User> {
                         stock_id: stock_id as UsersUserId,
                         purchase_date: DateTime.now().toISO() as UserStocksPurchaseDate,
                         quantity: amount,
-                        purchase_price: currentStockPrice
+                        purchase_price: currentStockPrice,
                     })
                     .execute();
                 
@@ -300,6 +335,10 @@ class Users extends DataStore<User> {
                     .where('stock_id', '=', stock_id as UsersUserId)
                     .orderBy('purchase_date desc')
                     .execute();
+
+                // prevents a user from being created
+                if (!userStocks.length)
+                    return; 
 
                 // amount is negative, make it positive
                 let remainingAmountToDecrement = -amount;
@@ -335,7 +374,8 @@ class Users extends DataStore<User> {
                     }
                 }
                 
-                this.addBalance(user_id, (currentStockPrice * amount));
+                const amountSold = amount - remainingAmountToDecrement;
+                this.addBalance(user_id, (currentStockPrice * amountSold));
             }
         });
     }
@@ -379,6 +419,16 @@ class Stocks extends DataStore<Stock> {
         }
     }
 
+    async getTotalSharesPurchased(stock_id: string): Promise<number> {
+        const result = await this.db
+            .selectFrom('user_stocks')
+            .select(eb => eb.fn.sum('quantity').as('total_shares_purchased'))
+            .where('stock_id', '=', stock_id as UsersUserId)
+            .executeTakeFirst();
+
+        return Number(result.total_shares_purchased) ?? 0;
+    }
+
     async getFromDB(id: string): Promise<Stock | undefined> {
         return await this.db
             .selectFrom('stocks')
@@ -405,7 +455,7 @@ class Stocks extends DataStore<Stock> {
             let cachedStockHistory = this.cache.get(id);
             if (cachedStockHistory) {
                 cachedStockHistory.pushFront(result);
-                cachedStockHistory.popBack();   
+                cachedStockHistory.popBack();
             } else {
                 this.cache.set(id, new Deque<Stock>([result]));
             }
@@ -537,11 +587,12 @@ class Stocks extends DataStore<Stock> {
 //     }
 // }
 
-const items = new Items(db);
-const stocks: DataStore<Stock> = new Stocks(db);
+const items = new Items(db)
+const stocks = new Stocks(db);
 const userReferences = new Collection<string, DataStore<any>>([
     ['stocks', stocks]
 ]);
+
 const users = new Users(db, userReferences);
 
 export { users as Users, items as Items, stocks as Stocks, db};
