@@ -260,13 +260,21 @@ class Users extends DataStore<User> {
         return userItems;
     }
 
-    async getPortfolioValue(user_id: string) {
-        const portfolio = await this.getPortfolio(user_id);
-        return portfolio.reduce((prevValue, currentStock) => prevValue + (currentStock.price), 0);
+    async getPortfolioValue(user_id: string): Promise<number> {
+        const Stocks = this.references.get('stocks') as Stocks;
+        const userStocks: UserStock[] = await this.getUserStocks(user_id);
+
+        let portfolioValue = 0;
+        for (const userStock of userStocks) {
+            const latestPrice = (await Stocks.getLatestStock(userStock.stock_id)).price;
+            portfolioValue += latestPrice * userStock.quantity;
+        }
+        
+        return portfolioValue
     }
 
     async getPortfolio(user_id: string): Promise<Stock[]> {
-        const stocks = this.references.get('stocks') as Stocks;
+        const Stocks = this.references.get('stocks') as Stocks;
 
         const userStock: UserStock[] = await this.db
             .selectFrom('user_stocks')
@@ -278,7 +286,7 @@ class Users extends DataStore<User> {
         // Populate with the latest stock information
         let stockPromises: Promise<Stock>[] = [];
         for (const stock of userStock) {
-            stockPromises.push(stocks.getLatestStock(stock.stock_id));
+            stockPromises.push(Stocks.getLatestStock(stock.stock_id));
         }
         
         return await Promise.all(stockPromises) as Stock[];
@@ -307,11 +315,11 @@ class Users extends DataStore<User> {
             const currentStockPrice: number = (await stocks.getLatestStock(stock_id))?.price;
 
             // prevents a user from being created and from inserting a non-existent stock
-            if (!currentStockPrice)
-                return; 
+            if (currentStockPrice == undefined)
+                return;
             
             if (amount > 0) {
-                this.set(user_id);
+                await this.set(user_id);
                 
                 // If amount is positive, insert a new record.
                 await trx

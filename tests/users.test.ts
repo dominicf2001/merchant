@@ -247,6 +247,8 @@ describe('User item operations', () => {
         expect(items).not.toContainEqual(itemOne);
         expect(items).toContainEqual(itemTwo);
     });
+
+    // TODO: tests for non-existing items? 
 });
 
 describe("User stock operations", () => {
@@ -300,11 +302,8 @@ describe("User stock operations", () => {
         await Users.set(userId);
         await sleep(sleepDuration);
 
-        // stock one
+        // stock one and two
         await Users.addStock(userId, stockId, 4);
-        await sleep(sleepDuration);
-
-        // stock two
         await Users.addStock(userId, stockTwoId, 1);
         await sleep(sleepDuration);
 
@@ -328,7 +327,7 @@ describe("User stock operations", () => {
         expect(portfolioStockTwo?.price).toBe(9);
 
         // test value
-        expect((await Users.getPortfolioValue(userId))).toBe(109);
+        expect((await Users.getPortfolioValue(userId))).toBe(436);
 
         // test user stocks
         expect(userStocks?.length).toBe(1);
@@ -357,31 +356,49 @@ describe("User stock operations", () => {
         expect((await Users.getPortfolio(userId)).length).toBe(0);
     });
 
-    // test('Delete item from a existing user with items, below zero and non-below zero', async () => {
-    //     await Users.set(userId);
-    //     await sleep(sleepDuration);
+    test('Delete stock from a existing user with stocks, below zero and non-below zero', async () => {
+        // initialization
+        await Users.set(userId);
+        await sleep(sleepDuration);
         
-    //     await Users.addItem(userId, itemId, 5);
-    //     await sleep(sleepDuration);
+        await Stocks.updateStockPrice(stockId, 500);
+        await Stocks.updateStockPrice(stockTwoId, 1000);
+        await sleep(sleepDuration);
 
-    //     await Users.addItem(userId, itemTwoId, 10);
-    //     await sleep(sleepDuration);
+        // stock one and two
+        await Users.addStock(userId, stockId, 100);
+        await Users.addStock(userId, stockTwoId, 50);
+        await sleep(sleepDuration);
 
-    //     await Users.addItem(userId, itemId, -5);
-    //     await sleep(sleepDuration);
-    //     await Users.addItem(userId, itemTwoId, -9);
-    //     await sleep(sleepDuration);
+        await Users.addStock(userId, stockId, -80);
+        await sleep(sleepDuration);
+        await Users.addStock(userId, stockTwoId, -100);
+        await sleep(sleepDuration);
 
-    //     const itemOne = await Users.getItem(userId, itemId);
-    //     const itemTwo = await Users.getItem(userId, itemTwoId);
-    //     const items = await Users.getItems(userId);
+        // queries
+        const portfolio = await Users.getPortfolio(userId);
+        const portfolioStock = portfolio.find(stock => stock.stock_id === stockId)
+        const portfolioStockTwo = portfolio.find(stock => stock.stock_id === stockTwoId)
+        
+        const userStocks = await Users.getUserStocks(userId, stockId);
+        const userStocksTwo = await Users.getUserStocks(userId, stockTwoId);
 
-    //     expect(itemOne).not.toBeDefined();
-    //     expect(itemTwo?.quantity).toBe(1);
-    //     expect(items).not.toContainEqual(itemOne);
-    //     expect(items).toContainEqual(itemTwo);
-    // });
+        // test portfolio
+        expect(portfolio?.length).toBe(1);
+        expect(portfolioStock?.price).toBe(500);
+        expect(portfolioStockTwo).toBeUndefined();
 
-    // TODO: tests for non-existing stocks
+        // test value
+        expect((await Users.getPortfolioValue(userId))).toBe(10000);
+
+        // test user stocks
+        expect(userStocks?.length).toBe(1);
+        expect(userStocks[0]?.quantity).toBe(20);
+        expect(userStocks[0]?.purchase_price).toBe(500);
+
+        expect(userStocksTwo?.length).toBe(0);
+    });
+
+    // TODO: tests for non-existing stocks 
     
 });
