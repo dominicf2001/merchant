@@ -1,3 +1,5 @@
+import { Message } from 'discord.js';
+
 module.exports = {
     data: {
         name: 'emp',
@@ -7,7 +9,7 @@ module.exports = {
         usage: '$use emp',
         role: 1
     },
-    async use(message, args) {
+    async use(message: Message, args: string[]) {
         let target;
         try {
             target = await message.guild.members.fetch("1030224702939070494");

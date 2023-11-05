@@ -1,3 +1,5 @@
+import { Message } from 'discord.js';
+
 module.exports = {
     data: {
         name: 'mute',
@@ -8,24 +10,29 @@ module.exports = {
         usage: "$use mute @target",
         role: 3
     },
-    async use(message, args) {
+    async use(message: Message, args: string) {
         let target = message.mentions.members.first();
+
         if (!target) {
             throw new Error('Please specify a target.');
         }
 
-        if (target.isCommunicationDisabled()){
-	        throw new Error(`<@${target.id}> has already been muted.`);
+        if (target.isCommunicationDisabled()) {
+            throw new Error(`<@${target.id}> has already been muted.`);
+        }
+        
+        try {
+            // TODO: should pull from the global json paramter file?
+            const durationMin: number = 5;
+            const durationMs: number = durationMin * 60000;
+            
+            target.timeout(durationMs);
+            message.channel.send(`<@${target.id}> has been muted for ${durationMin} minutes.`);
+        } catch (error) {
+            console.error(error);
+            message.channel.send(`<@${target.id}> could not be muted.`);
         }
 
-        const duration = 300000;
-	try {
-	    target.timeout(duration);
-	    message.channel.send(`<@${target.id}> has been muted for 5 minutes.`);
-	} catch (error) {
-        console.error(error);
-	    message.channel.send(`<@${target.id}> could not be muted.`);
-	}
-   }
+    }
 }
 

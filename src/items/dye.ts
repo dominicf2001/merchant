@@ -1,5 +1,5 @@
 import { Message, Colors, ColorResolvable } from 'discord.js';
-import { isAMention, toUpperCaseString } from '@utilities';
+import { findTextArgs, toUpperCaseString } from '@utilities';
 
 module.exports = {
     data: {
@@ -13,7 +13,7 @@ module.exports = {
     },
     async use(message: Message, args: string[]) {
         const target = message.mentions.members.first();
-		const color = toUpperCaseString(args.find(arg => isNaN(+arg) && !isAMention(arg))) as ColorResolvable & string;
+		const color = toUpperCaseString(findTextArgs(args)[0]) as ColorResolvable & string;
         
         // TODO: don't take error throwing approach?
         if (!color) {

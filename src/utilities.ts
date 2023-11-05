@@ -37,6 +37,19 @@ function isAMention(arg: string): boolean {
     return arg.startsWith('<@') && !arg.endsWith('>');
 }
 
+function findTextArgs(args: string[]): string[] {
+    return args.filter(arg => isNaN(+arg) && !isAMention(arg));
+}
+
+function findNumericArgs(args: string[]): string[] {
+    return args.filter(arg => !isNaN(+arg) && !isAMention(arg));
+}
+
+function findMentionArgs(args: string[]): string[] {
+    return args.filter(arg => isAMention(arg));
+}
+
 const TIMEZONE: string = 'America/New_York';
 
-export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen, isAMention, toUpperCaseString, TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE };
+export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen, isAMention, toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs,
+         TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE };
