@@ -406,18 +406,25 @@ class Users extends DataStore<User> {
 }
 
 class Items extends DataStore<Item> {
+    private itemBehaviors: Collection<string, Function> = new Collection<string, Function>();
+    
     async refreshCache(): Promise<void> {
-        // const itemsPath = path.join(process.cwd(), 'items');
-        // const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
-        // for (const file of itemFiles) {
-        //     const filePath = path.join(itemsPath, file);
-        //     const item: Item = await import(filePath);
-        //     if ('data' in item && 'use' in item) {
-        //         this.cache.set(item.data., item);
-        //     } else {
-        //         console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-        //     }
-        // }
+        const itemsPath = path.join(process.cwd(), 'src/items');
+        const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.ts'));
+        for (const file of itemFiles) {
+            const filePath = path.join(itemsPath, file);
+            const item = await import(filePath);
+            if ('data' in item && 'use' in item) {
+                this.itemBehaviors.set(item.item_id, item.use);
+            } else {
+                console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
+            }
+        }
+    }
+
+    async useItem(item_id: string): Promise<void> {
+        const use: Function = this.itemBehaviors.get(item_id);
+        await use();
     }
 
     constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {
