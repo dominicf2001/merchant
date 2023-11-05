@@ -1,36 +1,54 @@
-const { getBalance, addBalance } = require("../../database/utilities/userUtilities.js");
-const { tendieIconCode, formatNumber } = require("../../utilities.js");
-const { EmbedBuilder, inlineCode } = require('discord.js');
+import { Users } from '@database';
+import { findNumericArgs, CURRENCY_EMOJI_CODE } from '@utilities';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 module.exports = {
 	data: {
         name: 'give',
-        description: `Share your tendies.\n${inlineCode("$give @target [amount]")}`
+        description: `Share your tendies.\n${inlineCode("$give @target [(amount)]")}`
     },
-	async execute(message, args) {
-		const currentAmount = getBalance(message.author.id);
-		const transferAmount = args.find(arg => !isNaN(arg));
-		const transferTarget = message.mentions.users.first();
+	async execute(message: Message, args: string[]): Promise<void> {
+		const target = message.mentions.users.first();
 
-        if (!transferTarget){
-            throw Error("Please specify a target.");
+        if (!target){
+            message.reply("Please specify a target.");
+            return;
         }
 
-		if (!transferAmount) return message.reply(`Specify how many tendies, ${message.author.username}.`);
-		if (!transferTarget) return message.reply(`Mention the user to whom you want to give tendies, ${message.author.username}.`);
-		if (transferAmount > currentAmount) return message.reply(`You only have ${tendieIconCode} ${formatNumber(currentAmount)} tendies.`);
-		if (transferAmount <= 0) return message.reply(`Enter an amount greater than zero, ${message.author.username}.`);
+        let authorBalance: number = await Users.getBalance(message.author.id);
+        const transferAmount: number = +findNumericArgs(args)[0];
 
-        addBalance(message.author.id, -transferAmount);
-        addBalance(transferTarget.id, +transferAmount);
+		if (!transferAmount) {
+            message.reply(`Specify how many tendies, ${message.author.username}.`);
+            return;
+        }
 
+        if (!Number.isInteger(transferAmount)) {
+            message.reply(`You can only give a whole number of tendies.`);
+            return;
+        }
+
+		if (transferAmount > authorBalance) {
+            message.reply(`You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`);
+            return;
+        }
+		if (transferAmount <= 0) {
+            message.reply(`Enter an amount greater than zero, ${message.author.username}.`);
+            return;
+        }
+
+        await addBalance(message.author.id, -transferAmount);
+        authorBalance -= transferAmount;
+        await addBalance(target.id, +transferAmount);
+        
+        
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .setFields({
-                name: `${tendieIconCode} ${formatNumber(transferAmount)} transferred to: ${inlineCode(transferTarget.username)}`,
-                value: `You have ${tendieIconCode} ${formatNumber(+getBalance(message.author.id))} remaining`
+                name: `${CURRENCY_EMOJI_CODE} ${formatNumber(transferAmount)} transferred to: ${inlineCode(target.username)}`,
+                value: `You have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} remaining`
             });
 
-        return message.reply({ embeds: [embed] });
+        message.reply({ embeds: [embed] });
     },
 }
