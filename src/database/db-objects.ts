@@ -246,6 +246,16 @@ class Users extends DataStore<User> {
         return user.activity_points;
     }
 
+    async getItemCount(user_id: string): Promise<number> {
+        const items = await this.getItems(user_id);
+
+        const itemCount = items.reduce((previous, current) => {
+            return previous + current.quantity;
+        }, 0);
+
+        return itemCount;
+    }
+
     async getItem(user_id: string, item_id: string): Promise<UserItem | undefined> {
         const userItem: UserItem = await this.db
             .selectFrom('user_items')
@@ -338,8 +348,6 @@ class Users extends DataStore<User> {
                         purchase_price: currentStockPrice,
                     })
                     .execute();
-                
-                this.addBalance(user_id, -(currentStockPrice * amount));
             } else if (amount < 0) {
                 // If amount is negative, decrement the existing records.
                 const userStocks = await trx
@@ -387,9 +395,6 @@ class Users extends DataStore<User> {
                         remainingAmountToDecrement = 0;  // Stop, as all amount has been decremented
                     }
                 }
-                
-                const amountSold = amount - remainingAmountToDecrement;
-                this.addBalance(user_id, (currentStockPrice * amountSold));
             }
         });
     }
@@ -522,7 +527,7 @@ class Stocks extends DataStore<Stock> {
         }
     }
 
-    async getLatestStock(stock_id: string): Promise<Stock> {
+    async getLatestStock(stock_id: string): Promise<Stock | undefined> {
         return await this.get(stock_id);
     }
 

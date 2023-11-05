@@ -1,17 +1,18 @@
-const { getBalance } = require("../../database/utilities/userUtilities.js");
-const { EmbedBuilder } = require('discord.js');
-const { tendieIconCode, formatNumber } = require("../../utilities.js");
+import { Message, EmbedBuilder } from 'discord.js';
+import { Users } from '@database';
+import { CURRENCY_EMOJI_CODE, formatNumber } from '@utilities';
 
 module.exports = {
 	data: {
         name: 'bal',
         description: 'Check your tendies.'
     },
-	async execute(message, args) {
-
+	async execute(message: Message, args: string[]) {
+        const authorBalance = await Users.getBalance(message.author.id);
+        
         const embed = new EmbedBuilder()
             .setColor("Blurple")
-            .addFields({ value: `${tendieIconCode} ${formatNumber(+getBalance(message.author.id))}`, name: `Balance` });
+            .addFields({ value: `${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)}`, name: `Balance` });
 
 		return message.reply({ embeds: [embed] });
 	},
