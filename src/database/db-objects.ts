@@ -167,6 +167,12 @@ class Users extends DataStore<User> {
     }
     
     async addItem(user_id: string, item_id: string, amount: number): Promise<void> {
+        // do nothing if item dosent exist
+        const Items = this.references.get('items') as Items;
+        const itemExists = !!(await Items.get(item_id));
+        if (!itemExists)
+            return;
+        
         const userItem = await this.db
             .selectFrom('user_items')
             .selectAll()
@@ -311,8 +317,8 @@ class Users extends DataStore<User> {
 
     async addStock(user_id: string, stock_id: string, amount: number): Promise<void> {
         await this.db.transaction().execute(async trx => {
-            const stocks = this.references.get('stocks') as Stocks;
-            const currentStockPrice: number = (await stocks.getLatestStock(stock_id))?.price;
+            const Stocks = this.references.get('stocks') as Stocks;
+            const currentStockPrice: number = (await Stocks.getLatestStock(stock_id))?.price;
 
             // prevents a user from being created and from inserting a non-existent stock
             if (currentStockPrice == undefined)
@@ -598,7 +604,8 @@ class Stocks extends DataStore<Stock> {
 const items = new Items(db)
 const stocks = new Stocks(db);
 const userReferences = new Collection<string, DataStore<any>>([
-    ['stocks', stocks]
+    ['stocks', stocks],
+    ['items', items]
 ]);
 
 const users = new Users(db, userReferences);

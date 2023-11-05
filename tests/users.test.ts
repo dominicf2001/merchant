@@ -248,7 +248,30 @@ describe('User item operations', () => {
         expect(items).toContainEqual(itemTwo);
     });
 
-    // TODO: tests for non-existing items? 
+    test('Removing and adding a non-existing item', async () => {
+        const fakeItemId = '1111';
+        
+        Users.addItem(userId, fakeItemId, -1);
+
+        expect((await Users.get(userId))).toBeUndefined();
+        expect((await Items.get(fakeItemId))).toBeUndefined();
+
+        Users.addItem(userId, fakeItemId, 1);
+
+        expect((await Users.get(userId))).toBeUndefined();
+        expect((await Items.get(fakeItemId))).toBeUndefined();
+
+        await Users.set(userId);
+        await sleep(sleepDuration);
+
+        Users.addItem(userId, fakeItemId, -1);
+
+        expect((await Items.get(fakeItemId))).toBeUndefined();
+
+        Users.addItem(userId, fakeItemId, 1);
+
+        expect((await Items.get(fakeItemId))).toBeUndefined();
+    });
 });
 
 describe("User stock operations", () => {
@@ -348,11 +371,11 @@ describe("User stock operations", () => {
     test('Delete stock from a non-existing user', async () => {
         await Stocks.updateStockPrice(stockId, 1);
         await sleep(sleepDuration);
-        
+         
         await Users.addStock(userId, stockId, -1);
         await sleep(sleepDuration);
 
-        expect((await Users.get(userId))).not.toBeDefined();
+        expect((await Users.get(userId))).toBeUndefined();
         expect((await Users.getPortfolio(userId)).length).toBe(0);
     });
 
@@ -365,13 +388,16 @@ describe("User stock operations", () => {
         await Stocks.updateStockPrice(stockTwoId, 1000);
         await sleep(sleepDuration);
 
-        // stock one and two
+        // add stock one and two
         await Users.addStock(userId, stockId, 100);
+        await Users.addStock(userId, stockId, 10);
         await Users.addStock(userId, stockTwoId, 50);
+        await Users.addStock(userId, stockTwoId, 25);
+        await Users.addStock(userId, stockTwoId, 5);
         await sleep(sleepDuration);
 
+        // remove from stock one and two
         await Users.addStock(userId, stockId, -80);
-        await sleep(sleepDuration);
         await Users.addStock(userId, stockTwoId, -100);
         await sleep(sleepDuration);
 
@@ -389,16 +415,35 @@ describe("User stock operations", () => {
         expect(portfolioStockTwo).toBeUndefined();
 
         // test value
-        expect((await Users.getPortfolioValue(userId))).toBe(10000);
-
+        expect((await Users.getPortfolioValue(userId))).toBe(15000);
         // test user stocks
         expect(userStocks?.length).toBe(1);
-        expect(userStocks[0]?.quantity).toBe(20);
+        expect(userStocks[0]?.quantity).toBe(30);
         expect(userStocks[0]?.purchase_price).toBe(500);
 
         expect(userStocksTwo?.length).toBe(0);
     });
 
-    // TODO: tests for non-existing stocks 
-    
+    test('Removing and adding a non-existing stock', async () => {
+        Users.addStock(userId, stockId, -1);
+        
+        expect((await Users.get(userId))).toBeUndefined();
+        expect((await Stocks.get(stockId))).toBeUndefined();
+
+        Users.addStock(userId, stockId, 1);
+
+        expect((await Users.get(userId))).toBeUndefined();
+        expect((await Stocks.get(stockId))).toBeUndefined();
+        
+        await Users.set(userId);
+        await sleep(sleepDuration);
+
+        Users.addStock(userId, stockId, -1);
+        
+        expect((await Stocks.get(stockId))).toBeUndefined();
+
+        Users.addStock(userId, stockId, 1);
+        
+        expect((await Stocks.get(stockId))).toBeUndefined();
+    });
 });
