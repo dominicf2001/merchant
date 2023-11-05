@@ -1,18 +1,21 @@
+import { Message } from 'discord.js';
+import { findTextArgs } from '@utilities';
+
 module.exports = {
     data: {
         name: 'megaphone',
         price: 200000,
         icon: ":mega:",
         description: "Sends your message and/or attachment as an @everyone.",
-        usage: "$use megaphone [message/attachment]",
+        usage: "$use megaphone [message AND/OR attachment]",
         role: 2
     },
-    async use(message, args) {
-        const toSend = args.join(" ");
+    async use(message: Message, args: string[]) {
+        const msgToSend = findTextArgs(args).join(" ");
 
         const attachmentsArray = [...message.attachments.values()];
 
-        if (!toSend && message.attachments.size === 0) {
+        if (!msgToSend && message.attachments.size === 0) {
             throw new Error("You need to provide a message or an attachment.");
         }
 
@@ -23,7 +26,7 @@ module.exports = {
         }
 
         return message.channel.send({
-            content: toSend ? `@everyone\n\n <@${message.author.id}> says: ${toSend}` : '@everyone',
+            content: msgToSend ? `@everyone\n\n <@${message.author.id}> says: ${msgToSend}` : '@everyone',
             files: attachmentsArray,
         });
     }

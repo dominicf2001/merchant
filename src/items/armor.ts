@@ -1,4 +1,4 @@
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, Message } from "discord.js";
 import { Users } from "@database";
 
 module.exports = {
@@ -10,15 +10,15 @@ module.exports = {
         usage: "$use armor",
         role: 2
     },
-    async use(message, args) {
+    async use(message: Message, args: string[]) {
         try {
-            const user = await Users.findOne({ where: { user_id: message.author.id } });
+            const authorArmor = await Users.getArmor(message.author.id);
 
-            if (user.armor >= 1){
+            if (authorArmor >= 1){
                 return message.reply("You can only apply one armor at a time.");
             }
 
-            addArmor(message.author.id, 1);
+            Users.addArmor(message.author.id, 1);
 
             const embed = new EmbedBuilder()
                 .setColor("Blurple")

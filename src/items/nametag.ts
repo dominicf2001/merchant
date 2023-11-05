@@ -1,3 +1,6 @@
+import { Message } from 'discord.js';
+import { findTextArgs } from '@utilities';
+
 module.exports = {
     data: {
         name: 'nametag',
@@ -8,28 +11,18 @@ module.exports = {
         usage: '$use nametag @target [name]',
         role: 2
     },
-    async use(message, args) {
-        const targetArg = args.filter(arg => arg.startsWith('<@') && arg.endsWith('>'))[0];
-        const newNicknameArgs = args.filter(arg => arg !== targetArg);
+    async use(message: Message, args: string[]) {
+        const target = message.mentions.members.first();
+        const newNickname = findTextArgs(args).join(" ");
 
-        if (!targetArg) {
+        if (!target) {
             throw new Error('Please specify a target.');
         }
 
-        let id = targetArg.slice(2, -1);
-
-        if (id.startsWith('!')) {
-            id = id.slice(1);
+        if (!newNickname.length) {
+            throw new Error('Please specify a nickname.');
         }
-
-        const target = message.guild.members.cache.get(id);
-
-        if (!target) {
-            throw new Error('Invalid target specified.');
-        }
-
-        const newNickname = newNicknameArgs.join(" ");
-
+        
         if (newNickname.length > 32) {
             throw new Error('This name is too long.');
         }
@@ -38,6 +31,7 @@ module.exports = {
             await target.setNickname(newNickname);
             message.channel.send(`Nickname of <@${target.id}> has been changed to ${newNickname}`);
         } catch (error) {
+            // TODO: make an explicit permissions check?
             throw new Error("Cannot use nametag on this user.");
         }
     }
