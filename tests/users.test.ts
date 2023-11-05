@@ -1,4 +1,4 @@
-import { Users, Items, Stocks } from "@alias/db-objects";
+import { Users, Items, Stocks } from "@database";
 
 async function sleep(duration: number): Promise<void> {
     await new Promise(r => setTimeout(r, duration));

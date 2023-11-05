@@ -1,3 +1,6 @@
+import { Message, Colors, ColorResolvable } from 'discord.js';
+import { isAMention, toUpperCaseString } from '@utilities';
+
 module.exports = {
     data: {
         name: 'dye',
@@ -8,13 +11,17 @@ module.exports = {
         usage: `$use dye [color] @user\n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`,
         role: 1
     },
-    async use(message, args) {
-        let target = message.mentions.members.first();
-		let color = args.find(arg => isNaN(arg) && !arg.startsWith('<@') && !arg.endsWith('>'));
-        console.log(color);
-
+    async use(message: Message, args: string[]) {
+        const target = message.mentions.members.first();
+		const color = toUpperCaseString(args.find(arg => isNaN(+arg) && !isAMention(arg))) as ColorResolvable & string;
+        
+        // TODO: don't take error throwing approach?
         if (!color) {
             throw new Error('Please specify a color.');
+        }
+
+        if (!Colors[color]){
+            throw new Error('Invalid color.');
         }
 
         if (!target) {
@@ -24,19 +31,14 @@ module.exports = {
         try {
             const newRoleName = 'color' + target.id;
             let colorRole = (await message.guild.roles.fetch()).find(role => role.name === newRoleName);
-            color = color.charAt(0).toUpperCase() + color.slice(1);
-            try {
-                if (!colorRole) {
-                    colorRole = await message.guild.roles.create({
-                        name: newRoleName,
-                        color: color,
-                        reason: 'Dye item used'
-                    });
-                } else {
-                    await colorRole.setColor(color);
-                }
-            } catch (error) {
-                throw new Error(`This is not a valid color. View available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`);
+            if (!colorRole) {
+                colorRole = await message.guild.roles.create({
+                    name: newRoleName,
+                    color: color,
+                    reason: 'Dye item used'
+                });
+            } else {
+                await colorRole.setColor(color);
             }
 
             await target.roles.add(colorRole);

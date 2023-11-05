@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
-import { Users } from '@alias/db-objects';
+import { Users } from '@database/db-objects';
 import token from '../config.json';
 import { secondsToHms, getRandomFloat, marketIsOpen, TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "./utilities";
 import { calculateAndUpdateStocks, stockCleanUp } from "./cron";

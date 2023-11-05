@@ -1,5 +1,9 @@
 import { DateTime } from 'luxon';
 
+const OPEN_HOUR: number = 7;
+const CLOSE_HOUR: number = 22;
+const CURRENCY_EMOJI_CODE: string = "<:tendie:1115074573264764958>"
+
 function secondsToHms(d: number): string {
     var h = Math.floor(d / 3600);
     var m = Math.floor(d % 3600 / 60);
@@ -20,15 +24,19 @@ function formatNumber(num: number, decimalPlaces: number = 2): number {
   return Math.round(num * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
 }
 
-function marketIsOpen() {
+function marketIsOpen(): boolean {
     const currentHour = DateTime.now().setZone(TIMEZONE).hour;
-    return currentHour >= 7 && currentHour < 22;
+    return currentHour >= OPEN_HOUR && currentHour < CLOSE_HOUR;
+}
+
+function toUpperCaseString(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function isAMention(arg: string): boolean {
+    return arg.startsWith('<@') && !arg.endsWith('>');
 }
 
 const TIMEZONE: string = 'America/New_York';
-const OPEN_HOUR: number = 7;
-const CLOSE_HOUR: number = 22;
 
-const tendieIconCode: string = "<:tendie:1115074573264764958>"
-
-export { secondsToHms, getRandomInt, getRandomFloat, tendieIconCode, formatNumber, TIMEZONE, OPEN_HOUR, CLOSE_HOUR, marketIsOpen };
+export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen, isAMention, toUpperCaseString, TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE };

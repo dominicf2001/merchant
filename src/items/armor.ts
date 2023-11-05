@@ -1,6 +1,5 @@
-const { EmbedBuilder } = require("discord.js");
-const { addArmor } = require("../database/utilities/userUtilities.js");
-const { Users } = require("../database/dbObjects.js");
+import { EmbedBuilder } from "discord.js";
+import { Users } from "@database";
 
 module.exports = {
     data: {
