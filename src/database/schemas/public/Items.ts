@@ -12,7 +12,7 @@ export default interface ItemsTable {
 
   price: ColumnType<number, number | null, number | null>;
 
-  icon: ColumnType<string | null, string | null, string | null>;
+  emoji_code: ColumnType<string | null, string | null, string | null>;
 }
 
 export type Items = Selectable<ItemsTable>;

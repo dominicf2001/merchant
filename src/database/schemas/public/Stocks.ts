@@ -13,8 +13,6 @@ export default interface StocksTable {
 
   created_date: ColumnType<StocksCreatedDate, StocksCreatedDate | null, StocksCreatedDate | null>;
 
-  total_shares_purchased: ColumnType<number, number | null, number | null>;
-
   price: ColumnType<number, number | null, number | null>;
 }
 

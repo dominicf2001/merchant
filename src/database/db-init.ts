@@ -52,7 +52,7 @@ async function main() {
                 col.notNull().primaryKey())
             .addColumn('price', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
-            .addColumn('icon', 'varchar(30)')
+            .addColumn('emoji_code', 'varchar(30)')
             .execute();
         
         // STOCKS

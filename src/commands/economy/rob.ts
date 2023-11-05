@@ -1,7 +1,15 @@
-const { getBalance, addBalance, usersCache } = require("../../database/utilities/userUtilities.js");
-const { tendieIconCode, formatNumber, getRandomInt, getRandomFloat } = require("../../utilities.js");
-const { EmbedBuilder, inlineCode } = require('discord.js');
-const { Users } = require("../../database/dbObjects.js");
+import { Users } from '@database';
+import { CURRENCY_EMOJI_CODE, formatNumber, findTextArgs } from '@utilities';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
+
+enum RobType {
+    tendies = 'tendies',
+    item = 'item'
+}
+
+function isValidRobType(robType: string): robType is RobType {
+    return Object.keys(RobType).includes(robType as RobType);
+}
 
 module.exports = {
     cooldown: 5, // 7200
@@ -9,64 +17,83 @@ module.exports = {
         name: 'rob',
         description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${inlineCode("$rob @target [tendies/item]")}`
     },
-	async execute(message, args) {
-		const robType = args.find(arg => isNaN(arg) && !arg.startsWith('<@') && !arg.endsWith('>')) ?? "tendies";
-        const author = usersCache.get(message.author.id);
-        if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
-		const target = message.mentions.users.first();
+	async execute(message: Message, args: string[]): Promise<void> {
+		const robType: RobType = (findTextArgs(args)[0] ?? 'tendies') as RobType;
+        const target = message.mentions.users.first();
+        // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
 
         if (!target){
-            throw new Error("Please specify a target.");
+            message.reply("Please specify a target.");
+            return;
         }
 
-        if (target.id == author.user_id){
-            throw new Error("You cannot rob yourself.");
+        if (target.id === message.author.id){
+            message.reply("You cannot rob yourself.");
+            return;
         }
 
-        if (robType !== "tendies" && robType !== "item") {
-            throw new Error("Invalid rob type.");
+        if (!isValidRobType(robType)) {
+            message.reply("Invalid rob type.");
+            return;
         }
-
+        // TODO: move to json
+        const TENDIES_ROB_CHANCE = 70;
+        const ITEM_ROB_CHANCE = 20;
+        const MAX_ITEM_COUNT = 5;
         let reply = "";
+        
+        switch (robType) {
+            case 'tendies':
+                if (getRandomInt(1, 100) > TENDIES_ROB_CHANCE) {
+                    const targetBalance = await Users.getBalance(target.id);
+                    const robAmount: number = Math.floor(targetBalance * getRandomFloat(.01, .10));
+                    
+                    await Users.addBalance(message.author.id, robAmount);
+                    await Users.addBalance(target.id, -robAmount);
 
-        if (robType == "tendies") {
-            if (getRandomInt(1,100) > 70){
-                const amount = getBalance(target.id) * getRandomFloat(.01, .10);
-                addBalance(message.author.id, +amount);
-                addBalance(target.id, -amount);
-                reply = `You have robbed ${tendieIconCode} ${formatNumber(amount)} from: ${inlineCode(target.username)}.`;
-            } else {
-                const amount = getBalance(message.author.id) * getRandomFloat(.03, .15);
-                addBalance(message.author.id, -amount);
-                reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${tendieIconCode} ${formatNumber(amount)} `;
-            }
-        } else if (robType == "item") {
-            if (getRandomInt(1,100) > 1){
-                const targetUser = usersCache.get(target.id);
-                const targetItems = await targetUser.getItems();
-                const authorItems = await author.getItems();
+                    reply = `You have robbed ${CURRENCY_EMOJI_CODE} ${formatNumber(robAmount)} from: ${inlineCode(target.username)}.`;
+                }
+                else {
+                    const authorBalance = await Users.getBalance(message.author.id);
+                    const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
 
-                const userInvSize = authorItems.reduce((previous, current) => {
-                    return previous + current["quantity"];
-                }, 0);
+                    await Users.addBalance(message.author.id, -penaltyAmount);
 
-                if (userInvSize >= 5) throw new Error("Your inventory is full.");
+                    reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
+                }
+                break;
+            case 'item':
+                if (getRandomInt(1, 100) > ITEM_ROB_CHANCE) {
+                    const targetItems = await Users.getItems(target.id);
+                    const authorItemCount: number = await Users.getItemCount(message.author.id);
 
-                if (!targetItems.length) throw new Error("This user has no items.");
 
-                const item = targetItems[Math.floor(Math.random() * targetItems.length)];
-                item.id = item.item_id;
+                    if (authorItemCount >= MAX_ITEM_COUNT) {
+                        message.reply("Your inventory is full.");
+                        return;
+                    }
 
-                targetUser.removeItem(item);
-                author.addItem(item);
+                    if (!targetItems.length) {
+                        message.reply("This user has no items.");
+                        return;
+                    }
 
-                reply = `You have robbed ${item.item.name} from: ${inlineCode(target.username)}.`;
-            } else {
-                const amount = getBalance(message.author.id) * getRandomFloat(.03, .15);
-                addBalance(message.author.id, -amount);
-                reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${tendieIconCode} ${formatNumber(amount)} `;
-            }
+                    const item = targetItems[Math.floor(Math.random() * targetItems.length)];
 
+                    await Users.addItem(target.id, item.item_id, -1);
+                    await Users.addItem(message.author.id, item.item_id, 1);
+
+                    reply = `You have robbed ${item.item_id} from: ${inlineCode(target.username)}.`;
+                }
+                else {
+                    const authorBalance = await Users.getBalance(message.author.id);
+                    const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
+
+                    await Users.addBalance(message.author.id, -penaltyAmount);
+
+                    reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
+                }
+                break;
         }
 
         const embed = new EmbedBuilder()
@@ -76,6 +103,6 @@ module.exports = {
                 value: ` `
             });
 
-        return message.reply({ embeds: [embed] });
+        message.reply({ embeds: [embed] });
     },
 }
