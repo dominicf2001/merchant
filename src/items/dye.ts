@@ -7,7 +7,6 @@ module.exports = {
         description: "Sets the color of any user's nickname.",
         price: 1500,
         icon: ":art:",
-        attack: 1,
         usage: `$use dye [color] @user\n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`,
         role: 1
     },
@@ -28,6 +27,12 @@ module.exports = {
             throw new Error('Please specify a target.');
         }
 
+        if (message.author.id !== target.id) {
+            await Users.addArmor(target.id, -1);
+            await message.reply("This user was protected by :shield: armor. It is now broken and they are exposed.");
+            return;
+        }
+
         try {
             const newRoleName = 'color' + target.id;
             let colorRole = (await message.guild.roles.fetch()).find(role => role.name === newRoleName);
@@ -37,7 +42,8 @@ module.exports = {
                     color: color,
                     reason: 'Dye item used'
                 });
-            } else {
+            }
+            else {
                 await colorRole.setColor(color);
             }
 
@@ -49,7 +55,7 @@ module.exports = {
             message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
         } catch (error) {
             console.error(error);
-            throw error;
+            throw new Error("Something went wrong when setting the color.");
         }
     }
 }

@@ -8,7 +8,7 @@ import Database from './schemas/Database';
 import { DateTime } from 'luxon';
 import { Deque } from '@datastructures-js/deque';
 
-import { Collection } from 'discord.js';
+import { Collection, Message } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
 import { Pool, types } from 'pg';
@@ -166,54 +166,82 @@ class Users extends DataStore<User> {
         });
     }
     
-    async addItem(user_id: string, item_id: string, amount: number): Promise<void> {
-        // do nothing if item dosent exist
-        const Items = this.references.get('items') as Items;
-        const itemExists = !!(await Items.get(item_id));
-        if (!itemExists)
-            return;
-        
-        const userItem = await this.db
-            .selectFrom('user_items')
-            .selectAll()
-            .where('user_id', '=', user_id as any)
-            .where('item_id', '=', item_id as any)
-            .executeTakeFirst();
+    async addItem(user_id: string, item_id: string, amount: number): Promise<number> {
+        let amountAddedOrRemoved = 0;
 
-        if (!userItem && amount > 0) {
-            await this.set(user_id);
+        await this.db.transaction().execute(async trx => {
+            // Check if item exists
+            const Items = this.references.get('items') as Items;
+            const itemExists = !!(await Items.get(item_id));
             
-            await this.db
-                .insertInto('user_items')
-                .values({
-                    user_id: user_id as UsersUserId,
-                    item_id: item_id as ItemsItemId,
-                    quantity: amount
-                })
-                .execute();
-            return;
-        } else if (!userItem && amount <= 0) {
-            return;
-        }
+            if (!itemExists)
+                return;
 
-        const newQuantity = userItem.quantity + amount;
-        if (newQuantity <= 0) {
-            await this.db
-                .deleteFrom('user_items')
-                .where('user_id', '=', user_id as any)
-                .where('item_id', '=', item_id as any)
-                .execute();
-        } else {
-            await this.db
-                .updateTable('user_items')
-                .set({
-                    quantity: newQuantity
-                })
-                .where('user_id', '=', user_id as any)
-                .where('item_id', '=', item_id as any)
-                .execute();
-        }
+            if (amount > 0) {
+                // If amount is positive, increment the existing record or insert a new one.
+                const userItem = await trx
+                    .selectFrom('user_items')
+                    .selectAll()
+                    .where('user_id', '=', user_id as any)
+                    .where('item_id', '=', item_id as any)
+                    .executeTakeFirst();
+
+                if (!userItem) {
+                    await this.set(user_id);
+
+                    await trx
+                        .insertInto('user_items')
+                        .values({
+                            user_id: user_id as UsersUserId,
+                            item_id: item_id as ItemsItemId,
+                            quantity: amount
+                        })
+                        .execute();
+                } else {
+                    const newQuantity = userItem.quantity + amount;
+                    await trx
+                        .updateTable('user_items')
+                        .set({ quantity: newQuantity })
+                        .where('user_id', '=', user_id as any)
+                        .where('item_id', '=', item_id as any)
+                        .execute();
+                }
+
+                amountAddedOrRemoved = amount;
+            } else if (amount < 0) {
+                // If amount is negative, decrement the existing record.
+                const userItem = await trx
+                    .selectFrom('user_items')
+                    .selectAll()
+                    .where('user_id', '=', user_id as any)
+                    .where('item_id', '=', item_id as any)
+                    .executeTakeFirst();
+
+                if (userItem) {
+                    const newQuantity = userItem.quantity + amount;  // amount is negative
+                    if (newQuantity <= 0) {
+                        await trx
+                            .deleteFrom('user_items')
+                            .where('user_id', '=', user_id as any)
+                            .where('item_id', '=', item_id as any)
+                            .execute();
+                        amountAddedOrRemoved = -userItem.quantity;  // All items were removed
+                    } else {
+                        await trx
+                            .updateTable('user_items')
+                            .set({ quantity: newQuantity })
+                            .where('user_id', '=', user_id as any)
+                            .where('item_id', '=', item_id as any)
+                            .execute();
+                        amountAddedOrRemoved = amount;  // The specified negative amount was removed
+                    }
+                }
+            }
+        });
+
+        return amountAddedOrRemoved;
     }
+
 
     async setBalance(user_id: string, amount: number): Promise<void> {
         if (amount < 0) amount = 0;
@@ -324,8 +352,10 @@ class Users extends DataStore<User> {
                 .execute() as UserStock[]
         );
     }
-
-    async addStock(user_id: string, stock_id: string, amount: number): Promise<void> {
+    
+    async addStock(user_id: string, stock_id: string, amount: number): Promise<number> {
+        let amountSoldOrBought = 0;
+        
         await this.db.transaction().execute(async trx => {
             const Stocks = this.references.get('stocks') as Stocks;
             const currentStockPrice: number = (await Stocks.getLatestStock(stock_id))?.price;
@@ -348,7 +378,10 @@ class Users extends DataStore<User> {
                         purchase_price: currentStockPrice,
                     })
                     .execute();
-            } else if (amount < 0) {
+                
+                amountSoldOrBought = amount;
+            }
+            else if (amount < 0) {
                 // If amount is negative, decrement the existing records.
                 const userStocks = await trx
                     .selectFrom('user_stocks')
@@ -360,7 +393,7 @@ class Users extends DataStore<User> {
 
                 // prevents a user from being created
                 if (!userStocks.length)
-                    return; 
+                    return 0; 
 
                 // amount is negative, make it positive
                 let remainingAmountToDecrement = -amount;
@@ -394,9 +427,11 @@ class Users extends DataStore<User> {
 
                         remainingAmountToDecrement = 0;  // Stop, as all amount has been decremented
                     }
+                    amountSoldOrBought = amount - remainingAmountToDecrement;
                 }
             }
         });
+        return amountSoldOrBought;
     }
 
 
@@ -405,8 +440,10 @@ class Users extends DataStore<User> {
     }
 }
 
+type UseFunction = (message: Message, args: string[]) => Promise<void>;
+
 class Items extends DataStore<Item> {
-    private itemBehaviors: Collection<string, Function> = new Collection<string, Function>();
+    private itemBehaviors: Collection<string, UseFunction> = new Collection<string, UseFunction>();
     
     async refreshCache(): Promise<void> {
         const itemsPath = path.join(process.cwd(), 'src/items');
@@ -422,9 +459,9 @@ class Items extends DataStore<Item> {
         }
     }
 
-    async useItem(item_id: string): Promise<void> {
-        const use: Function = this.itemBehaviors.get(item_id);
-        await use();
+    async use(item_id: string, message: Message, args: string[]): Promise<void> {
+        const use: UseFunction = this.itemBehaviors.get(item_id);
+         await use(message, args);
     }
 
     constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {

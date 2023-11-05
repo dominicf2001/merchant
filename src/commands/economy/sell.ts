@@ -1,106 +1,123 @@
-const { Users, UserStocks } = require("../../database/dbObjects.js");
-const { tendieIconCode, formatNumber } = require("../../utilities.js");
-const { addBalance } = require("../../database/utilities/userUtilities.js");
-const { getLatestStock } = require("../../database/utilities/stockUtilities.js");
-const { inlineCode, EmbedBuilder } = require('discord.js');
+import { Users, Items, Stocks } from '@database';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 module.exports = {
-	data: {
+    data: {
         name: 'sell',
         description: `sell an item or a stock.\n${inlineCode("$sell [item/@user] [quantity/all]")}`
     },
-    async execute(message, args) {
-        if (message.mentions.users.size == 1){
-            sellStock(message, args);
-        } else {
-            const itemName = args.find(arg => isNaN(arg) && arg !== "all");
-            let quantity = args.includes("all") ? 10 : args.find(arg => !isNaN(arg)) ?? 1;
-            const user = await Users.findOne({ where: { user_id: message.author.id } });
-            const item = await user.getItem(itemName);
-
-            if (!item) return message.reply(`You do not have this item.`);
-
-            if (quantity <= 0){
-                return message.reply(`You can only sell one or more items.`);
-            }
-
-            if (quantity > item.quantity || args.includes("all")){
-                quantity = item.quantity;
-            }
-
-            const embed = new EmbedBuilder()
-                .setColor("Blurple")
-
-            const pluralS = quantity > 1 ? "s" : "";
-
-            addBalance(message.author.id, item.item.price * quantity);
-
-            for (let i = 0; i < quantity; ++i){
-                await user.removeItem(item.item);
-            }
-
-            embed.addFields({
-                name: `${formatNumber(quantity)} ${item.item.name}${pluralS} sold for ${tendieIconCode} ${formatNumber(item.item.price * quantity)}`,
-                value: ' '
-            });
-            return message.reply({ embeds: [embed] });
+    async execute(message: Message, args: string[]): Promise<void> {
+        if (message.mentions.users.size == 1) {
+            await sellStock(message, args);
         }
-	},
+        else {
+            await sellItem(message, args);
+        }
+
+    }
 };
 
-async function sellStock(message, args) {
+async function sellStock(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
+    const quantity: number = args.includes("all") ?
+        99999 :
+        (+findNumericArgs(args)[0] ?? 1);
+
+    if (!Number.isInteger(quantity)) {
+        await message.reply(`You can only sell a whole number of shares.`);
+        return;
+    }
+
+    if (quantity <= 0) {
+        await message.reply(`You can only sell one or more shares.`);
+        return;
+    }
+
+    if (message.author.id === stockUser.id) {
+        await message.reply(`You cannot own your own stock.`);
+        return;
+    }
+
     const latestStock = await getLatestStock(stockUser.id);
 
+    if (!latestStock) {
+        await message.reply(`That stock does not exist.`);
+        return;
+    }
+
+    let userStocks = await Users.getUserStocks(message.author.id, stockUser.id);
+
+    if (!userStocks.length) {
+        await message.reply(`You do not own any shares of this stock.`);
+        return;
+    }
+
     try {
-        let userStocks = await UserStocks.findAll({
-            where: { user_id: message.author.id, stock_user_id: stockUser.id },
-            order: [['purchase_date', 'ASC']],
-        });
+        const totalSold: number = await Users.addStock(message.author.id, stockUser.id, -quantity);
+        const totalReturn: number = latestStock.price * totalSold;
 
-        if (!userStocks.length) return message.reply(`You do not have any shares of this stock.`);
+        await addBalance(message.author.id, totalReturn);
 
-        let totalShares = userStocks.reduce((total, stock) => total + Number(stock.shares), 0);
-        let shares = args.includes("all") ? totalShares : args.find(arg => !isNaN(arg)) ?? 1;
-
-        if (shares <= 0) {
-            return message.reply(`You can only sell one or more stocks.`);
-        }
-
-        // sell as many as possible
-        let totalSharesSold = 0;
-        for (let i = 0; i < userStocks.length; i++) {
-            if (shares <= 0) break;
-
-            let userStock = userStocks[i];
-
-            if (Number(userStock.shares) > shares) {
-                totalSharesSold += shares;
-                userStock.shares -= shares;
-                shares = 0;
-                await userStock.save();
-            } else {
-                totalSharesSold += Number(userStock.shares);
-                shares -= Number(userStock.shares);
-
-                await userStock.destroy();
-            }
-        }
-
-        await addBalance(message.author.id, Number(latestStock.price * totalSharesSold));
-
-        const pluralS = totalSharesSold > 1 ? "s" : "";
-
+        const pluralS: string = totalSold > 1 ? "s" : "";
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .addFields({
-                name: `${formatNumber(totalSharesSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${tendieIconCode} ${formatNumber(latestStock.price * totalSharesSold)}`,
+                name: `${formatNumber(totalSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
                 value: ' '
             });
 
-        return message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     } catch (error) {
         console.error(error);
     }
 }
 
+async function sellItem(message: Message, args: string[]): Promise<void> {
+    const itemName: string = findTextArgs(args)[0].toLowerCase();
+    const quantity: number = args.includes("all") ?
+        99999 :
+        (+findNumericArgs(args)[0] ?? 1);
+    
+    if (!Number.isInteger(quantity)) {
+        await message.reply(`You can only sell a whole number of items.`);
+        return;
+    }
+
+    if (quantity <= 0) {
+        await message.reply(`You can only sell one or more items.`);
+        return;
+    }
+
+    const item = await Items.get(itemName);
+
+    if (!item) {
+        await message.reply(`That item does not exist.`);
+        return;
+    }
+    
+    const userItem = await Users.getItem(message.author.id, itemName);
+
+    if (!userItem) {
+        await message.reply(`You do not have this item.`);
+        return;
+    }
+    
+    try {
+        const totalSold: number = await Users.addItem(message.author.id, itemName, -quantity);
+        const totalReturn: number = item.price * totalSold;
+
+        await addBalance(message.author.id, totalReturn);
+        
+        const pluralS: string = quantity > 1 ? "s" : "";
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .addFields({
+                name: `${formatNumber(totalSold)} ${itemName}${pluralS} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
+                value: ' '
+            });
+        await message.reply({ embeds: [embed] });
+    } catch (error) {
+        console.error(error);
+    }
+}
