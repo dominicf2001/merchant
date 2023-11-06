@@ -38,6 +38,7 @@ client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
     await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE);
 });
 
+// TODO: abstract this?
 async function sendShopMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
     const paginatedMenu = new PaginatedMenuBuilder(id)
         .setColor('Blurple')

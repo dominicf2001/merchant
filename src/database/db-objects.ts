@@ -79,6 +79,23 @@ abstract class DataStore<Data> {
         }
     }
 
+    async getAll(): Promise<Data[]> {
+        if (this.cache.size) {
+            // cache hit
+            const allData: Data[] = [];
+            for (const id in this.cache) {
+                allData.push(this.cache[id][0]);
+            }
+            return allData;
+        } else {
+            // cache miss
+            return await this.db
+                .selectFrom(this.tableName)
+                .selectAll()
+                .execute() as Data[];
+        }
+    }
+
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
         const newData: Data = { [this.tableID]: id as any, ...data } as Data;
 
@@ -315,6 +332,12 @@ class Users extends DataStore<User> {
         }
         
         return portfolioValue
+    }
+
+    async getNetWorth(user_id: string): Promise<number> {
+        const portfolioValue = await this.getPortfolioValue(user_id);
+        const balance = await this.getBalance(user_id);
+        return portfolioValue + balance;
     }
 
     async getPortfolio(user_id: string): Promise<Stock[]> {

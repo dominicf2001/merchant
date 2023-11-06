@@ -1,30 +1,35 @@
-const { usersCache } = require("../../database/utilities/userUtilities.js");
-const { EmbedBuilder, inlineCode } = require('discord.js');
-const { tendieIconCode, formatNumber } = require("../../utilities.js");
-const { getNetWorth } = require("../../database/utilities/userUtilities.js");
+import { Message, EmbedBuilder, inlineCode, userMention } from 'discord.js';
+import { Users } from '@database';
+import { CURRENCY_EMOJI_CODE, formatNumber } from '@utilities';
 
 module.exports = {
-	data: {
+    data: {
         name: 'top',
         description: 'See who are the goodest boys.'
     },
-    async execute(message) {
-        const topUsers = usersCache.sort(async (a, b) => (await getNetWorth(b.user_id)) - (await getNetWorth(a.user_id))).first(10);
-        console.log(topUsers);
+    async execute(message: Message, args: string[]): Promise<void> {
+        const allUsers = await Users.getAll();
+        
+        const netWorths = await Promise.all(allUsers.map(user => Users.getNetWorth(user.user_id)));
+        
+        const usersAndNetWorths = allUsers.map((user, index) => ({
+            user,
+            netWorth: netWorths[index],
+        }));
+        usersAndNetWorths.sort((a, b) => b.netWorth - a.netWorth);
+        
+        const topUsers = usersAndNetWorths.slice(0, 10);
 
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .setTitle("Goodest Boys");
 
-        const fetchedUsers = await Promise.all(topUsers.map(user => message.client.users.fetch(user.user_id)));
-        const netWorths = await Promise.all(topUsers.map(async user => await getNetWorth(user.user_id)));
-
-        for (let index = 0; index < topUsers.length; index++) {
-            const fetchedUser = fetchedUsers[index];
-            const netWorth = netWorths[index];
-            embed.addFields({ name: `${index + 1}. ${inlineCode(fetchedUser.tag)}`, value: `${tendieIconCode} ${formatNumber(netWorth)}`});
+        let i = 1;
+        for (const userAndNetworth of topUsers) {
+            const { user, netWorth } = userAndNetworth;
+            embed.addFields({ name: `${i++}. ${inlineCode(userMention(user.user_id))}`, value: `${CURRENCY_EMOJI_CODE} ${formatNumber(netWorth)}` });
         }
 
-        return message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     },
-}
+};
