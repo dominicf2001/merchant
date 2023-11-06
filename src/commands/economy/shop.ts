@@ -1,90 +1,63 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { tendieIconCode } = require("../../utilities.js");
-const { client } = require("../../index.js");
+import { Items } from '@database';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '@utilities';
+import { Message, Events, ButtonInteraction } from 'discord.js';
+
+const SHOP_ID: string = 'shop';
+const SHOP_PAGE_SIZE: number = 5;
 
 module.exports = {
-	data: {
+    data: {
         name: 'shop',
         description: 'View the shop.'
     },
-	async execute(message, args) {
-        handleShopReply(message, args);
-    },
+    async execute(message: Message, args: string[]): Promise<void> {
+        const pageNum = +findNumericArgs(args)[0] ?? 1;
+        await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+    }
 };
 
-async function handleShopReply(message, args, isUpdate) {
-    let pageNum = args.find(arg => !isNaN(arg)) ?? 1;
-    const pageSize = 5;
-    const startIndex = (pageNum - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-
-
-    const items = Array.from(message.client.items.values())
-        .sort((itemA, itemB) => itemA.data.price - itemB.data.price)
-        .slice(startIndex, endIndex + 1);
-
-    const totalPages = Math.ceil(items.length / pageSize);
-
-    const roles = [
-        "Truecel",
-        "Incel",
-        "Chud",
-        "Fakecel",
-        "Normie"
-    ];
-
-    const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .setTitle("Shop")
-        .setDescription(`Page ${pageNum}/${totalPages}\n----\nTo view additional info on an item, see $help [item].\n----\n`);
-
-    items.forEach(item => {
-        embed.addFields({ name: `${item.data.icon} ${item.data.name} - ${tendieIconCode} - ${item.data.price} (${roles[item.data.role]})`, value: `${item.data.description}` });
-    })
-
-    if (pageNum > totalPages || pageNum < 1) return;
-
-    const previousBtn = new ButtonBuilder()
-        .setCustomId('shopPrevious')
-        .setLabel('Previous')
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pageNum == 1);
-
-    const nextBtn = new ButtonBuilder()
-        .setCustomId('shopNext')
-        .setLabel('Next')
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pageNum == totalPages);
-
-    const buttons = new ActionRowBuilder()
-        .addComponents(previousBtn, nextBtn);
-
-    if (isUpdate) {
-        return message.update({ embeds: [embed], components: [buttons] });
-    } else {
-        return message.reply({ embeds: [embed], components: [buttons] });
-    }
-}
-
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isButton()) return;
+client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
     const { customId } = interaction;
+    
+    // Ensure this a paginated menu button (may need more checks here in the future)
+    if (!interaction.isButton())
+        return false;
 
-    if (!['shopPrevious', 'shopNext'].includes(customId)) return;
+    if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
+        return;
 
     const authorId = interaction.message.mentions.users.first().id;
-
-    if (interaction.user.id !== authorId) return;
+    if (interaction.user.id !== authorId)
+        return;
 
     let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-
-    if (customId === 'shopPrevious') {
-        pageNum = Math.max(pageNum - 1, 1);
-    } else if (customId === 'shopNext') {
-        pageNum = pageNum + 1;
-    }
-
-    if (authorId === interaction.user.id) {
-        handleShopReply(interaction, [pageNum], true);
-    }
+    pageNum = (customId === `${SHOP_ID}Previous`) ?
+        pageNum = Math.max(pageNum - 1, 1) :
+        pageNum + 1;
+    
+    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE);
 });
+
+async function sendShopMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
+    const paginatedMenu = new PaginatedMenuBuilder(id)
+        .setColor('Blurple')
+        .setTitle('Shop')
+        .setDescription('To view additional info on an item, see $help [item].');
+
+    const startIndex = (pageNum - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const items = (await Items.getItems())
+        .sort((itemA, itemB) => itemA.price - itemB.price)
+        .slice(startIndex, endIndex + 1);
+    
+    items.forEach(item => {
+        paginatedMenu.addFields({ name: `${item.emoji_code} ${item.item_id} - ${CURRENCY_EMOJI_CODE} - ${formatNumber(item.price)}`, value: `${item.description}` });
+    }) 
+
+    const embed = paginatedMenu.createEmbed();
+    const buttons = paginatedMenu.createButtons();
+    
+    message instanceof ButtonInteraction ?
+        await message.update({ embeds: [embed], components: [buttons] }) :
+        await message.reply({ embeds: [embed], components: [buttons] });
+}

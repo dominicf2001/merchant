@@ -450,9 +450,10 @@ class Items extends DataStore<Item> {
         const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.ts'));
         for (const file of itemFiles) {
             const filePath = path.join(itemsPath, file);
-            const item = await import(filePath);
-            if ('data' in item && 'use' in item) {
-                this.itemBehaviors.set(item.item_id, item.use);
+            const itemObj = await import(filePath);
+            if ('data' in itemObj && 'use' in itemObj) {
+                this.itemBehaviors.set(itemObj.data.item_id, itemObj.use);
+                this.cache.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
             } else {
                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
             }
@@ -462,6 +463,19 @@ class Items extends DataStore<Item> {
     async use(item_id: string, message: Message, args: string[]): Promise<void> {
         const use: UseFunction = this.itemBehaviors.get(item_id);
          await use(message, args);
+    }
+
+    async getItems(): Promise<Item[]> {
+        if (!this.cache.size) {
+            const items: Item[] = await this.db
+                .selectFrom('items')
+                .selectAll()
+                .execute() as Item[];
+            return items;   
+        }
+        else {
+            return this.cache[0].values();
+        }
     }
 
     constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {

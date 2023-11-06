@@ -1,4 +1,4 @@
-import { Users, Items, Stocks } from '@database';
+import { Users, Items } from '@database';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 

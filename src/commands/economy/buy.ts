@@ -18,8 +18,6 @@ module.exports = {
     },
 };
 
-// TOOO: combine the functions?
-
 async function buyStock(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
     const quantity: number = args.includes("all") ?

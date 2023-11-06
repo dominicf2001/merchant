@@ -1,4 +1,4 @@
-import { APIEmbedField, ActionRowData, ColorResolvable, EmbedData, Message, BaseInteraction, RestOrArray, APIEmbed, APIActionRowComponent, APIMessageActionRowComponent } from 'discord.js';
+import { APIEmbedField, ActionRowData, ColorResolvable, EmbedData, Message, BaseInteraction, RestOrArray } from 'discord.js';
 import { DateTime } from 'luxon';
 
 const OPEN_HOUR: number = 7;
@@ -55,6 +55,8 @@ class PaginatedMenuBuilder {
     private totalPages: number = 1;
     private id: string = "";
     private pageSize: number = 5;
+    private startIndex: number;
+    private endIndex: number;
     private color: ColorResolvable = "blurple" as ColorResolvable;
     private title: string = "";
     private description: string = "";
@@ -81,7 +83,7 @@ class PaginatedMenuBuilder {
         return this;
     }
 
-    createEmbed(): APIEmbed {
+    createEmbed(): EmbedData {
         const embed = new EmbedBuilder()
             .setColor(this.color)
             .setTitle(this.title)
@@ -91,7 +93,7 @@ class PaginatedMenuBuilder {
         return embed;
     }
 
-    createButtons(): APIActionRowComponent<APIMessageActionRowComponent> {
+    createButtons(): ActionRowData {
         const previousBtn = new ButtonBuilder()
             .setCustomId(`${this.id}Previous`)
             .setLabel('Previous')
@@ -105,7 +107,7 @@ class PaginatedMenuBuilder {
             .setDisabled(this.pageNum === this.totalPages);
 
         const buttonsRow = new ActionRowBuilder()
-            .addComponents(previousBtn, nextBtn);
+            .addComponents(previousBtn, nextBtn) as Actio;
 
         return buttonsRow;
     }
