@@ -1,13 +1,14 @@
-const { EmbedBuilder, inlineCode, AttachmentBuilder } = require('discord.js');
-const { tendieIconCode, formatNumber } = require("../../utilities.js");
-const { getPortfolio, getPortfolioStock } = require('../../database/utilities/stockUtilities.js');
+import { Users, Items, Stocks } from '@database';
+import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
+import { DateTime } from 'luxon';
 
 module.exports = {
     data: {
         name: 'pf',
         description: 'View your portfolio.'
     },
-    async execute(message, args) {
+    async execute(message: Message, args: string[]): Promise<void> {
         if (args[0]) {
             try {
                 await handleDetailReply(message, args);
@@ -24,66 +25,69 @@ module.exports = {
     }
 };
 
-async function handleListReply(message, args) {
-    const portfolio = await getPortfolio(message.author.id);
+async function handleListReply(message: Message, args: string[]): Promise<void> {
+    const portfolio = await Users.getPortfolio(message.author.id);
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .setDescription(`To view additional info on a stock: ${inlineCode("$pf @user [page#]")}`);
 
-    let totalValue = 0;
-    let totalChange = 0;
-    for (const stockId in portfolio){
-        const stock = portfolio[stockId];
-        let arrow = stock.gainOrLoss < 0 ?
-            "<:stockdown:1119370974140301352>" :
-            "<:stockup:1119370943240863745>";
-        const gainedOrLost = stock.gainOrLoss < 0 ?
+    let totalValue: number = 0;
+    let totalChange: number = 0;
+    for (const stockId in portfolio) {
+        const userStocks = await Users.getUserStocks(message.author.id, stockId);
+
+        let value: number = 0;
+        let quantity: number = 0;
+        for (const userStock of userStocks) {
+            quantity += userStock.quantity;
+            value += (userStock.quantity * userStock.purchase_price);
+        }
+
+        const latestStockPrice: number = (await Stocks.getLatestStock(stockId)).price;
+        const gain: number = latestStockPrice - totalValue;
+        
+        const arrow: string = gain < 0 ?
+            STOCKDOWN_EMOJI_CODE :
+            STOCKUP_EMOJI_CODE;
+        const gainedOrLost: string = gain < 0 ?
             "lost" :
             "gained";
 
         const user = await message.client.users.fetch(stockId);
-        totalValue += Number(stock.total_purchase_price) + Number(stock.gainOrLoss);
-        totalChange += Number(stock.gainOrLoss);
-        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} ${tendieIconCode} ${formatNumber(stock.gainOrLoss)} ${gainedOrLost} all time`,
-            value: `Total shares: :receipt: ${formatNumber(stock.total_shares)}\nTotal invested: ${tendieIconCode} ${formatNumber(stock.total_purchase_price)}`});
+        totalValue += (value + gain);
+        totalChange += gain;
+        embed.addFields({ name: `${arrow} ${inlineCode(user.username)} ${CURRENCY_EMOJI_CODE} ${formatNumber(gain)} ${gainedOrLost} all time`,
+            value: `Total shares: :receipt: ${formatNumber(quantity)}\nTotal invested: ${CURRENCY_EMOJI_CODE} ${formatNumber(value)}`});
     }
 
-    arrow = totalChange < 0 ?
-        "<:stockdown:1119370974140301352>" :
-        "<:stockup:1119370943240863745>";
+    const arrow: string = totalChange < 0 ?
+        STOCKDOWN_EMOJI_CODE :
+        STOCKUP_EMOJI_CODE;
 
-    embed.setTitle(`Portfolio :page_with_curl:\nValue: ${tendieIconCode} ${formatNumber(totalValue)} (${arrow} ${formatNumber(totalChange)})`);
+    embed.setTitle(`Portfolio :page_with_curl:\nValue: ${CURRENCY_EMOJI_CODE} ${formatNumber(totalValue)} (${arrow} ${formatNumber(totalChange)})`);
 
-    return await message.reply({ embeds: [embed] });
+    await message.reply({ embeds: [embed] });
 }
 
-async function handleDetailReply(message, args) {
-    const pageNum = args.find(arg => !isNaN(arg)) ?? 1;
+async function handleDetailReply(message: Message, args: string[]): Promise<void> {
+    const pageNum: number = +findNumericArgs(args)[0] ?? 1;
     const stockUser = message.mentions.users.first();
     const stockId = stockUser.id;
-    const portfolioStock = await getPortfolioStock(message.author.id, stockId, pageNum);
+    const userStocks = await Users.getUserStocks(message.author.id, stockId);
 
-    if (!portfolioStock?.length){
-        return await message.reply("No history.");
+    if (!userStocks?.length){
+        await message.reply("No history.");
+        return;
     }
 
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .setTitle(`${inlineCode(stockUser.username)} Purchase History :page_with_curl:`)
 
-    const options = {
-        weekday: 'short',
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    };
-
-    for (const stock of portfolioStock) {
-        const formattedDate = stock.purchase_date.toLocaleString('en-US', options);
-        embed.addFields({ name: `${formattedDate}`, value: `Shares purchased: :receipt: ${formatNumber(stock.shares)}\nPurchase price: ${tendieIconCode} ${formatNumber(stock.purchase_price)}` });
+    for (const userStock of userStocks) {
+        const purchaseDate: string = DateTime.fromISO(userStock.purchase_date).toString();
+        embed.addFields({ name: `${purchaseDate}`, value: `Shares purchased: :receipt: ${formatNumber(userStock.quantity)}\nPurchase price: ${CURRENCY_EMOJI_CODE} ${formatNumber(userStock.purchase_price)}` });
     }
 
-    return await message.reply({ embeds: [embed] });
+    await message.reply({ embeds: [embed] });
 }

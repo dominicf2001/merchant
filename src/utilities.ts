@@ -3,7 +3,9 @@ import { DateTime } from 'luxon';
 
 const OPEN_HOUR: number = 7;
 const CLOSE_HOUR: number = 22;
-const CURRENCY_EMOJI_CODE: string = "<:tendie:1115074573264764958>"
+const CURRENCY_EMOJI_CODE: string = "<:tendie:1115074573264764958>";
+const STOCKUP_EMOJI_CODE: string = "<:stockdown:1119370974140301352>";
+const STOCKDOWN_EMOJI_CODE: string = "<:stockup:1119370943240863745>";
 
 function secondsToHms(d: number): string {
     var h = Math.floor(d / 3600);
@@ -119,4 +121,4 @@ const TIMEZONE: string = 'America/New_York';
 
 export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen,isAMention,
          toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs, PaginatedMenuBuilder,
-         TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE };
+         TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE, STOCKUP_EMOJI_CODE };
