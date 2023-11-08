@@ -1,31 +1,39 @@
-const { EmbedBuilder, inlineCode } = require('discord.js');
-const { tendieIconCode } = require("../../utilities.js");
-const { setStockPrice } = require("../../database/utilities/stockUtilities.js");
+import { Stocks } from '@database';
+import { Message, userMention } from 'discord.js';
+import { CURRENCY_EMOJI_CODE, findNumericArgs } from '@utilities';
 
 module.exports = {
 	data: {
         name: 'setprice',
         description: 'View stocks.'
     },
-    async execute(message, args) {
-        const id = args[0];
-        const newPrice = +args[1];
+    async execute(message: Message, args: string[]): Promise<void> {
+        const stockUser = message.mentions.members.first();
+        const newPrice: number = +findNumericArgs(args);
 
-	if (message.author.id != "608852453315837964") {
-	    return message.reply("You do not have permission to use this.");
-	}
+        if (!newPrice) {
+            await message.reply("Please specify a price.");
+            return;            
+        }
+        
+        if (message.author.id != "608852453315837964") {
+            await message.reply("You do not have permission to use this.");
+            return;
+        }
 
         try {
-            setStockPrice(id, newPrice);
+            await Stocks.updateStockPrice(stockUser.id, newPrice);
+            
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({
-                    name: `${inlineCode(id)}'s price set to: ${tendieIconCode} ${newPrice}`,
+                    name: `${inlineCode(userMention(stockUser.id))}'s price set to: ${CURRENCY_EMOJI_CODE} ${newPrice}`,
                     value: ` `
                 });
-            return message.reply({ embeds: [embed] });
+            await message.reply({ embeds: [embed] });
         } catch(error) {
             console.error("Error setting price: ", error);
+            await message.reply("Error setting price.");
         }
 
     },
