@@ -1,24 +1,23 @@
-const { EmbedBuilder } = require('discord.js');
-const { tendieIconCode, getRandomInt } = require("../../utilities.js");
-const { addBalance } = require("../../database/utilities/userUtilities.js");
+import { Users } from '@database';
+import { Message } from 'discord.js';
+import { CURRENCY_EMOJI_CODE } from '@utilities';
 
 module.exports = {
     cooldown: 3600,
-	data: {
+    data: {
         name: 'work',
         description: 'Make some tendies.'
     },
-	async execute(message, args) {
+    async execute(message: Message, args: string[]): Promise<void> {
         try {
             const tendiesMade = getRandomInt(100, 500);
-            addBalance(message.author.id, tendiesMade);
+            Users.addBalance(message.author.id, tendiesMade);
 
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
-                .addFields({ value: `You make: ${tendieIconCode} ${tendiesMade} tendies!`, name: ` ` });
+                .addFields({ value: `You make: ${CURRENCY_EMOJI_CODE} ${tendiesMade} tendies!`, name: ` ` });
 
-		return message.reply({ embeds: [embed] });
-
+            await message.reply({ embeds: [embed] });
         } catch (error) {
             console.error(error);
             await message.reply('There was an error while trying to work!');
