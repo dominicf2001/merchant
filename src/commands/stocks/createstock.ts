@@ -1,29 +1,31 @@
-const { EmbedBuilder } = require('discord.js');
-const { Stocks } = require("../../database/dbObjects.js");
-const { latestStocksCache } = require("../../database/utilities/stockUtilities.js");
+import { Stocks } from '@database';
+import { Message } from 'discord.js';
+
+const DEFAULT_STOCK_PRICE = 125;
+
 module.exports = {
     data: {
         name: 'createstock',
         description: 'Create a stock.'
     },
-    async execute(message, args) {
+    async execute(message: Message, args: string[]): Promise<void> {
         const user = message.mentions.users.first();
 
         if (!user) {
-            return message.reply("Please specify a target.");
+            await message.reply("Please specify a target.");
+            return;
         }
 
+        // TODO: pull or lookup
         if (message.author.id != "608852453315837964") {
-            return message.reply("You do not have permission to use this.");
+            await message.reply("You do not have permission to use this.");
+            return;
         }
 
         try {
-            const stock = await Stocks.create({
-                user_id: user.id,
-                price: 125
+            await Stocks.set(user.id, {
+                price: DEFAULT_STOCK_PRICE
             });
-
-            latestStocksCache.set(user.id, stock);
 
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
@@ -31,10 +33,10 @@ module.exports = {
                     name: `Stock has been created.`,
                     value: ` `
                 });
-            return message.reply({ embeds: [embed] });
+            await message.reply({ embeds: [embed] });
         } catch(error) {
             console.error("Error creating stock: ", error);
-            return message.reply("Error creating stock.");
+            await message.reply("Error creating stock.");
         }
 
     }
