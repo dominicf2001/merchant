@@ -17,6 +17,31 @@ module.exports = {
     }
 };
 
+// TODO: abstract this?
+async function sendShopMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
+    const paginatedMenu = new PaginatedMenuBuilder(id)
+        .setColor('Blurple')
+        .setTitle('Shop')
+        .setDescription('To view additional info on an item, see $help [item].');
+
+    const startIndex: number = (pageNum - 1) * pageSize;
+    const endIndex: number = startIndex + pageSize;
+    const items = (await Items.getItems())
+        .sort((itemA, itemB) => itemA.price - itemB.price)
+        .slice(startIndex, endIndex + 1);
+    
+    items.forEach(item => {
+        paginatedMenu.addFields({ name: `${item.emoji_code} ${item.item_id} - ${CURRENCY_EMOJI_CODE} - ${formatNumber(item.price)}`, value: `${item.description}` });
+    }) 
+
+    const embed = paginatedMenu.createEmbed();
+    const buttons = paginatedMenu.createButtons();
+    
+    message instanceof ButtonInteraction ?
+        await message.update({ embeds: [embed], components: [buttons] }) :
+        await message.reply({ embeds: [embed], components: [buttons] });
+}
+
 client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
     const { customId } = interaction;
     
@@ -38,28 +63,3 @@ client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
     
     await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE);
 });
-
-// TODO: abstract this?
-async function sendShopMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
-    const paginatedMenu = new PaginatedMenuBuilder(id)
-        .setColor('Blurple')
-        .setTitle('Shop')
-        .setDescription('To view additional info on an item, see $help [item].');
-
-    const startIndex = (pageNum - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const items = (await Items.getItems())
-        .sort((itemA, itemB) => itemA.price - itemB.price)
-        .slice(startIndex, endIndex + 1);
-    
-    items.forEach(item => {
-        paginatedMenu.addFields({ name: `${item.emoji_code} ${item.item_id} - ${CURRENCY_EMOJI_CODE} - ${formatNumber(item.price)}`, value: `${item.description}` });
-    }) 
-
-    const embed = paginatedMenu.createEmbed();
-    const buttons = paginatedMenu.createButtons();
-    
-    message instanceof ButtonInteraction ?
-        await message.update({ embeds: [embed], components: [buttons] }) :
-        await message.reply({ embeds: [embed], components: [buttons] });
-}

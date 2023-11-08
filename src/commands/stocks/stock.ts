@@ -1,9 +1,12 @@
 import { ChartJSNodeCanvas } from'chartjs-node-canvas';
 import { Stocks } from '@database';
-import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
-import { Message, EmbedBuilder, AttachmentBuilder, inlineCode } from 'discord.js';
+import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs, PaginatedMenuBuilder } from '@utilities';
+import { Message, EmbedBuilder, AttachmentBuilder, inlineCode, Events, ButtonInteraction } from 'discord.js';
 import { DateTime } from 'luxon';
 import { ChartConfiguration } from 'chart.js';
+
+const STOCK_LIST_ID: string = 'shop';
+const STOCK_LIST_PAGE_SIZE: number = 5;
 
 const width = 3000;
 const height = 1400;
@@ -17,13 +20,14 @@ module.exports = {
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.first()) {
             try {
-                await handleChartReply(message, args);
+                await sendStockChart(message, args);
             } catch (error) {
                 console.error("Error handling chart reply: ", error);
             }
         } else {
             try {
-                await handleListReply(message, args);
+                let pageNum: number = +findNumericArgs(args)[0] ?? 1;
+                await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
             } catch (error) {
                 console.error("Error handling list reply: ", error);
             }
@@ -33,7 +37,7 @@ module.exports = {
 
 // TODO: move this out
 type StockInterval = 'now' | 'hour' | 'day' | 'month';
-async function handleChartReply(message: Message, args: string[]): Promise<void> {
+async function sendStockChart(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
     const validIntervals: StockInterval[] = ['now', 'hour', 'day', 'month'];
     const intervalArg = findTextArgs(args)[0];
@@ -153,84 +157,60 @@ async function handleChartReply(message: Message, args: string[]): Promise<void>
     await message.reply({ embeds: [embed], files: [attachment] });
 }
 
+async function sendStockList(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
+    const startIndex: number = (pageNum - 1) * pageSize;
+    const endIndex: number = startIndex + pageSize;
+    
+    const stocks = (await Stocks.getLatestStocks()).slice(startIndex, endIndex);
 
+    // getting the 'now' stock history pulls from a cache
+    const histories = await Promise.all(stocks.map(s => Stocks.getStockHistory(s.stock_id, 'now')));
 
-async function handleListReply(message, args, isUpdate) {
-    let pageNum = findNumericArgs(args)[0] ?? 1;
-    const pageSize = 5;
-    const startIndex = (pageNum - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-
-    const stocks = Array.from(latestStocksCache.values()).slice(startIndex, endIndex);
-
-    const totalPages = Math.ceil(latestStocksCache.size / pageSize);
-
-    if (pageNum > totalPages || pageNum < 1) return;
-
-    const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .setTitle("Stocks :chart_with_upwards_trend:")
-        .setDescription(`Page ${pageNum}/${totalPages}\nTo view additional info on a stock: ${inlineCode("$stock @user")}`);
-
-    const previousBtn = new ButtonBuilder()
-        .setCustomId('shopPrevious')
-        .setLabel('Previous')
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pageNum == 1);
-
-    const nextBtn = new ButtonBuilder()
-        .setCustomId('stockListNext')
-        .setLabel('Next')
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pageNum == totalPages);
-
-    const buttons = new ActionRowBuilder()
-        .addComponents(previousBtn, nextBtn);
-
-    const historiesPromise = Promise.all(stocks.map(s => getStockHistory(s.user_id)));
-    const histories = await historiesPromise;
-
+    const paginatedMenu = new PaginatedMenuBuilder(id)
+        .setColor('Blurple')
+        .setTitle('Stocks :chart_with_upwards_trend:')
+        .setDescription('To view additional info on a stock: ${inlineCode("$stock @user").');
+    
     let i = 0;
     for (const stock of stocks){
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
-        const username = (await message.client.users.fetch(stock.user_id)).username;
+        const username = (await message.client.users.fetch(stock.stock_id)).username;
 
         const arrow = (currentPrice - previousPrice) < 0 ?
-            "<:stockdown:1119370974140301352>" :
-            "<:stockup:1119370943240863745>";
+            STOCKDOWN_EMOJI_CODE :
+            STOCKUP_EMOJI_CODE;
 
-        embed.addFields({ name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`, value: `${"Previous:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
+        paginatedMenu.addFields({ name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`, value: `${"Previous:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
         ++i;
     };
 
-    if (isUpdate) {
-        return message.update({ embeds: [embed], components: [buttons] });
-    } else {
-        return message.reply({ embeds: [embed], components: [buttons] });
-    }
+    const embed = paginatedMenu.createEmbed();
+    const buttons = paginatedMenu.createButtons();
+    
+    message instanceof ButtonInteraction ?
+        await message.update({ embeds: [embed], components: [buttons] }) :
+        await message.reply({ embeds: [embed], components: [buttons] });
 }
 
-
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isButton()) return;
+client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
     const { customId } = interaction;
+    
+    // Ensure this a paginated menu button (may need more checks here in the future)
+    if (!interaction.isButton())
+        return false;
 
-    if (!['stockListPrevious', 'stockListNext'].includes(customId)) return;
+    if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
+        return;
 
     const authorId = interaction.message.mentions.users.first().id;
-
-    if (interaction.user.id !== authorId) return;
+    if (interaction.user.id !== authorId)
+        return;
 
     let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-
-    if (customId === 'stockListPrevious') {
-        pageNum = Math.max(pageNum - 1, 1);
-    } else if (customId === 'stockListNext') {
-        pageNum = pageNum + 1;
-    }
-
-    if (authorId === interaction.user.id) {
-        handleListReply(interaction, [pageNum], true);
-    }
+    pageNum = (customId === `${STOCK_LIST_ID}Previous`) ?
+        pageNum = Math.max(pageNum - 1, 1) :
+        pageNum + 1;
+    
+    await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE);
 });
