@@ -27,6 +27,7 @@ async function main() {
             await db.schema.dropTable("users").ifExists().cascade().execute();
             await db.schema.dropTable("items").ifExists().cascade().execute();
             await db.schema.dropTable("stocks").ifExists().cascade().execute();
+            await db.schema.dropTable("commands").ifExists().cascade().execute();
             await db.schema.dropTable("user_items").ifExists().cascade().execute();
             await db.schema.dropTable("user_stocks").ifExists().cascade().execute();
             await db.schema.dropTable("user_cooldowns").ifExists().cascade().execute();
@@ -76,6 +77,16 @@ async function main() {
             .columns(['stock_id'])
             .execute();
 
+        // COMMANDS
+        await db.schema.createTable('commands')
+            .addColumn('command_id', 'varchar(30)', col =>
+                col.notNull().primaryKey())
+            .addColumn('description', 'varchar', col =>
+                col.notNull().defaultTo(""))
+            .addColumn('is_admin', 'boolean', col =>
+                col.notNull().defaultTo(false))
+            .execute();
+
         // USER ITEMS
         await db.schema.createTable('user_items')
             .addColumn('user_id', 'varchar(30)', col =>
@@ -110,12 +121,13 @@ async function main() {
         await db.schema.createTable('user_cooldowns')
             .addColumn('user_id', 'varchar(30)', col =>
                 col.notNull())
-            .addColumn('command_name', 'varchar(30)', col =>
+            .addColumn('command_id', 'varchar(30)', col =>
                 col.notNull())
             .addColumn('start_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
-            .addPrimaryKeyConstraint('user_cooldown_pk', ['user_id', 'command_name'])
+            .addPrimaryKeyConstraint('user_cooldown_pk', ['user_id', 'command_id'])
             .addForeignKeyConstraint('user_cooldown_fk_user', ['user_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
+            .addForeignKeyConstraint('user_cooldown_fk_command', ['command_id'], 'commands', ['command_id'], (cb) => cb.onDelete('cascade'))
             .execute();
  
         await processDatabase(config);

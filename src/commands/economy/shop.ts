@@ -26,7 +26,7 @@ async function sendShopMenu(message: Message | ButtonInteraction, id: string, pa
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
-    const items = (await Items.getItems())
+    const items = (await Items.getAll())
         .sort((itemA, itemB) => itemA.price - itemB.price)
         .slice(startIndex, endIndex + 1);
     

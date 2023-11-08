@@ -1,13 +1,16 @@
-const { EmbedBuilder } = require('discord.js');
+import { Items } from '@database';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder, findTextArgs } from '@utilities';
+import { Message, Events, ButtonInteraction } from 'discord.js';
+import { client } from '../../index';
 
 module.exports = {
 	data: {
         name: 'help',
         description: 'Displays available commands or displays info on a command/item.'
     },
-    async execute(message, args) {
+    async execute(message: Message, args: string[]): Promise<void> {
         if (args.length){
-            const name = args[0];
+            const name = findTextArgs(args)[0];
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setTitle(`${name}`);
@@ -20,7 +23,7 @@ module.exports = {
                     value: ` `
                 });
                 embed.setDescription(`${command.data.description}`);
-                return message.reply({ embeds: [embed] });
+                await message.reply({ embeds: [embed] });
             }
 
             const item = message.client.items.find(item => item.data.name == name);
@@ -30,7 +33,7 @@ module.exports = {
                     value: ` `
                 });
                 embed.setDescription(`${item.data.description}`);
-                return message.reply({ embeds: [embed] });
+                await message.reply({ embeds: [embed] });
             }
 
 
@@ -46,7 +49,7 @@ module.exports = {
                     value: command.data.description
                 });
             });
-            return message.reply({ embeds: [embed] });
+            await message.reply({ embeds: [embed] });
         }
 	},
 };

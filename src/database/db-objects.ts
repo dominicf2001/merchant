@@ -2,6 +2,7 @@ import { Kysely, PostgresDialect, Updateable, Insertable, sql } from 'kysely';
 import { Users as User, UsersUserId } from './schemas/public/Users';
 import { Items as Item, ItemsItemId } from './schemas/public/Items';
 import { Stocks as Stock, StocksCreatedDate } from './schemas/public/Stocks';
+import { Commands as Command, CommandsCommandId } from './schemas/public/Commands';
 import { UserItems as UserItem } from './schemas/public/UserItems';
 import { UserStocks as UserStock  } from './schemas/public/UserStocks';
 import Database from './schemas/Database';
@@ -32,7 +33,9 @@ const db = new Kysely<Database>({
 });
 
 type TableName = keyof Database;
-type TableID = 'user_id' | 'item_id' | 'stock_id';
+type TableID = 'user_id' | 'item_id' | 'stock_id' | 'command_id';
+type StockInterval = 'now' | 'hour' | 'day' | 'month';
+type BehaviorFunction = (message: Message, args: string[]) => Promise<void>;
 
 abstract class DataStore<Data> {
     protected cache: Collection<string, Deque<Data>> = new Collection<string, Deque<Data>>();
@@ -463,10 +466,8 @@ class Users extends DataStore<User> {
     }
 }
 
-type UseFunction = (message: Message, args: string[]) => Promise<void>;
-
 class Items extends DataStore<Item> {
-    private itemBehaviors: Collection<string, UseFunction> = new Collection<string, UseFunction>();
+    private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
         const itemsPath = path.join(process.cwd(), 'src/items');
@@ -475,7 +476,7 @@ class Items extends DataStore<Item> {
             const filePath = path.join(itemsPath, file);
             const itemObj = await import(filePath);
             if ('data' in itemObj && 'use' in itemObj) {
-                this.itemBehaviors.set(itemObj.data.item_id, itemObj.use);
+                this.behaviors.set(itemObj.data.item_id, itemObj.use);
                 this.cache.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
             } else {
                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
@@ -484,29 +485,14 @@ class Items extends DataStore<Item> {
     }
 
     async use(item_id: string, message: Message, args: string[]): Promise<void> {
-        const use: UseFunction = this.itemBehaviors.get(item_id);
+        const use: BehaviorFunction = this.behaviors.get(item_id);
          await use(message, args);
-    }
-
-    async getItems(): Promise<Item[]> {
-        if (!this.cache.size) {
-            const items: Item[] = await this.db
-                .selectFrom('items')
-                .selectAll()
-                .execute() as Item[];
-            return items;   
-        }
-        else {
-            return this.cache[0].values();
-        }
     }
 
     constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {
         super(db, 'items', 'item_id', references);
     }
 }
-
-type StockInterval = 'now' | 'hour' | 'day' | 'month';
 
 class Stocks extends DataStore<Stock> {
     // caches the 'now' stock history for each stock
@@ -666,26 +652,38 @@ class Stocks extends DataStore<Stock> {
     }
 }
 
-// class Commands extends DataStore<Command> {
-//     async refreshCache(): Promise<void> {
-//         const foldersPath: string = path.join(process.cwd(), 'commands');
-//         const commandFolders: string[] = fs.readdirSync(foldersPath);
+class Commands extends DataStore<Command> {
+    private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
+    
+    async refreshCache(): Promise<void> {
+        const foldersPath: string = path.join(process.cwd(), 'src/commands');
+        const commandFolders: string[] = fs.readdirSync(foldersPath);
 
-//         for (const folder of commandFolders) {
-//             const commandsPath: string = path.join(foldersPath, folder);
-//             const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-//             for (const file of commandFiles) {
-//                 const filePath: string = path.join(commandsPath, file);
-//                 const command: Command = await import(filePath);
-//                 if ('data' in command && 'execute' in command) {
-//                     this.cache.set(command.data.name, command);
-//                 } else {
-//                     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-//                 }
-//             }
-//         }
-//     }
-// }
+        for (const folder of commandFolders) {
+            const commandsPath: string = path.join(foldersPath, folder);
+            const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
+            for (const file of commandFiles) {
+                const filePath: string = path.join(commandsPath, file);
+                const commandObj = await import(filePath);
+                if ('data' in commandObj && 'execute' in commandObj) {
+                    this.behaviors.set(commandObj.data.command_id, commandObj.use);
+                    this.cache.set(commandObj.data.command_id, new Deque<Command>([commandObj.data]));
+                } else {
+                    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+                }
+            }
+        }
+    }
+
+    async execute(command_id: string, message: Message, args: string[]): Promise<void> {
+        const execute: BehaviorFunction = this.behaviors.get(command_id);
+        await execute(message, args);
+    }
+
+    constructor(db: Kysely<Database>, references?: Collection<string, DataStore<any>>) {
+        super(db, 'commands', 'command_id', references);
+    }
+}
 
 const items = new Items(db)
 const stocks = new Stocks(db);
@@ -695,5 +693,6 @@ const userReferences = new Collection<string, DataStore<any>>([
 ]);
 
 const users = new Users(db, userReferences);
+const commands = new Commands(db);
 
-export { users as Users, items as Items, stocks as Stocks, db};
+export { users as Users, items as Items, stocks as Stocks, commands as Commands, db};
