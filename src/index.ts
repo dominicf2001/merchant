@@ -4,6 +4,8 @@ import { Users } from '@database/db-objects';
 import token from '../config.json';
 import { secondsToHms, getRandomFloat, marketIsOpen, TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "./utilities";
 import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
+import { Commands } from '@database';
+import { DateTime } from 'luxon';
 
 const client: Client = new Client({
     intents: [
@@ -49,7 +51,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
         }
     }
 });
-
+ 
 
 // COMMAND HANDLING
 client.on(Events.MessageCreate, async message => {
@@ -68,34 +70,14 @@ client.on(Events.MessageCreate, async message => {
         const commandName: string = args.shift().toLowerCase();
 
         // TODO
-        const command = dataStore.caches["commands"].get(commandName);
+        const command = await Commands.get(commandName);
 
-        if (!command) return;
+        if (!command)
+            return;
 
-        // TODO: move into a cooldown check function on Users
-        // HANDLE COMMAND COOLDOWN
-        const now: number = Date.now();
-        const defaultCooldownDuration: number = 0;
-        const cooldownAmount: number = (command.cooldown ?? defaultCooldownDuration) * 1000;
-
-        const userCooldown = await UserCooldowns.findOne({
-            where: {
-                user_id: message.author.id,
-                command_name: command.data.name
-            }
-        });
-
-        // existing cooldown check
-        if (userCooldown) {
-            const expirationTime: number = userCooldown.timestamp + cooldownAmount;
-
-            if (now < expirationTime) {
-                const expiredTimestampReadable: string = secondsToHms(Math.round((expirationTime - now) / 1000));
-                return message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.`});
-            } else {
-                await userCooldown.destroy();
-            }
-        }
+        // call getReaminingCooldownDuraton
+        const expiredTimestampReadable: string = secondsToHms(Math.round((expirationTime - now) / 1000));
+        await message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.` });
 
         try {
             await command.execute(message, args);
@@ -143,7 +125,8 @@ let dailyCleanup = cron.schedule('0 5 * * *', () => {
     timezone: TIMEZONE
 });
 
-stockTicker.start();
-dailyCleanup.start();
+// TODO:
+// stockTicker.start();
+// dailyCleanup.start();
 
 client.login(token);

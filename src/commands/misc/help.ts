@@ -1,5 +1,5 @@
 import { Commands, Items } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder, findTextArgs } from '@utilities';
+import { PaginatedMenuBuilder, findTextArgs } from '@utilities';
 import { Message, Events, ButtonInteraction } from 'discord.js';
 import { client } from '../../index';
 
@@ -11,7 +11,7 @@ module.exports = {
     },
     async execute(message: Message, args: string[]): Promise<void> {
         if (args.length){
-            const name = findTextArgs(args)[0];
+            const name = findTextArgs(args)[0].toLowerCase();
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setTitle(`${name}`);

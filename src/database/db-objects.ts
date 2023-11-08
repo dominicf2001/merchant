@@ -5,6 +5,7 @@ import { Stocks as Stock, StocksCreatedDate } from './schemas/public/Stocks';
 import { Commands as Command, CommandsCommandId } from './schemas/public/Commands';
 import { UserItems as UserItem } from './schemas/public/UserItems';
 import { UserStocks as UserStock  } from './schemas/public/UserStocks';
+import { UserCooldowns as UserCooldown  } from './schemas/public/UserCooldowns';
 import Database from './schemas/Database';
 import { DateTime } from 'luxon';
 import { Deque } from '@datastructures-js/deque';
@@ -459,8 +460,44 @@ class Users extends DataStore<User> {
         });
         return amountSoldOrBought;
     }
+    
+    async getRemainingCooldownDuration(user_id: string, command_id: string): Promise<number> {
+        const Commands = this.references.get('commands') as Commands;
+        const command = await Commands.get(command_id);
 
+        const now: DateTime = DateTime.now();
+        const cooldownAmount: number = command.cooldown_time;
 
+        const userCooldown: UserCooldown = await this.db
+            .selectFrom('user_cooldowns')
+            .where('user_id', '=', user_id as UsersUserId)
+            .where('command_id', '=', command_id as CommandsCommandId)
+            .executeTakeFirst() as UserCooldown;
+
+        let remainingDuration = 0;
+        if (userCooldown) {
+            const expirationDateTime: DateTime = DateTime.fromISO(userCooldown.start_date).plus({ milliseconds: cooldownAmount });
+            remainingDuration = expirationDateTime.diff(now, 'milliseconds').milliseconds;
+
+            if (remainingDuration <= 0) {
+                await Commands.delete(command_id);
+                remainingDuration = 0;
+            }
+        }
+
+        return remainingDuration;
+    }
+
+    async createCooldown(user_id: string, command_id: string): Promise<void> {
+        await this.db
+            .insertInto('user_cooldowns')
+            .values({
+                user_id: user_id as UsersUserId,
+                command_id: command_id as CommandsCommandId
+            })
+            .execute();
+    }
+    
     constructor(db: Kysely<Database>, references: Collection<string, DataStore<any>>) {
         super(db, 'users', 'user_id', references);
     }
@@ -687,12 +724,13 @@ class Commands extends DataStore<Command> {
 
 const items = new Items(db)
 const stocks = new Stocks(db);
+const commands = new Commands(db);
 const userReferences = new Collection<string, DataStore<any>>([
     ['stocks', stocks],
-    ['items', items]
+    ['items', items],
+    ['commands', commands]
 ]);
 
 const users = new Users(db, userReferences);
-const commands = new Commands(db);
 
 export { users as Users, items as Items, stocks as Stocks, commands as Commands, db};

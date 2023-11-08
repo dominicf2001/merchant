@@ -83,6 +83,8 @@ async function main() {
                 col.notNull().primaryKey())
             .addColumn('description', 'varchar', col =>
                 col.notNull().defaultTo(""))
+            .addColumn('cooldown_time', 'integer', col =>
+                col.notNull().defaultTo(0))
             .addColumn('is_admin', 'boolean', col =>
                 col.notNull().defaultTo(false))
             .execute();
