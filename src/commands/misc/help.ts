@@ -1,8 +1,9 @@
-import { Items } from '@database';
+import { Commands, Items } from '@database';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder, findTextArgs } from '@utilities';
 import { Message, Events, ButtonInteraction } from 'discord.js';
 import { client } from '../../index';
 
+// TODO: implement paging
 module.exports = {
 	data: {
         name: 'help',
@@ -15,27 +16,32 @@ module.exports = {
                 .setColor("Blurple")
                 .setTitle(`${name}`);
 
-            const command = message.client.commands.find(command => command.data.name == name);
+            const command = await Commands.get(name);
 
-            if (command){
+            if (command) {
                 embed.addFields({
-                    name: `${command.data.usage}`,
+                    name: `${command.command_id}`,
                     value: ` `
                 });
-                embed.setDescription(`${command.data.description}`);
+                embed.setDescription(`${command.description}`);
                 await message.reply({ embeds: [embed] });
+                return;
             }
 
-            const item = message.client.items.find(item => item.data.name == name);
+
+            const item = await Items.get(name);
+            
             if (item){
                 embed.addFields({
-                    name: `${item.data.usage}`,
+                    name: `${item.item_id}`,
                     value: ` `
                 });
-                embed.setDescription(`${item.data.description}`);
+                embed.setDescription(`${item.description}`);
                 await message.reply({ embeds: [embed] });
+                return;
             }
 
+            await message.reply("This item or command does not exist.");
 
         } else {
             const embed = new EmbedBuilder()
@@ -43,12 +49,15 @@ module.exports = {
                 .setTitle("Available commands.")
                 .setDescription("$help [command/item] for additional info on a specific command/item's usage.");
 
-            message.client.commands.forEach(command => {
+            const commands = await Commands.getAll();
+            
+            commands.forEach(command => {
                 embed.addFields({
-                    name: `$${command.data.name}`,
-                    value: command.data.description
+                    name: `$${command.command_id}`,
+                    value: command.description
                 });
             });
+            
             await message.reply({ embeds: [embed] });
         }
 	},
