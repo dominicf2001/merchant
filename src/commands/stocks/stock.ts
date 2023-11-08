@@ -1,10 +1,9 @@
-const { EmbedBuilder, inlineCode, AttachmentBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { tendieIconCode } = require("../../utilities.js");
-const { getLatestStock, getStockHistory, latestStocksCache, getStockPurchasedShares } = require("../../database/utilities/stockUtilities.js");
-const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
-const moment = require('moment');
-const { formatNumber } = require("../../utilities.js");
-const { client } = require("../../index.js");
+import { ChartJSNodeCanvas } from'chartjs-node-canvas';
+import { Stocks } from '@database';
+import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
+import { Message, EmbedBuilder, AttachmentBuilder, inlineCode } from 'discord.js';
+import { DateTime } from 'luxon';
+import { ChartConfiguration } from 'chart.js';
 
 const width = 3000;
 const height = 1400;
@@ -15,16 +14,16 @@ module.exports = {
         name: 'stock',
         description: 'View stocks.'
     },
-    async execute(message, args) {
+    async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.first()) {
             try {
-                handleChartReply(message, args);
+                await handleChartReply(message, args);
             } catch (error) {
                 console.error("Error handling chart reply: ", error);
             }
         } else {
             try {
-                handleListReply(message, args);
+                await handleListReply(message, args);
             } catch (error) {
                 console.error("Error handling list reply: ", error);
             }
@@ -32,46 +31,83 @@ module.exports = {
     },
 };
 
-async function handleChartReply(message, args) {
+// TODO: move this out
+type StockInterval = 'now' | 'hour' | 'day' | 'month';
+async function handleChartReply(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
-    const interval = args[1] ?? "now";
-    const intervals = ['now', 'hour', 'day', 'month'];
+    const validIntervals: StockInterval[] = ['now', 'hour', 'day', 'month'];
+    const intervalArg = findTextArgs(args)[0];
+    const interval: StockInterval | undefined = validIntervals.find(vi => vi === intervalArg);
 
-    if (!intervals.includes(interval) && args[1]){
-        return message.reply("Invalid interval.");
+    if (!interval){
+        await message.reply("Invalid interval.");
+        return;
     }
 
-    const stockHistory = (await getStockHistory(stockUser.id, interval)).reverse();
-    const priceList = stockHistory.map(h => Number(h.dataValues.price));
-    const highestPrice = Math.round(Math.max(...priceList));
-    const lowestPrice = Math.round(Math.min(...priceList));
-
-    const currentStock = await getLatestStock(stockUser.id);
-    if (!currentStock) {
-        return message.reply("This stock does not exist.");
+    const latestStock = await Stocks.getLatestStock(stockUser.id);
+    if (!latestStock) {
+        await message.reply("This stock does not exist.");
+        return;
     }
 
-    const previousPrice = stockHistory[stockHistory.length - 2]?.price ?? 0;
-    const currentPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
-    const difference = Number(currentPrice) - Number(previousPrice);
+    const stockHistory = await Stocks.getStockHistory(stockUser.id, interval);
+    const initialPrice = stockHistory.length > 0 ? stockHistory[0].price : 0;
+    const priceBounds = stockHistory.reduce(({ highest, lowest }, h) => {
+        return {
+            highest: Math.max(highest, h.price),
+            lowest: Math.min(lowest, h.price)
+        };
+    }, { highest: initialPrice, lowest: initialPrice });
 
-    const arrow = difference < 0 ? "<:stockdown:1119370974140301352>" : "<:stockup:1119370943240863745>";
-    const lineColor = difference < 0 ? "rgb(255, 0, 0)" : "rgb(0, 195, 76)";
+    const highestPrice: number = Math.round(priceBounds.highest);
+    const lowestPrice: number = Math.round(priceBounds.lowest);
 
-    const volume = await getStockPurchasedShares(stockUser.id);
-    const dateFormat = interval === 'hour' ? 'MMM DD, h:mm a' : interval === 'day' ? 'MMM DD' : interval === 'now' ? 'h:mm:ss' : 'MMM';
+    const previousPrice: number = stockHistory[stockHistory.length - 2]?.price ?? 0;
+    const currentPrice: number = stockHistory[stockHistory.length - 1]?.price ?? 0;
+    const difference: number = currentPrice - previousPrice;
 
+    const arrow = difference < 0 ?
+        STOCKDOWN_EMOJI_CODE : 
+        STOCKUP_EMOJI_CODE;
+
+    const stockDownColor: string = "rgb(255, 0, 0)";
+    const stockUpColor: string = "rgb(0, 195, 76)";
+    const lineColor: string = difference < 0 ?
+        stockDownColor :
+        stockUpColor;
+
+
+    const volume = await Stocks.getTotalSharesPurchased(stockUser.id);
+
+    let dateFormat: string;
+    switch (interval) {
+        case 'now':
+            dateFormat = 'h:mm:ss';
+            break;
+        case 'hour':
+            dateFormat = 'MMM dd, h:mm a';
+            break;
+        case 'day':
+            dateFormat = 'MMM dd';
+            break;
+        case 'month':
+            dateFormat = 'MMM';
+            break;
+        default:
+            dateFormat = 'yyyy-MM-dd';
+            break;
+    }
+    
     const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour });
-    const configuration = {
+    const configuration: ChartConfiguration = {
         type: 'line',
         data: {
-            labels: stockHistory.map(h => moment(h.dataValues[interval]).format(dateFormat)),
+            labels: stockHistory.map(h => DateTime.fromISO(h.created_date).toFormat(dateFormat)),
             datasets: [{
                 label: `Stock price (${interval})`,
                 data: stockHistory.map(h => h.price),
                 fill: false,
-                borderColor: lineColor,
-                lineTension: 0.1
+                borderColor: lineColor
             }]
         },
         options: {
@@ -97,7 +133,7 @@ async function handleChartReply(message, args) {
                 legend: {
                     labels: {
                         font: {
-                            size: 60 // this controls the font size of the legend labels
+                            size: 60
                         }
                     }
                 }
@@ -106,21 +142,21 @@ async function handleChartReply(message, args) {
     };
 
     const image = await chartJSNodeCanvas.renderToBuffer(configuration);
-    const attachment = new AttachmentBuilder(image, 'chart.png');
+    const attachment = new AttachmentBuilder(image);
 
     const embed = new EmbedBuilder()
         .setColor("Blurple")
-        .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${tendieIconCode} ${formatNumber(currentPrice)}`)
-        .setDescription(`High: ${tendieIconCode} ${formatNumber(highestPrice)}\nLow: ${tendieIconCode} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`)
+        .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(currentPrice)}`)
+        .setDescription(`High: ${CURRENCY_EMOJI_CODE} ${formatNumber(highestPrice)}\nLow: ${CURRENCY_EMOJI_CODE} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`)
         .setImage('attachment://chart.png');
 
-    return message.reply({ embeds: [embed], files: [attachment] });
+    await message.reply({ embeds: [embed], files: [attachment] });
 }
 
 
 
 async function handleListReply(message, args, isUpdate) {
-    let pageNum = args.find(arg => !isNaN(arg)) ?? 1;
+    let pageNum = findNumericArgs(args)[0] ?? 1;
     const pageSize = 5;
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
@@ -164,7 +200,7 @@ async function handleListReply(message, args, isUpdate) {
             "<:stockdown:1119370974140301352>" :
             "<:stockup:1119370943240863745>";
 
-        embed.addFields({ name: `${arrow} ${inlineCode(username)} - ${tendieIconCode} ${formatNumber(stock.price)}`, value: `${"Previous:"} ${tendieIconCode} ${formatNumber(previousPrice)}` });
+        embed.addFields({ name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`, value: `${"Previous:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
         ++i;
     };
 

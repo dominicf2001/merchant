@@ -1,6 +1,7 @@
 import { Items } from '@database';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '@utilities';
 import { Message, Events, ButtonInteraction } from 'discord.js';
+import { client } from '../../index';
 
 const SHOP_ID: string = 'shop';
 const SHOP_PAGE_SIZE: number = 5;

@@ -70,6 +70,7 @@ async function handleListReply(message: Message, args: string[]): Promise<void> 
 }
 
 async function handleDetailReply(message: Message, args: string[]): Promise<void> {
+    // TODO: implement paging
     const pageNum: number = +findNumericArgs(args)[0] ?? 1;
     const stockUser = message.mentions.users.first();
     const stockId = stockUser.id;
