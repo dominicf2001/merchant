@@ -1,10 +1,9 @@
 import cron from 'node-cron';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
-import { Users } from '@database/db-objects';
+import { Users, Commands } from '@database';
 import token from '../config.json';
 import { secondsToHms, getRandomFloat, marketIsOpen, TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "./utilities";
 import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
-import { Commands } from '@database';
 import { DateTime } from 'luxon';
 
 const client: Client = new Client({
@@ -68,30 +67,22 @@ client.on(Events.MessageCreate, async message => {
     if (isCommand) {
         const args: string[] = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName: string = args.shift().toLowerCase();
-
-        // TODO
+        
         const command = await Commands.get(commandName);
 
         if (!command)
             return;
 
-        // call getReaminingCooldownDuraton
-        const expiredTimestampReadable: string = secondsToHms(Math.round((expirationTime - now) / 1000));
-        await message.reply({ content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again in \`${expiredTimestampReadable}\`.` });
-
-        try {
-            await command.execute(message, args);
-            // create new cooldown after command execution
-            await UserCooldowns.create({
-                user_id: message.author.id,
-                command_name: command.data.name,
-                timestamp: now
-            });
-        } catch (error) {
-            console.error(error);
-            await message.reply(error.message);
+        const remainingCooldownDuration: number = await Users.getRemainingCooldownDuration(message.author.id, commandName);
+        if (remainingCooldownDuration) {
+            await message.reply({ content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${remainingCooldown / 1000} seconds\`.` });
         }
-    } else {
+
+        if (command.cooldown_time > 0) {
+            await Users.createCooldown(message.author.id, command.command_id);
+        }
+    }
+    else {
         // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
         if (marketIsOpen()) {
             const mentionedUsers = message.mentions.users;
