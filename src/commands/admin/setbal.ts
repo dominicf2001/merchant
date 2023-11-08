@@ -1,37 +1,41 @@
-const { tendieIconCode } = require("../../utilities.js");
-const { setBalance } = require("../../database/utilities/userUtilities.js");
-const { EmbedBuilder, inlineCode } = require('discord.js');
+import { Users } from '@database';
+import { Message, EmbedBuilder, userMention } from 'discord.js';
+import { CURRENCY_EMOJI_CODE, findNumericArgs } from '@utilities';
 
 module.exports = {
 	data: {
         name: 'setbal',
         description: `(ADMIN) Set a users role.\n${inlineCode("$setbal @target [role]")}`
     },
-	async execute(message, args) {
+	async execute(message: Message, args: string[]): Promise<void> {
+		const newBalance: number = +findNumericArgs(args)[0];
+		const target = message.mentions.users.first() ?? message.author;
+        
+        // TODO: pull or lookup
         if (message.author.id != "608852453315837964") {
-            return message.reply("You do not have permission to use this.");
+            await message.reply("You do not have permission to use this.");
+            return;
         }
 
-		const newBalance = args.find(arg => !isNaN(arg));
-		const target = message.mentions.users.first() ?? message.author;
-
         if (!newBalance) {
-            return message.reply("You must specify a balance.");
+            await message.reply("You must specify a balance.");
+            return;
         };
 
         if (!target) {
-            return message.reply("You must specify a target.");
+            await message.reply("You must specify a target.");
+            return;
         }
 
-        setBalance(target.id, newBalance);
+        Users.setBalance(target.id, newBalance);
 
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .setFields({
-                name: `${inlineCode(target.username)}'s balance set to: ${tendieIconCode} ${newBalance}`,
+                name: `${inlineCode(userMention(target.id))}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
                 value: ` `
             });
 
-        return message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     }
 }

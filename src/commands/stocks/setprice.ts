@@ -1,5 +1,5 @@
 import { Stocks } from '@database';
-import { Message, userMention } from 'discord.js';
+import { Message, userMention, EmbedBuilder } from 'discord.js';
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from '@utilities';
 
 module.exports = {
