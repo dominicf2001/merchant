@@ -11,11 +11,14 @@ const STOCK_LIST_PAGE_SIZE = 5;
 const width = 3000;
 const height = 1400;
 const backgroundColour = "white";
-module.exports = {
-    data: {
-        name: 'stock',
-        description: 'View stocks.'
-    },
+const data = {
+    command_id: 'stock',
+    description: `View stocks`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         if (message.mentions.users.first()) {
             try {

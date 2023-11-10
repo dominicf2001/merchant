@@ -3,12 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
+const data = {
+    command_id: 'help',
+    description: `Displays available commands or displays info on a command/item.`,
+    cooldown_time: 0,
+    is_admin: false
+};
 // TODO: implement paging
-module.exports = {
-    data: {
-        name: 'help',
-        description: 'Displays available commands or displays info on a command/item.'
-    },
+exports.default = {
+    data: data,
     async execute(message, args) {
         if (args.length) {
             const name = (0, utilities_1.findTextArgs)(args)[0].toLowerCase();

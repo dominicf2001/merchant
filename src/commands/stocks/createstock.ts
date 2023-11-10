@@ -1,13 +1,18 @@
 import { Stocks } from '../../database/db-objects';
 import { Message, EmbedBuilder } from 'discord.js';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 
 const DEFAULT_STOCK_PRICE = 125;
 
-module.exports = {
-    data: {
-        name: 'createstock',
-        description: 'Create a stock.'
-    },
+const data: Command = {
+    command_id: 'createstock' as CommandsCommandId,
+    description: `Create a stock`,
+    cooldown_time: 0,
+    is_admin: true
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         const user = message.mentions.users.first();
 

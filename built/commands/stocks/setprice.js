@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
 const utilities_1 = require("../../utilities");
-module.exports = {
-    data: {
-        name: 'setprice',
-        description: 'View stocks.'
-    },
+const data = {
+    command_id: 'setprice',
+    description: `Set a stock price`,
+    cooldown_time: 0,
+    is_admin: true
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const stockUser = message.mentions.members.first();
         const newPrice = +(0, utilities_1.findNumericArgs)(args);

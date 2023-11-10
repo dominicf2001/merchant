@@ -1,13 +1,18 @@
 import { Users, Items, Stocks } from '../../database/db-objects';
 import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 import { DateTime } from 'luxon';
 
-module.exports = {
-    data: {
-        name: 'pf',
-        description: 'View your portfolio.'
-    },
+const data: Command = {
+    command_id: 'pf' as CommandsCommandId,
+    description: `View your portfolio`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (args[0]) {
             try {

@@ -3,12 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
-module.exports = {
-    data: {
-        name: 'buy',
-        description: `Buy an item or a stock.`,
-        usage: `${(0, discord_js_1.inlineCode)("$buy [(item) OR @(user)] [(quantity) OR all]")}\n For stocks only $buy will always purchase as many as possible.`
-    },
+const data = {
+    command_id: 'buy',
+    description: `Buy an item or a stock. ${(0, discord_js_1.inlineCode)("$buy [(item) OR @(user)] [(quantity) OR all]")}\n For stocks only $buy will always purchase as many as possible`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         if (message.mentions.users.size === 1) {
             await buyStock(message, args);

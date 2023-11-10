@@ -102,6 +102,8 @@ abstract class DataStore<Data> {
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
         const newData: Data = { [this.tableID]: id as any, ...data } as Data;
+        console.log("Setting data...");
+        console.log(newData);
 
         try {
             let result: Data = await this.db
@@ -272,27 +274,27 @@ class Users extends DataStore<User> {
 
     async getBalance(user_id: string): Promise<number> {
         const user = await this.get(user_id);
-        return user.balance;
+        return user?.balance ?? 0;
     }
 
     async getArmor(user_id: string): Promise<number> {
         const user = await this.get(user_id);
-        return user.armor;
+        return user?.armor ?? 0;
     }
 
     async getActivityPoints(user_id: string): Promise<number> {
         const user = await this.get(user_id);
-        return user.activity_points;
+        return user?.activity_points ?? 0;
     }
 
     async getItemCount(user_id: string): Promise<number> {
         const items = await this.getItems(user_id);
 
-        const itemCount = items.reduce((previous, current) => {
+        const itemCount = items?.reduce((previous, current) => {
             return previous + current.quantity;
         }, 0);
 
-        return itemCount;
+        return itemCount ?? 0;
     }
 
     async getItem(user_id: string, item_id: string): Promise<UserItem | undefined> {
@@ -496,20 +498,20 @@ class Users extends DataStore<User> {
 class Items extends DataStore<Item> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
-    async refreshCache(): Promise<void> {
-        const itemsPath = path.join(process.cwd(), 'built/items');
-        const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.ts'));
-        for (const file of itemFiles) {
-            const filePath = path.join(itemsPath, file);
-            const itemObj = await import(filePath);
-            if ('data' in itemObj && 'use' in itemObj) {
-                this.behaviors.set(itemObj.data.item_id, itemObj.use);
-                this.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
-            } else {
-                console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-            }
-        }
-    }
+    // async refreshCache(): Promise<void> {
+    //     const itemsPath = path.join(process.cwd(), 'built/items');
+    //     const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
+    //     for (const file of itemFiles) {
+    //         const filePath = path.join(itemsPath, file);
+    //         const itemObj = await import(filePath);
+    //         if ('data' in itemObj && 'use' in itemObj) {
+    //             this.behaviors.set(itemObj.data.item_id, itemObj.use);
+    //             this.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
+    //         } else {
+    //             console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
+    //         }
+    //     }
+    // }
 
     async use(item_id: string, message: Message, args: string[]): Promise<void> {
         const use: BehaviorFunction = this.behaviors.get(item_id);
@@ -673,18 +675,22 @@ class Commands extends DataStore<Command> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
+        console.log("Refreshing commands");
         const foldersPath: string = path.join(process.cwd(), 'built/commands');
         const commandFolders: string[] = fs.readdirSync(foldersPath);
 
+        console.log(commandFolders);
         for (const folder of commandFolders) {
             const commandsPath: string = path.join(foldersPath, folder);
-            const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
+            const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+            console.log(commandFiles);
             for (const file of commandFiles) {
                 const filePath: string = path.join(commandsPath, file);
-                const commandObj = await import(filePath);
+                const commandObj = (await import(filePath)).default;
+                console.log(commandObj);
                 if ('data' in commandObj && 'execute' in commandObj) {
-                    this.behaviors.set(commandObj.data.command_id, commandObj.use);
-                    this.set(commandObj.data.command_id, new Deque<Command>([commandObj.data]));
+                    this.behaviors.set(commandObj.data.command_id, commandObj.execute);
+                    this.set(commandObj.data.command_id, commandObj.data);
                 } else {
                     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
                 }

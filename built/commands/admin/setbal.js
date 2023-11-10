@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
 const utilities_1 = require("../../utilities");
-module.exports = {
-    data: {
-        name: 'setbal',
-        description: `(ADMIN) Set a users role.\n${(0, discord_js_1.inlineCode)("$setbal @target [role]")}`
-    },
+const data = {
+    command_id: 'setbal',
+    description: `(ADMIN) Set a users role.\n${(0, discord_js_1.inlineCode)("$setbal @target [role]")}`,
+    cooldown_time: 0,
+    is_admin: true
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const newBalance = +(0, utilities_1.findNumericArgs)(args)[0];
         const target = message.mentions.users.first() ?? message.author;

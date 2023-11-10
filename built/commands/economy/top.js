@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
-module.exports = {
-    data: {
-        name: 'top',
-        description: 'See who are the goodest boys.'
-    },
+const data = {
+    command_id: 'top',
+    description: `See who are the goodest boys.`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const allUsers = await db_objects_1.Users.getAll();
         const netWorths = await Promise.all(allUsers.map(user => db_objects_1.Users.getNetWorth(user.user_id)));

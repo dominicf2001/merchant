@@ -3,12 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
 const utilities_1 = require("../../utilities");
-module.exports = {
-    cooldown: 3600,
-    data: {
-        name: 'work',
-        description: 'Make some tendies.'
-    },
+const data = {
+    command_id: 'work',
+    description: `Make some tendies.`,
+    cooldown_time: 360000,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         try {
             const tendiesMade = (0, utilities_1.getRandomInt)(100, 500);

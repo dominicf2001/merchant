@@ -1,12 +1,17 @@
 import { Stocks } from '../../database/db-objects';
 import { Message, userMention, EmbedBuilder, inlineCode } from 'discord.js';
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 
-module.exports = {
-	data: {
-        name: 'setprice',
-        description: 'View stocks.'
-    },
+const data: Command = {
+    command_id: 'setprice' as CommandsCommandId,
+    description: `Set a stock price`,
+    cooldown_time: 0,
+    is_admin: true
+};
+
+export default {
+	data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         const stockUser = message.mentions.members.first();
         const newPrice: number = +findNumericArgs(args);

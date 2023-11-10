@@ -6,11 +6,14 @@ const discord_js_1 = require("discord.js");
 const index_1 = require("../../index");
 const SHOP_ID = 'shop';
 const SHOP_PAGE_SIZE = 5;
-module.exports = {
-    data: {
-        name: 'shop',
-        description: 'View the shop.'
-    },
+const data = {
+    command_id: 'shop',
+    description: `View the shop`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] ?? 1;
         await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);

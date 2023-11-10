@@ -4,11 +4,14 @@ const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
 const luxon_1 = require("luxon");
-module.exports = {
-    data: {
-        name: 'pf',
-        description: 'View your portfolio.'
-    },
+const data = {
+    command_id: 'pf',
+    description: `View your portfolio`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         if (args[0]) {
             try {

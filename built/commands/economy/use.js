@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
-module.exports = {
-    data: {
-        name: 'use',
-        description: `Use an item.\n${(0, discord_js_1.inlineCode)("$use [item]")}\n${(0, discord_js_1.inlineCode)("$use [item] @target")}`
-    },
+const data = {
+    command_id: 'use',
+    description: `Use an item.\n${(0, discord_js_1.inlineCode)("$use [item]")}\n${(0, discord_js_1.inlineCode)("$use [item] @target")}`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         let itemName = (0, utilities_1.findTextArgs)(args)[0];
         const item = await db_objects_1.Users.getItem(message.author.id, itemName);

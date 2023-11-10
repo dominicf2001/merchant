@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
 const DEFAULT_STOCK_PRICE = 125;
-module.exports = {
-    data: {
-        name: 'createstock',
-        description: 'Create a stock.'
-    },
+const data = {
+    command_id: 'createstock',
+    description: `Create a stock`,
+    cooldown_time: 0,
+    is_admin: true
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const user = message.mentions.users.first();
         if (!user) {

@@ -2,6 +2,7 @@ import { ChartJSNodeCanvas } from'chartjs-node-canvas';
 import { Stocks } from '../../database/db-objects';
 import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs, PaginatedMenuBuilder } from '../../utilities';
 import { Message, EmbedBuilder, AttachmentBuilder, inlineCode, Events, ButtonInteraction } from 'discord.js';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { DateTime } from 'luxon';
 import { ChartConfiguration } from 'chart.js';
 import { client } from '../../index';
@@ -13,11 +14,15 @@ const width = 3000;
 const height = 1400;
 const backgroundColour = "white";
 
-module.exports = {
-    data: {
-        name: 'stock',
-        description: 'View stocks.'
-    },
+const data: Command = {
+    command_id: 'stock' as CommandsCommandId,
+    description: `View stocks`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.first()) {
             try {

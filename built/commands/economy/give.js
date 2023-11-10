@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
-module.exports = {
-    data: {
-        name: 'give',
-        description: `Share your tendies.\n${(0, discord_js_1.inlineCode)("$give @target [(amount)]")}`
-    },
+const data = {
+    command_id: 'give',
+    description: `Share your tendies.\n${(0, discord_js_1.inlineCode)("$give @target [(amount)]")}`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const target = message.mentions.users.first();
         if (!target) {

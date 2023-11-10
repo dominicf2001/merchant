@@ -11,12 +11,14 @@ var RobType;
 function isValidRobType(robType) {
     return Object.keys(RobType).includes(robType);
 }
-module.exports = {
-    cooldown: 5,
-    data: {
-        name: 'rob',
-        description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${(0, discord_js_1.inlineCode)("$rob @target [tendies/item]")}`
-    },
+const data = {
+    command_id: 'rob',
+    description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${(0, discord_js_1.inlineCode)("$rob @target [tendies/item]")}`,
+    cooldown_time: 5000,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const robType = ((0, utilities_1.findTextArgs)(args)[0] ?? 'tendies');
         const target = message.mentions.users.first();

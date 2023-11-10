@@ -3,11 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
-module.exports = {
-    data: {
-        name: 'inv',
-        description: 'View your inventory.'
-    },
+const data = {
+    command_id: 'inv',
+    description: `View your inventory`,
+    cooldown_time: 0,
+    is_admin: false
+};
+exports.default = {
+    data: data,
     async execute(message, args) {
         const [items, armor, itemCount] = await Promise.all([
             db_objects_1.Users.getItems(message.author.id),
