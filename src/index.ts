@@ -1,8 +1,8 @@
 import cron from 'node-cron';
 import fs from 'fs';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
-import { Users, Commands } from '@database';
-const { TOKEN } = JSON.parse(fs.readFileSync('../config.json', 'utf8'));
+import { Users, Commands } from './database/db-objects';
+const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../config.json`, 'utf8'));
 import { secondsToHms, getRandomFloat, marketIsOpen, TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "./utilities";
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 
@@ -20,8 +20,6 @@ const client: Client = new Client({
 });
 
 export { client };
-
-// TODO: make a json file with ALL paramaters
 
 client.once(Events.ClientReady, async () => {    
     console.log('Ready as ' + client.user.tag);
@@ -77,9 +75,13 @@ client.on(Events.MessageCreate, async message => {
         if (remainingCooldownDuration) {
             await message.reply({ content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.` });
         }
+        else {
+            if (command.cooldown_time > 0) {
+                await Users.createCooldown(message.author.id, command.command_id);
+            }
 
-        if (command.cooldown_time > 0) {
-            await Users.createCooldown(message.author.id, command.command_id);
+            console.log("test");
+            Commands.execute(command.command_id, message, args);
         }
     }
     else {
@@ -102,7 +104,7 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
     setTimeout(() => {
         // calculateAndUpdateStocks();
         // TODO: paramaterize channel id?
-        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
     }, randomMinute * 60 * 1000);
 }, {

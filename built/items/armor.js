@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const _database_1 = require("@database");
+const db_objects_1 = require("../database/db-objects");
 module.exports = {
     data: {
         name: 'armor',
@@ -13,11 +13,11 @@ module.exports = {
     },
     async use(message, args) {
         try {
-            const authorArmor = await _database_1.Users.getArmor(message.author.id);
+            const authorArmor = await db_objects_1.Users.getArmor(message.author.id);
             if (authorArmor >= 1) {
                 return message.reply("You can only apply one armor at a time.");
             }
-            _database_1.Users.addArmor(message.author.id, 1);
+            db_objects_1.Users.addArmor(message.author.id, 1);
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({

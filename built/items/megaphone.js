@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const _utilities_1 = require("@utilities");
+const utilities_1 = require("../utilities");
 module.exports = {
     data: {
         name: 'megaphone',
@@ -11,7 +11,7 @@ module.exports = {
         role: 2
     },
     async use(message, args) {
-        const msgToSend = (0, _utilities_1.findTextArgs)(args).join(" ");
+        const msgToSend = (0, utilities_1.findTextArgs)(args).join(" ");
         const attachmentsArray = [...message.attachments.values()];
         if (!msgToSend && message.attachments.size === 0) {
             throw new Error("You need to provide a message or an attachment.");

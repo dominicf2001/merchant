@@ -1,4 +1,4 @@
-import { Stocks, Users, db } from "@database";
+import { Stocks, Users, db } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from '@faker-js/faker';
 import { DateTime } from "luxon";

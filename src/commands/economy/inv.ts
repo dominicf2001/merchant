@@ -1,12 +1,17 @@
-import { Users, Items } from '@database';
-import { formatNumber } from '@utilities';
+import { Users, Items } from '../../database/db-objects';
+import { formatNumber } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder } from 'discord.js';
 
-module.exports = {
-    data: {
-        name: 'inv',
-        description: 'View your inventory.'
-    },
+const data: Command = {
+    command_id: 'inv' as CommandsCommandId,
+    description: `View your inventory`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         const [items, armor, itemCount] = await Promise.all([
             Users.getItems(message.author.id),

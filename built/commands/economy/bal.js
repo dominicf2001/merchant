@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const _database_1 = require("@database");
-const _utilities_1 = require("@utilities");
+const db_objects_1 = require("../../database/db-objects");
+const utilities_1 = require("../../utilities");
 module.exports = {
     data: {
         name: 'bal',
         description: 'Check your tendies.'
     },
     async execute(message, args) {
-        const authorBalance = await _database_1.Users.getBalance(message.author.id);
+        const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
         const embed = new discord_js_1.EmbedBuilder()
             .setColor("Blurple")
-            .addFields({ value: `${_utilities_1.CURRENCY_EMOJI_CODE} ${(0, _utilities_1.formatNumber)(authorBalance)}`, name: `Balance` });
+            .addFields({ value: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)}`, name: `Balance` });
         return message.reply({ embeds: [embed] });
     },
 };

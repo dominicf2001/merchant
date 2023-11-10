@@ -1,6 +1,6 @@
 import { ChartJSNodeCanvas } from'chartjs-node-canvas';
-import { Stocks } from '@database';
-import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs, PaginatedMenuBuilder } from '@utilities';
+import { Stocks } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs, PaginatedMenuBuilder } from '../../utilities';
 import { Message, EmbedBuilder, AttachmentBuilder, inlineCode, Events, ButtonInteraction } from 'discord.js';
 import { DateTime } from 'luxon';
 import { ChartConfiguration } from 'chart.js';
@@ -200,10 +200,6 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     
     const { customId } = interaction;
-    
-    // Ensure this a paginated menu button (may need more checks here in the future)
-    if (!interaction.isButton())
-        return;
 
     if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
         return;

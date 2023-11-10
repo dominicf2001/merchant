@@ -1,5 +1,6 @@
-import { Users } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber, findTextArgs, getRandomFloat, getRandomInt } from '@utilities';
+import { Users } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, formatNumber, findTextArgs, getRandomFloat, getRandomInt } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 enum RobType {
@@ -11,12 +12,15 @@ function isValidRobType(robType: string): robType is RobType {
     return Object.keys(RobType).includes(robType as RobType);
 }
 
-module.exports = {
-    cooldown: 5, // 7200
-    data: {
-        name: 'rob',
-        description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${inlineCode("$rob @target [tendies/item]")}`
-    },
+const data: Command = {
+    command_id: 'rob' as CommandsCommandId,
+    description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${inlineCode("$rob @target [tendies/item]")}`,
+    cooldown_time: 5000,
+    is_admin: false
+};
+
+export default {
+    data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
 		const robType: RobType = (findTextArgs(args)[0] ?? 'tendies') as RobType;
         const target = message.mentions.users.first();

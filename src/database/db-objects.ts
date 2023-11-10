@@ -143,17 +143,7 @@ abstract class DataStore<Data> {
     }
 }
 
-class Users extends DataStore<User> {
-    async get(id: string): Promise<User | undefined> {
-        if (this.cache.has(id)) {
-            // cache hit
-            return this.getFromCache(id);
-        } else {
-            // cache miss
-            return await this.getFromDB(id);
-        }
-    }
-    
+class Users extends DataStore<User> {    
     async addBalance(user_id: string, amount: number): Promise<void> {
         const user = await this.get(user_id);
         
@@ -507,14 +497,14 @@ class Items extends DataStore<Item> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
-        const itemsPath = path.join(process.cwd(), 'items');
+        const itemsPath = path.join(process.cwd(), 'built/items');
         const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.ts'));
         for (const file of itemFiles) {
             const filePath = path.join(itemsPath, file);
             const itemObj = await import(filePath);
             if ('data' in itemObj && 'use' in itemObj) {
                 this.behaviors.set(itemObj.data.item_id, itemObj.use);
-                this.cache.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
+                this.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
             } else {
                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
             }
@@ -583,16 +573,6 @@ class Stocks extends DataStore<Stock> {
                 this.cache.set(id, new Deque<Stock>([result]));
             }
         });
-    }
-
-    async get(id: string): Promise<Stock | undefined> {
-        if (this.cache.has(id)) {
-            // cache hit
-            return this.getFromCache(id);
-        } else {
-            // cache miss
-            return await this.getFromDB(id);
-        }
     }
     
     async updateStockPrice(stock_id: string, amount: number): Promise<void> {
@@ -693,7 +673,7 @@ class Commands extends DataStore<Command> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
-        const foldersPath: string = path.join(process.cwd(), 'commands');
+        const foldersPath: string = path.join(process.cwd(), 'built/commands');
         const commandFolders: string[] = fs.readdirSync(foldersPath);
 
         for (const folder of commandFolders) {
@@ -704,7 +684,7 @@ class Commands extends DataStore<Command> {
                 const commandObj = await import(filePath);
                 if ('data' in commandObj && 'execute' in commandObj) {
                     this.behaviors.set(commandObj.data.command_id, commandObj.use);
-                    this.cache.set(commandObj.data.command_id, new Deque<Command>([commandObj.data]));
+                    this.set(commandObj.data.command_id, new Deque<Command>([commandObj.data]));
                 } else {
                     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
                 }

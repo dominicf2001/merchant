@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const chartjs_node_canvas_1 = require("chartjs-node-canvas");
-const _database_1 = require("@database");
-const _utilities_1 = require("@utilities");
+const db_objects_1 = require("../../database/db-objects");
+const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
 const luxon_1 = require("luxon");
 const index_1 = require("../../index");
@@ -27,7 +27,7 @@ module.exports = {
         }
         else {
             try {
-                let pageNum = +(0, _utilities_1.findNumericArgs)(args)[0] ?? 1;
+                let pageNum = +(0, utilities_1.findNumericArgs)(args)[0] ?? 1;
                 await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
             }
             catch (error) {
@@ -39,18 +39,18 @@ module.exports = {
 async function sendStockChart(message, args) {
     const stockUser = message.mentions.users.first();
     const validIntervals = ['now', 'hour', 'day', 'month'];
-    const intervalArg = (0, _utilities_1.findTextArgs)(args)[0];
+    const intervalArg = (0, utilities_1.findTextArgs)(args)[0];
     const interval = validIntervals.find(vi => vi === intervalArg);
     if (!interval) {
         await message.reply("Invalid interval.");
         return;
     }
-    const latestStock = await _database_1.Stocks.getLatestStock(stockUser.id);
+    const latestStock = await db_objects_1.Stocks.getLatestStock(stockUser.id);
     if (!latestStock) {
         await message.reply("This stock does not exist.");
         return;
     }
-    const stockHistory = await _database_1.Stocks.getStockHistory(stockUser.id, interval);
+    const stockHistory = await db_objects_1.Stocks.getStockHistory(stockUser.id, interval);
     const initialPrice = stockHistory.length > 0 ? stockHistory[0].price : 0;
     const priceBounds = stockHistory.reduce(({ highest, lowest }, h) => {
         return {
@@ -64,14 +64,14 @@ async function sendStockChart(message, args) {
     const currentPrice = stockHistory[stockHistory.length - 1]?.price ?? 0;
     const difference = currentPrice - previousPrice;
     const arrow = difference < 0 ?
-        _utilities_1.STOCKDOWN_EMOJI_CODE :
-        _utilities_1.STOCKUP_EMOJI_CODE;
+        utilities_1.STOCKDOWN_EMOJI_CODE :
+        utilities_1.STOCKUP_EMOJI_CODE;
     const stockDownColor = "rgb(255, 0, 0)";
     const stockUpColor = "rgb(0, 195, 76)";
     const lineColor = difference < 0 ?
         stockDownColor :
         stockUpColor;
-    const volume = await _database_1.Stocks.getTotalSharesPurchased(stockUser.id);
+    const volume = await db_objects_1.Stocks.getTotalSharesPurchased(stockUser.id);
     let dateFormat;
     switch (interval) {
         case 'now':
@@ -136,18 +136,18 @@ async function sendStockChart(message, args) {
     const attachment = new discord_js_1.AttachmentBuilder(image);
     const embed = new discord_js_1.EmbedBuilder()
         .setColor("Blurple")
-        .setTitle(`${arrow} ${(0, discord_js_1.inlineCode)(stockUser.username)} - ${_utilities_1.CURRENCY_EMOJI_CODE} ${(0, _utilities_1.formatNumber)(currentPrice)}`)
-        .setDescription(`High: ${_utilities_1.CURRENCY_EMOJI_CODE} ${(0, _utilities_1.formatNumber)(highestPrice)}\nLow: ${_utilities_1.CURRENCY_EMOJI_CODE} ${(0, _utilities_1.formatNumber)(lowestPrice)}\nVolume: :bar_chart: ${(0, _utilities_1.formatNumber)(volume)}`)
+        .setTitle(`${arrow} ${(0, discord_js_1.inlineCode)(stockUser.username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(currentPrice)}`)
+        .setDescription(`High: ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(highestPrice)}\nLow: ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(lowestPrice)}\nVolume: :bar_chart: ${(0, utilities_1.formatNumber)(volume)}`)
         .setImage('attachment://chart.png');
     await message.reply({ embeds: [embed], files: [attachment] });
 }
 async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const stocks = (await _database_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
+    const stocks = (await db_objects_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
     // getting the 'now' stock history pulls from a cache
-    const histories = await Promise.all(stocks.map(s => _database_1.Stocks.getStockHistory(s.stock_id, 'now')));
-    const paginatedMenu = new _utilities_1.PaginatedMenuBuilder(id)
+    const histories = await Promise.all(stocks.map(s => db_objects_1.Stocks.getStockHistory(s.stock_id, 'now')));
+    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
         .setDescription('To view additional info on a stock: ${inlineCode("$stock @user").');
@@ -157,9 +157,9 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
         const currentPrice = stock.price;
         const username = (await message.client.users.fetch(stock.stock_id)).username;
         const arrow = (currentPrice - previousPrice) < 0 ?
-            _utilities_1.STOCKDOWN_EMOJI_CODE :
-            _utilities_1.STOCKUP_EMOJI_CODE;
-        paginatedMenu.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${_utilities_1.CURRENCY_EMOJI_CODE} ${(0, _utilities_1.formatNumber)(stock.price)}`, value: `${"Previous:"} ${_utilities_1.CURRENCY_EMOJI_CODE} ${(0, _utilities_1.formatNumber)(previousPrice)}` });
+            utilities_1.STOCKDOWN_EMOJI_CODE :
+            utilities_1.STOCKUP_EMOJI_CODE;
+        paginatedMenu.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(stock.price)}`, value: `${"Previous:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}` });
         ++i;
     }
     ;
@@ -174,9 +174,6 @@ index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => 
         return;
     }
     const { customId } = interaction;
-    // Ensure this a paginated menu button (may need more checks here in the future)
-    if (!interaction.isButton())
-        return;
     if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
         return;
     const authorId = interaction.message.mentions.users.first().id;

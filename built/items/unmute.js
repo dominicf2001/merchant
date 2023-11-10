@@ -14,7 +14,7 @@ module.exports = {
         if (!target) {
             throw new Error('Please specify a target.');
         }
-        if (!target.isCommunicationDisabled()) {
+        if (!target.isCommunicationDisabled().valueOf()) {
             throw new Error(`<@${target.id}> has not been muted.`);
         }
         try {

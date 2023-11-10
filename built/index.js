@@ -7,8 +7,8 @@ exports.client = void 0;
 const node_cron_1 = __importDefault(require("node-cron"));
 const fs_1 = __importDefault(require("fs"));
 const discord_js_1 = require("discord.js");
-const _database_1 = require("@database");
-const { TOKEN } = JSON.parse(fs_1.default.readFileSync('../config.json', 'utf8'));
+const db_objects_1 = require("./database/db-objects");
+const { TOKEN } = JSON.parse(fs_1.default.readFileSync(`${__dirname}/../config.json`, 'utf8'));
 const utilities_1 = require("./utilities");
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 const client = new discord_js_1.Client({
@@ -24,7 +24,6 @@ const client = new discord_js_1.Client({
     ],
 });
 exports.client = client;
-// TODO: make a json file with ALL paramaters
 client.once(discord_js_1.Events.ClientReady, async () => {
     console.log('Ready as ' + client.user.tag);
 });
@@ -32,20 +31,20 @@ client.on(discord_js_1.Events.InviteCreate, (invite) => {
     if (invite.inviter.bot)
         return;
     if ((0, utilities_1.marketIsOpen)()) {
-        _database_1.Users.addActivityPoints(invite.inviterId, 1);
+        db_objects_1.Users.addActivityPoints(invite.inviterId, 1);
     }
 });
 client.on(discord_js_1.Events.MessageReactionAdd, (_, user) => {
     if (user.bot)
         return;
     if ((0, utilities_1.marketIsOpen)()) {
-        _database_1.Users.addActivityPoints(user.id, 1);
+        db_objects_1.Users.addActivityPoints(user.id, 1);
     }
 });
 client.on(discord_js_1.Events.VoiceStateUpdate, (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         if ((0, utilities_1.marketIsOpen)()) {
-            _database_1.Users.addActivityPoints(newState.member.user.id, 1);
+            db_objects_1.Users.addActivityPoints(newState.member.user.id, 1);
         }
     }
 });
@@ -53,24 +52,28 @@ client.on(discord_js_1.Events.VoiceStateUpdate, (oldState, newState) => {
 client.on(discord_js_1.Events.MessageCreate, async (message) => {
     if (message.author.bot)
         return;
-    const userExists = !!_database_1.Users.get(message.author.id);
+    const userExists = !!db_objects_1.Users.get(message.author.id);
     if (!userExists) {
-        _database_1.Users.set(message.author.id);
+        db_objects_1.Users.set(message.author.id);
     }
     const prefix = '$';
     const isCommand = message.content.startsWith(prefix);
     if (isCommand) {
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName = args.shift().toLowerCase();
-        const command = await _database_1.Commands.get(commandName);
+        const command = await db_objects_1.Commands.get(commandName);
         if (!command)
             return;
-        const remainingCooldownDuration = await _database_1.Users.getRemainingCooldownDuration(message.author.id, commandName);
+        const remainingCooldownDuration = await db_objects_1.Users.getRemainingCooldownDuration(message.author.id, commandName);
         if (remainingCooldownDuration) {
             await message.reply({ content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${(0, utilities_1.secondsToHms)(remainingCooldownDuration / 1000)}\`.` });
         }
-        if (command.cooldown_time > 0) {
-            await _database_1.Users.createCooldown(message.author.id, command.command_id);
+        else {
+            if (command.cooldown_time > 0) {
+                await db_objects_1.Users.createCooldown(message.author.id, command.command_id);
+            }
+            console.log("test");
+            db_objects_1.Commands.execute(command.command_id, message, args);
         }
     }
     else {
@@ -79,10 +82,10 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
             const mentionedUsers = message.mentions.users;
             mentionedUsers.forEach(user => {
                 if (user.id != message.author.id && !user.bot) {
-                    _database_1.Users.addActivityPoints(user.id, 1);
+                    db_objects_1.Users.addActivityPoints(user.id, 1);
                 }
             });
-            _database_1.Users.addActivityPoints(message.author.id, 1);
+            db_objects_1.Users.addActivityPoints(message.author.id, 1);
         }
     }
 });
@@ -92,7 +95,7 @@ let stockTicker = node_cron_1.default.schedule(`*/5 ${utilities_1.OPEN_HOUR}-${u
     setTimeout(() => {
         // calculateAndUpdateStocks();
         // TODO: paramaterize channel id?
-        client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
     }, randomMinute * 60 * 1000);
 }, {

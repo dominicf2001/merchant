@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const _database_1 = require("@database");
+const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
-const _utilities_1 = require("@utilities");
+const utilities_1 = require("../../utilities");
 module.exports = {
     cooldown: 3600,
     data: {
@@ -11,11 +11,11 @@ module.exports = {
     },
     async execute(message, args) {
         try {
-            const tendiesMade = (0, _utilities_1.getRandomInt)(100, 500);
-            _database_1.Users.addBalance(message.author.id, tendiesMade);
+            const tendiesMade = (0, utilities_1.getRandomInt)(100, 500);
+            db_objects_1.Users.addBalance(message.author.id, tendiesMade);
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
-                .addFields({ value: `You make: ${_utilities_1.CURRENCY_EMOJI_CODE} ${tendiesMade} tendies!`, name: ` ` });
+                .addFields({ value: `You make: ${utilities_1.CURRENCY_EMOJI_CODE} ${tendiesMade} tendies!`, name: ` ` });
             await message.reply({ embeds: [embed] });
         }
         catch (error) {

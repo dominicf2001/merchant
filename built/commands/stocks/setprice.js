@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const _database_1 = require("@database");
+const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
-const _utilities_1 = require("@utilities");
+const utilities_1 = require("../../utilities");
 module.exports = {
     data: {
         name: 'setprice',
@@ -10,7 +10,7 @@ module.exports = {
     },
     async execute(message, args) {
         const stockUser = message.mentions.members.first();
-        const newPrice = +(0, _utilities_1.findNumericArgs)(args);
+        const newPrice = +(0, utilities_1.findNumericArgs)(args);
         if (!newPrice) {
             await message.reply("Please specify a price.");
             return;
@@ -20,11 +20,11 @@ module.exports = {
             return;
         }
         try {
-            await _database_1.Stocks.updateStockPrice(stockUser.id, newPrice);
+            await db_objects_1.Stocks.updateStockPrice(stockUser.id, newPrice);
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({
-                name: `${(0, discord_js_1.inlineCode)((0, discord_js_1.userMention)(stockUser.id))}'s price set to: ${_utilities_1.CURRENCY_EMOJI_CODE} ${newPrice}`,
+                name: `${(0, discord_js_1.inlineCode)((0, discord_js_1.userMention)(stockUser.id))}'s price set to: ${utilities_1.CURRENCY_EMOJI_CODE} ${newPrice}`,
                 value: ` `
             });
             await message.reply({ embeds: [embed] });

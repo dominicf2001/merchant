@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const _utilities_1 = require("@utilities");
+const utilities_1 = require("../utilities");
 module.exports = {
     data: {
         name: 'nametag',
@@ -13,7 +13,7 @@ module.exports = {
     },
     async use(message, args) {
         const target = message.mentions.members.first();
-        const newNickname = (0, _utilities_1.findTextArgs)(args).join(" ");
+        const newNickname = (0, utilities_1.findTextArgs)(args).join(" ");
         if (!target) {
             throw new Error('Please specify a target.');
         }

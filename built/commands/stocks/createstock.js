@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const _database_1 = require("@database");
+const db_objects_1 = require("../../database/db-objects");
 const discord_js_1 = require("discord.js");
 const DEFAULT_STOCK_PRICE = 125;
 module.exports = {
@@ -20,7 +20,7 @@ module.exports = {
             return;
         }
         try {
-            await _database_1.Stocks.set(user.id, {
+            await db_objects_1.Stocks.set(user.id, {
                 price: DEFAULT_STOCK_PRICE
             });
             const embed = new discord_js_1.EmbedBuilder()

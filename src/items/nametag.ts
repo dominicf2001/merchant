@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { findTextArgs } from '@utilities';
+import { findTextArgs } from '../utilities';
 
 module.exports = {
     data: {

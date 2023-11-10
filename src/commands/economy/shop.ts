@@ -1,16 +1,21 @@
-import { Items } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '@utilities';
-import { Message, Events, ButtonInteraction, ActionRowBuilder, BaseInteraction } from 'discord.js';
+import { Items } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
+import { Message, Events, ButtonInteraction } from 'discord.js';
 import { client } from '../../index';
 
 const SHOP_ID: string = 'shop';
 const SHOP_PAGE_SIZE: number = 5;
 
-module.exports = {
-    data: {
-        name: 'shop',
-        description: 'View the shop.'
-    },
+const data: Command = {
+    command_id: 'shop' as CommandsCommandId,
+    description: `View the shop`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         const pageNum = +findNumericArgs(args)[0] ?? 1;
         await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
@@ -48,10 +53,6 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     
     const { customId } = interaction;
-    
-    // Ensure this a paginated menu button (may need more checks here in the future)
-    if (!interaction.isButton())
-        return;
 
     if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
         return;

@@ -1,12 +1,17 @@
 import { Message, EmbedBuilder, inlineCode, userMention } from 'discord.js';
-import { Users } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber } from '@utilities';
+import { Users } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 
-module.exports = {
-    data: {
-        name: 'top',
-        description: 'See who are the goodest boys.'
-    },
+const data: Command = {
+    command_id: 'top' as CommandsCommandId,
+    description: `See who are the goodest boys.`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         const allUsers = await Users.getAll();
         

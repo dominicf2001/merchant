@@ -1,5 +1,5 @@
 import { EmbedBuilder, Message } from "discord.js";
-import { Users } from "@database";
+import { Users } from "../database/db-objects";
 
 module.exports = {
     data: {

@@ -1,13 +1,17 @@
-import { Users } from '@database';
+import { Users } from '../../database/db-objects';
 import { Message, EmbedBuilder } from 'discord.js';
-import { CURRENCY_EMOJI_CODE, getRandomInt } from '@utilities';
+import { CURRENCY_EMOJI_CODE, getRandomInt } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';x
 
-module.exports = {
-    cooldown: 3600,
-    data: {
-        name: 'work',
-        description: 'Make some tendies.'
-    },
+const data: Command = {
+    command_id: 'work' as CommandsCommandId,
+    description: `Make some tendies.`,
+    cooldown_time: 360000,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         try {
             const tendiesMade = getRandomInt(100, 500);

@@ -1,6 +1,6 @@
-import { Stocks } from '@database';
+import { Stocks } from '../../database/db-objects';
 import { Message, userMention, EmbedBuilder, inlineCode } from 'discord.js';
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from '@utilities';
+import { CURRENCY_EMOJI_CODE, findNumericArgs } from '../../utilities';
 
 module.exports = {
 	data: {

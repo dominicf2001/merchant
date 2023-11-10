@@ -145,16 +145,6 @@ class DataStore {
     }
 }
 class Users extends DataStore {
-    async get(id) {
-        if (this.cache.has(id)) {
-            // cache hit
-            return this.getFromCache(id);
-        }
-        else {
-            // cache miss
-            return await this.getFromDB(id);
-        }
-    }
     async addBalance(user_id, amount) {
         const user = await this.get(user_id);
         let newBalance = user ? (user.balance + amount) : amount;
@@ -450,14 +440,14 @@ class Users extends DataStore {
 class Items extends DataStore {
     behaviors = new discord_js_1.Collection();
     async refreshCache() {
-        const itemsPath = path_1.default.join(process.cwd(), 'items');
+        const itemsPath = path_1.default.join(process.cwd(), 'built/items');
         const itemFiles = fs_1.default.readdirSync(itemsPath).filter(file => file.endsWith('.ts'));
         for (const file of itemFiles) {
             const filePath = path_1.default.join(itemsPath, file);
             const itemObj = await Promise.resolve(`${filePath}`).then(s => __importStar(require(s)));
             if ('data' in itemObj && 'use' in itemObj) {
                 this.behaviors.set(itemObj.data.item_id, itemObj.use);
-                this.cache.set(itemObj.data.item_id, new deque_1.Deque([itemObj.data]));
+                this.set(itemObj.data.item_id, new deque_1.Deque([itemObj.data]));
             }
             else {
                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
@@ -518,16 +508,6 @@ class Stocks extends DataStore {
                 this.cache.set(id, new deque_1.Deque([result]));
             }
         });
-    }
-    async get(id) {
-        if (this.cache.has(id)) {
-            // cache hit
-            return this.getFromCache(id);
-        }
-        else {
-            // cache miss
-            return await this.getFromDB(id);
-        }
     }
     async updateStockPrice(stock_id, amount) {
         if (amount < 0)
@@ -613,7 +593,7 @@ class Stocks extends DataStore {
 class Commands extends DataStore {
     behaviors = new discord_js_1.Collection();
     async refreshCache() {
-        const foldersPath = path_1.default.join(process.cwd(), 'commands');
+        const foldersPath = path_1.default.join(process.cwd(), 'built/commands');
         const commandFolders = fs_1.default.readdirSync(foldersPath);
         for (const folder of commandFolders) {
             const commandsPath = path_1.default.join(foldersPath, folder);
@@ -623,7 +603,7 @@ class Commands extends DataStore {
                 const commandObj = await Promise.resolve(`${filePath}`).then(s => __importStar(require(s)));
                 if ('data' in commandObj && 'execute' in commandObj) {
                     this.behaviors.set(commandObj.data.command_id, commandObj.use);
-                    this.cache.set(commandObj.data.command_id, new deque_1.Deque([commandObj.data]));
+                    this.set(commandObj.data.command_id, new deque_1.Deque([commandObj.data]));
                 }
                 else {
                     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);

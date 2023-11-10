@@ -1,4 +1,4 @@
-import { Stocks } from '@database';
+import { Stocks } from '../../database/db-objects';
 import { Message, EmbedBuilder } from 'discord.js';
 
 const DEFAULT_STOCK_PRICE = 125;

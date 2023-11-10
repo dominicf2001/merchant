@@ -1,5 +1,5 @@
-import { Users, Items, Stocks } from '@database';
-import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
+import { Users, Items, Stocks } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 import { DateTime } from 'luxon';
 

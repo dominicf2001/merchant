@@ -1,12 +1,17 @@
-import { Users, Items, Stocks } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
+import { Users, Items, Stocks } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
-module.exports = {
-    data: {
-        name: 'sell',
-        description: `sell an item or a stock.\n${inlineCode("$sell [item/@user] [quantity/all]")}`
-    },
+const data: Command = {
+    command_id: 'sell' as CommandsCommandId,
+    description: `sell an item or a stock.\n${inlineCode("$sell [item/@user] [quantity/all]")}`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.size == 1) {
             await sellStock(message, args);

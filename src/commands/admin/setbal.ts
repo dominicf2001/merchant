@@ -1,12 +1,17 @@
-import { Users } from '@database';
+import { Users } from '../../database/db-objects';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, userMention, inlineCode } from 'discord.js';
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from '@utilities';
+import { CURRENCY_EMOJI_CODE, findNumericArgs } from '../../utilities';
 
-module.exports = {
-	data: {
-        name: 'setbal',
-        description: `(ADMIN) Set a users role.\n${inlineCode("$setbal @target [role]")}`
-    },
+const data: Command = {
+    command_id: 'setbal' as CommandsCommandId,
+    description: `(ADMIN) Set a users role.\n${inlineCode("$setbal @target [role]")}`,
+    cooldown_time: 0,
+    is_admin: true
+};
+
+export default {
+    data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
 		const newBalance: number = +findNumericArgs(args)[0];
 		const target = message.mentions.users.first() ?? message.author;

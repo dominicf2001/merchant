@@ -1,12 +1,17 @@
-import { Users } from '@database';
-import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber } from '@utilities';
+import { Users } from '../../database/db-objects';
+import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
-module.exports = {
-	data: {
-        name: 'give',
-        description: `Share your tendies.\n${inlineCode("$give @target [(amount)]")}`
-    },
+const data: Command = {
+    command_id: 'give' as CommandsCommandId,
+    description: `Share your tendies.\n${inlineCode("$give @target [(amount)]")}`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+	data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
 		const target = message.mentions.users.first();
 

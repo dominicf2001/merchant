@@ -1,13 +1,17 @@
-import { Users, Items, Stocks } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
+import { Users, Items, Stocks } from '../../database/db-objects';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
+import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
-module.exports = {
-    data: {
-        name: 'buy',
-        description: `Buy an item or a stock.`,
-        usage: `${inlineCode("$buy [(item) OR @(user)] [(quantity) OR all]")}\n For stocks only $buy will always purchase as many as possible.`
-    },
+const data: Command = {
+    command_id: 'buy' as CommandsCommandId,
+    description: `Buy an item or a stock. ${inlineCode("$buy [(item) OR @(user)] [(quantity) OR all]")}\n For stocks only $buy will always purchase as many as possible`,
+    cooldown_time: 0,
+    is_admin: false
+};
+
+export default {
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.size === 1) {
             await buyStock(message, args);

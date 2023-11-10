@@ -8,7 +8,10 @@
         "test-stocks": "jest --runInBand ./src/tests/stocks.test.ts",
         "test-users": "jest --runInBand ./src/tests/users.test.ts",
         "dbinit": "npx tsx ./src/database/db-init.ts",
-        "dbinit-f": "npx tsx ./src/database/db-init.ts -f"
+        "dbinit-f": "npx tsx ./src/database/db-init.ts -f",
+        "build": "npx tsc",
+        "start": "node ./built/index.js",
+        "go": "npm run build && npm run start"
     },
     "author": "",
     "license": "ISC",

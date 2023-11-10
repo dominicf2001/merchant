@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const _utilities_1 = require("@utilities");
-const _database_1 = require("@database");
+const utilities_1 = require("../utilities");
+const db_objects_1 = require("../database/db-objects");
 module.exports = {
     data: {
         name: 'dye',
@@ -14,7 +14,7 @@ module.exports = {
     },
     async use(message, args) {
         const target = message.mentions.members.first();
-        const color = (0, _utilities_1.toUpperCaseString)((0, _utilities_1.findTextArgs)(args)[0]);
+        const color = (0, utilities_1.toUpperCaseString)((0, utilities_1.findTextArgs)(args)[0]);
         // TODO: don't take error throwing approach?
         if (!color) {
             throw new Error('Please specify a color.');
@@ -26,7 +26,7 @@ module.exports = {
             throw new Error('Please specify a target.');
         }
         if (message.author.id !== target.id) {
-            await _database_1.Users.addArmor(target.id, -1);
+            await db_objects_1.Users.addArmor(target.id, -1);
             await message.reply("This user was protected by :shield: armor. It is now broken and they are exposed.");
             return;
         }

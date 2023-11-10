@@ -1,5 +1,5 @@
-import { Commands, Items } from '@database';
-import { PaginatedMenuBuilder, findTextArgs } from '@utilities';
+import { Commands, Items } from '../../database/db-objects';
+import { PaginatedMenuBuilder, findTextArgs } from '../../utilities';
 import { Message, Events, ButtonInteraction, EmbedBuilder } from 'discord.js';
 import { client } from '../../index';
 
