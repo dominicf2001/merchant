@@ -1,5 +1,6 @@
 import { Message, Colors, ColorResolvable } from 'discord.js';
 import { findTextArgs, toUpperCaseString } from '@utilities';
+import { Users } from '@database';
 
 module.exports = {
     data: {

@@ -1,5 +1,5 @@
 import { Users } from '@database';
-import { Message, EmbedBuilder, userMention } from 'discord.js';
+import { Message, EmbedBuilder, userMention, inlineCode } from 'discord.js';
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from '@utilities';
 
 module.exports = {

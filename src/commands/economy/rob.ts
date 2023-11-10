@@ -1,5 +1,5 @@
 import { Users } from '@database';
-import { CURRENCY_EMOJI_CODE, formatNumber, findTextArgs } from '@utilities';
+import { CURRENCY_EMOJI_CODE, formatNumber, findTextArgs, getRandomFloat, getRandomInt } from '@utilities';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 enum RobType {

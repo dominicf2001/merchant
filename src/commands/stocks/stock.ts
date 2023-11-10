@@ -4,6 +4,7 @@ import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNum
 import { Message, EmbedBuilder, AttachmentBuilder, inlineCode, Events, ButtonInteraction } from 'discord.js';
 import { DateTime } from 'luxon';
 import { ChartConfiguration } from 'chart.js';
+import { client } from '../../index';
 
 const STOCK_LIST_ID: string = 'shop';
 const STOCK_LIST_PAGE_SIZE: number = 5;

@@ -1,6 +1,6 @@
 import { Users, Items } from '@database';
 import { findTextArgs } from '@utilities';
-import { Message } from 'discord.js';
+import { Message, inlineCode } from 'discord.js';
 
 module.exports = {
 	data: {

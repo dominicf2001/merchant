@@ -1,6 +1,6 @@
 import { Commands, Items } from '@database';
 import { PaginatedMenuBuilder, findTextArgs } from '@utilities';
-import { Message, Events, ButtonInteraction } from 'discord.js';
+import { Message, Events, ButtonInteraction, EmbedBuilder } from 'discord.js';
 import { client } from '../../index';
 
 // TODO: implement paging

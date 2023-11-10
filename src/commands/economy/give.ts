@@ -1,5 +1,5 @@
 import { Users } from '@database';
-import { findNumericArgs, CURRENCY_EMOJI_CODE } from '@utilities';
+import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber } from '@utilities';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 module.exports = {
@@ -37,9 +37,9 @@ module.exports = {
             return;
         }
 
-        await addBalance(message.author.id, -transferAmount);
+        await Users.addBalance(message.author.id, -transferAmount);
         authorBalance -= transferAmount;
-        await addBalance(target.id, +transferAmount);
+        await Users.addBalance(target.id, +transferAmount);
         
         
         const embed = new EmbedBuilder()

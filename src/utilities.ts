@@ -1,4 +1,5 @@
-import { APIEmbedField, ActionRowData, ColorResolvable, EmbedData, Message, BaseInteraction, RestOrArray, APIEmbed, APIActionRowComponent, APIMessageActionRowComponent } from 'discord.js';
+import { APIEmbedField, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle,
+         EmbedBuilder, RestOrArray, APIEmbed, APIActionRowComponent, APIMessageActionRowComponent } from 'discord.js';
 import { DateTime } from 'luxon';
 
 const OPEN_HOUR: number = 7;

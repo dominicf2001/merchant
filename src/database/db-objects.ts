@@ -507,7 +507,7 @@ class Items extends DataStore<Item> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
-        const itemsPath = path.join(process.cwd(), 'src/items');
+        const itemsPath = path.join(process.cwd(), 'items');
         const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.ts'));
         for (const file of itemFiles) {
             const filePath = path.join(itemsPath, file);
@@ -693,7 +693,7 @@ class Commands extends DataStore<Command> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
-        const foldersPath: string = path.join(process.cwd(), 'src/commands');
+        const foldersPath: string = path.join(process.cwd(), 'commands');
         const commandFolders: string[] = fs.readdirSync(foldersPath);
 
         for (const folder of commandFolders) {

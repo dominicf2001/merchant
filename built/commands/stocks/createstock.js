@@ -1,0 +1,39 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const _database_1 = require("@database");
+const discord_js_1 = require("discord.js");
+const DEFAULT_STOCK_PRICE = 125;
+module.exports = {
+    data: {
+        name: 'createstock',
+        description: 'Create a stock.'
+    },
+    async execute(message, args) {
+        const user = message.mentions.users.first();
+        if (!user) {
+            await message.reply("Please specify a target.");
+            return;
+        }
+        // TODO: pull or lookup
+        if (message.author.id != "608852453315837964") {
+            await message.reply("You do not have permission to use this.");
+            return;
+        }
+        try {
+            await _database_1.Stocks.set(user.id, {
+                price: DEFAULT_STOCK_PRICE
+            });
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `Stock has been created.`,
+                value: ` `
+            });
+            await message.reply({ embeds: [embed] });
+        }
+        catch (error) {
+            console.error("Error creating stock: ", error);
+            await message.reply("Error creating stock.");
+        }
+    }
+};

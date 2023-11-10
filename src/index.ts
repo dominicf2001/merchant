@@ -1,10 +1,10 @@
 import cron from 'node-cron';
+import fs from 'fs';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { Users, Commands } from '@database';
-import token from '../config.json';
+const { TOKEN } = JSON.parse(fs.readFileSync('../config.json', 'utf8'));
 import { secondsToHms, getRandomFloat, marketIsOpen, TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "./utilities";
-import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
-import { DateTime } from 'luxon';
+// import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 
 const client: Client = new Client({
     intents: [
@@ -75,7 +75,7 @@ client.on(Events.MessageCreate, async message => {
 
         const remainingCooldownDuration: number = await Users.getRemainingCooldownDuration(message.author.id, commandName);
         if (remainingCooldownDuration) {
-            await message.reply({ content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${remainingCooldown / 1000} seconds\`.` });
+            await message.reply({ content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.` });
         }
 
         if (command.cooldown_time > 0) {
@@ -100,7 +100,7 @@ client.on(Events.MessageCreate, async message => {
 let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
     let randomMinute: number = Math.floor(Math.random() * 5);
     setTimeout(() => {
-        calculateAndUpdateStocks();
+        // calculateAndUpdateStocks();
         // TODO: paramaterize channel id?
         client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
         console.log("tick");
@@ -110,7 +110,7 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
 });
 
 let dailyCleanup = cron.schedule('0 5 * * *', () => {
-    stockCleanUp();
+    // stockCleanUp();
     console.log("Cleanup has occurred!");
 }, {
     timezone: TIMEZONE
@@ -120,4 +120,4 @@ let dailyCleanup = cron.schedule('0 5 * * *', () => {
 // stockTicker.start();
 // dailyCleanup.start();
 
-client.login(token);
+client.login(TOKEN);

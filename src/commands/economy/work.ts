@@ -1,6 +1,6 @@
 import { Users } from '@database';
-import { Message } from 'discord.js';
-import { CURRENCY_EMOJI_CODE } from '@utilities';
+import { Message, EmbedBuilder } from 'discord.js';
+import { CURRENCY_EMOJI_CODE, getRandomInt } from '@utilities';
 
 module.exports = {
     cooldown: 3600,

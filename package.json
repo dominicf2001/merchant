@@ -5,8 +5,8 @@
     "main": "index.js",
     "scripts": {
         "test": "jest --runInBand ./tests",
-        "test-stocks": "jest --runInBand ./tests/stocks.test.ts",
-        "test-users": "jest --runInBand ./tests/users.test.ts",
+        "test-stocks": "jest --runInBand ./src/tests/stocks.test.ts",
+        "test-users": "jest --runInBand ./src/tests/users.test.ts",
         "dbinit": "npx tsx ./src/database/db-init.ts",
         "dbinit-f": "npx tsx ./src/database/db-init.ts -f"
     },

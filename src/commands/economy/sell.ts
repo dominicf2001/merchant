@@ -1,4 +1,4 @@
-import { Users, Items } from '@database';
+import { Users, Items, Stocks } from '@database';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '@utilities';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
@@ -39,7 +39,7 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         return;
     }
 
-    const latestStock = await getLatestStock(stockUser.id);
+    const latestStock = await Stocks.getLatestStock(stockUser.id);
 
     if (!latestStock) {
         await message.reply(`That stock does not exist.`);
@@ -57,7 +57,7 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         const totalSold: number = await Users.addStock(message.author.id, stockUser.id, -quantity);
         const totalReturn: number = latestStock.price * totalSold;
 
-        await addBalance(message.author.id, totalReturn);
+        await Users.addBalance(message.author.id, totalReturn);
 
         const pluralS: string = totalSold > 1 ? "s" : "";
         const embed = new EmbedBuilder()
@@ -107,7 +107,7 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
         const totalSold: number = await Users.addItem(message.author.id, itemName, -quantity);
         const totalReturn: number = item.price * totalSold;
 
-        await addBalance(message.author.id, totalReturn);
+        await Users.addBalance(message.author.id, totalReturn);
         
         const pluralS: string = quantity > 1 ? "s" : "";
         const embed = new EmbedBuilder()
