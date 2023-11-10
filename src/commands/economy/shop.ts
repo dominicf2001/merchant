@@ -1,6 +1,6 @@
 import { Items } from '@database';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '@utilities';
-import { Message, Events, ButtonInteraction } from 'discord.js';
+import { Message, Events, ButtonInteraction, ActionRowBuilder, BaseInteraction } from 'discord.js';
 import { client } from '../../index';
 
 const SHOP_ID: string = 'shop';
@@ -42,12 +42,16 @@ async function sendShopMenu(message: Message | ButtonInteraction, id: string, pa
         await message.reply({ embeds: [embed], components: [buttons] });
 }
 
-client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
+client.on(Events.InteractionCreate, async interaction => {
+    if (!interaction.isButton()) {
+        return;
+    }
+    
     const { customId } = interaction;
     
     // Ensure this a paginated menu button (may need more checks here in the future)
     if (!interaction.isButton())
-        return false;
+        return;
 
     if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
         return;

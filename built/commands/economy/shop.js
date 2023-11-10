@@ -37,10 +37,13 @@ async function sendShopMenu(message, id, pageSize = 5, pageNum = 1) {
         await message.reply({ embeds: [embed], components: [buttons] });
 }
 index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isButton()) {
+        return;
+    }
     const { customId } = interaction;
     // Ensure this a paginated menu button (may need more checks here in the future)
     if (!interaction.isButton())
-        return false;
+        return;
     if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
         return;
     const authorId = interaction.message.mentions.users.first().id;

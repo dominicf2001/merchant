@@ -65,7 +65,7 @@ class PaginatedMenuBuilder {
     color = "blurple";
     title = "";
     description = "";
-    fields;
+    fields = [];
     setColor(color) {
         this.color = color;
         return this;
@@ -79,8 +79,9 @@ class PaginatedMenuBuilder {
         return this;
     }
     addFields(...fields) {
-        this.fields.concat(fields);
-        this.totalPages = Math.ceil(fields.length / this.pageSize);
+        this.fields.push(...(0, discord_js_1.normalizeArray)(fields));
+        // Recalculate the total pages.
+        this.totalPages = Math.ceil(this.fields.length / this.pageSize);
         return this;
     }
     createEmbed() {
@@ -91,6 +92,7 @@ class PaginatedMenuBuilder {
             .setFields(this.fields);
         return embed;
     }
+    // APIActionRowComponent<APIMessageActionRowComponent>
     createButtons() {
         const previousBtn = new discord_js_1.ButtonBuilder()
             .setCustomId(`${this.id}Previous`)

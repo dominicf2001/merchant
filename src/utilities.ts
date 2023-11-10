@@ -1,5 +1,5 @@
 import { APIEmbedField, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle,
-         EmbedBuilder, RestOrArray, APIEmbed, APIActionRowComponent, APIMessageActionRowComponent } from 'discord.js';
+         EmbedBuilder, RestOrArray, APIEmbed, APIActionRowComponent, APIMessageActionRowComponent, normalizeArray, AnyComponentBuilder } from 'discord.js';
 import { DateTime } from 'luxon';
 
 const OPEN_HOUR: number = 7;
@@ -61,7 +61,7 @@ class PaginatedMenuBuilder {
     private color: ColorResolvable = "blurple" as ColorResolvable;
     private title: string = "";
     private description: string = "";
-    private fields: RestOrArray<APIEmbedField>;
+    private fields: APIEmbedField[] = [];
     
     setColor(color: ColorResolvable): PaginatedMenuBuilder {
         this.color = color;
@@ -79,12 +79,16 @@ class PaginatedMenuBuilder {
     }
 
     addFields(...fields: RestOrArray<APIEmbedField>): PaginatedMenuBuilder {
-        this.fields.concat(fields);
-        this.totalPages = Math.ceil(fields.length / this.pageSize);
+        this.fields.push(...normalizeArray(fields));
+
+        // Recalculate the total pages.
+        this.totalPages = Math.ceil(this.fields.length / this.pageSize);
+
         return this;
     }
 
-    createEmbed(): APIEmbed {
+
+    createEmbed(): EmbedBuilder {
         const embed = new EmbedBuilder()
             .setColor(this.color)
             .setTitle(this.title)
@@ -94,7 +98,8 @@ class PaginatedMenuBuilder {
         return embed;
     }
 
-    createButtons(): APIActionRowComponent<APIMessageActionRowComponent> {
+    // APIActionRowComponent<APIMessageActionRowComponent>
+    createButtons(): ActionRowBuilder<ButtonBuilder> {
         const previousBtn = new ButtonBuilder()
             .setCustomId(`${this.id}Previous`)
             .setLabel('Previous')
@@ -107,7 +112,7 @@ class PaginatedMenuBuilder {
             .setStyle(ButtonStyle.Primary)
             .setDisabled(this.pageNum === this.totalPages);
 
-        const buttonsRow = new ActionRowBuilder()
+        const buttonsRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(previousBtn, nextBtn);
 
         return buttonsRow;

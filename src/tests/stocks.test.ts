@@ -1,5 +1,5 @@
 import { Stocks, Users, db } from "@database";
-import { StocksCreatedDate } from "../src/database/schemas/public/Stocks";
+import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from '@faker-js/faker';
 import { DateTime } from "luxon";
 

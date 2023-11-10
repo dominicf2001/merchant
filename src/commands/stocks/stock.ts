@@ -194,12 +194,16 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
         await message.reply({ embeds: [embed], components: [buttons] });
 }
 
-client.on(Events.InteractionCreate, async (interaction: ButtonInteraction) => {
+client.on(Events.InteractionCreate, async interaction => {
+    if (!interaction.isButton()) {
+        return;
+    }
+    
     const { customId } = interaction;
     
     // Ensure this a paginated menu button (may need more checks here in the future)
     if (!interaction.isButton())
-        return false;
+        return;
 
     if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
         return;
