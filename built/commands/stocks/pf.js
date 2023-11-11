@@ -15,7 +15,7 @@ exports.default = {
     async execute(message, args) {
         if (args[0]) {
             try {
-                await handleDetailReply(message, args);
+                await sendPurchaseHistoryList(message, args);
             }
             catch (error) {
                 console.error("Error handling chart reply: ", error);
@@ -23,7 +23,7 @@ exports.default = {
         }
         else {
             try {
-                await handleListReply(message, args);
+                await sendStockList(message, args);
             }
             catch (error) {
                 console.error("Error handling list reply: ", error);
@@ -31,34 +31,35 @@ exports.default = {
         }
     }
 };
-async function handleListReply(message, args) {
+async function sendStockList(message, args) {
     const portfolio = await db_objects_1.Users.getPortfolio(message.author.id);
     const embed = new discord_js_1.EmbedBuilder()
         .setColor("Blurple")
-        .setDescription(`To view additional info on a stock: ${(0, discord_js_1.inlineCode)("$pf @user [page#]")}`);
+        .setDescription(`To view additional info: ${(0, discord_js_1.inlineCode)("$pf @user [page#]")}`);
     let totalValue = 0;
     let totalChange = 0;
-    for (const stockId in portfolio) {
-        const userStocks = await db_objects_1.Users.getUserStocks(message.author.id, stockId);
-        let value = 0;
+    for (const stock of portfolio) {
+        const userStocks = await db_objects_1.Users.getUserStocks(message.author.id, stock.stock_id);
+        let purchaseValue = 0;
         let quantity = 0;
         for (const userStock of userStocks) {
             quantity += userStock.quantity;
-            value += (userStock.quantity * userStock.purchase_price);
+            purchaseValue += (userStock.quantity * userStock.purchase_price);
         }
-        const latestStockPrice = (await db_objects_1.Stocks.getLatestStock(stockId)).price;
-        const gain = latestStockPrice - totalValue;
+        const latestStockPrice = (await db_objects_1.Stocks.getLatestStock(stock.stock_id)).price;
+        const latestValue = quantity * latestStockPrice;
+        const gain = latestValue - purchaseValue;
         const arrow = gain < 0 ?
             utilities_1.STOCKDOWN_EMOJI_CODE :
             utilities_1.STOCKUP_EMOJI_CODE;
         const gainedOrLost = gain < 0 ?
             "lost" :
             "gained";
-        const user = await message.client.users.fetch(stockId);
-        totalValue += (value + gain);
+        const user = await message.client.users.fetch(stock.stock_id);
+        totalValue += (purchaseValue + gain);
         totalChange += gain;
         embed.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(user.username)} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(gain)} ${gainedOrLost} all time`,
-            value: `Total shares: :receipt: ${(0, utilities_1.formatNumber)(quantity)}\nTotal invested: ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(value)}` });
+            value: `Total shares: :receipt: ${(0, utilities_1.formatNumber)(quantity)}\nTotal invested: ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(purchaseValue)}` });
     }
     const arrow = totalChange < 0 ?
         utilities_1.STOCKDOWN_EMOJI_CODE :
@@ -66,7 +67,7 @@ async function handleListReply(message, args) {
     embed.setTitle(`Portfolio :page_with_curl:\nValue: ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(totalValue)} (${arrow} ${(0, utilities_1.formatNumber)(totalChange)})`);
     await message.reply({ embeds: [embed] });
 }
-async function handleDetailReply(message, args) {
+async function sendPurchaseHistoryList(message, args) {
     // TODO: implement paging
     const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] ?? 1;
     const stockUser = message.mentions.users.first();

@@ -16,13 +16,13 @@ export default {
     async execute(message: Message, args: string[]): Promise<void> {
         if (args[0]) {
             try {
-                await handleDetailReply(message, args);
+                await sendPurchaseHistoryList(message, args);
             } catch (error) {
                 console.error("Error handling chart reply: ", error);
             }
         } else {
             try {
-                await handleListReply(message, args);
+                await sendStockList(message, args);
             } catch (error) {
                 console.error("Error handling list reply: ", error);
             }
@@ -30,26 +30,28 @@ export default {
     }
 };
 
-async function handleListReply(message: Message, args: string[]): Promise<void> {
+async function sendStockList(message: Message, args: string[]): Promise<void> {
     const portfolio = await Users.getPortfolio(message.author.id);
+    
     const embed = new EmbedBuilder()
         .setColor("Blurple")
-        .setDescription(`To view additional info on a stock: ${inlineCode("$pf @user [page#]")}`);
+        .setDescription(`To view additional info: ${inlineCode("$pf @user [page#]")}`);
 
     let totalValue: number = 0;
     let totalChange: number = 0;
-    for (const stockId in portfolio) {
-        const userStocks = await Users.getUserStocks(message.author.id, stockId);
+    for (const stock of portfolio) {
+        const userStocks = await Users.getUserStocks(message.author.id, stock.stock_id);
 
-        let value: number = 0;
+        let purchaseValue: number = 0;
         let quantity: number = 0;
         for (const userStock of userStocks) {
             quantity += userStock.quantity;
-            value += (userStock.quantity * userStock.purchase_price);
+            purchaseValue += (userStock.quantity * userStock.purchase_price);
         }
 
-        const latestStockPrice: number = (await Stocks.getLatestStock(stockId)).price;
-        const gain: number = latestStockPrice - totalValue;
+        const latestStockPrice: number = (await Stocks.getLatestStock(stock.stock_id)).price;
+        const latestValue: number = quantity * latestStockPrice;
+        const gain: number = latestValue - purchaseValue;
         
         const arrow: string = gain < 0 ?
             STOCKDOWN_EMOJI_CODE :
@@ -58,11 +60,11 @@ async function handleListReply(message: Message, args: string[]): Promise<void> 
             "lost" :
             "gained";
 
-        const user = await message.client.users.fetch(stockId);
-        totalValue += (value + gain);
+        const user = await message.client.users.fetch(stock.stock_id);
+        totalValue += (purchaseValue + gain);
         totalChange += gain;
         embed.addFields({ name: `${arrow} ${inlineCode(user.username)} ${CURRENCY_EMOJI_CODE} ${formatNumber(gain)} ${gainedOrLost} all time`,
-            value: `Total shares: :receipt: ${formatNumber(quantity)}\nTotal invested: ${CURRENCY_EMOJI_CODE} ${formatNumber(value)}`});
+            value: `Total shares: :receipt: ${formatNumber(quantity)}\nTotal invested: ${CURRENCY_EMOJI_CODE} ${formatNumber(purchaseValue)}`});
     }
 
     const arrow: string = totalChange < 0 ?
@@ -74,7 +76,7 @@ async function handleListReply(message: Message, args: string[]): Promise<void> 
     await message.reply({ embeds: [embed] });
 }
 
-async function handleDetailReply(message: Message, args: string[]): Promise<void> {
+async function sendPurchaseHistoryList(message: Message, args: string[]): Promise<void> {
     // TODO: implement paging
     const pageNum: number = +findNumericArgs(args)[0] ?? 1;
     const stockUser = message.mentions.users.first();
