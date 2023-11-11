@@ -164,13 +164,9 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
 }
 
 async function sendStockList(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
-    console.log(pageNum);
-    console.log(pageSize);
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
-
-    console.log(startIndex);
-    console.log(endIndex);
+    
     const stocks = (await Stocks.getLatestStocks()).slice(startIndex, endIndex);
 
     console.log(stocks);
@@ -187,6 +183,8 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
     for (const stock of stocks){
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
+        console.log({previousPrice});
+        console.log({currentPrice});
         const username = (await message.client.users.fetch(stock.stock_id)).username;
 
         const arrow = (currentPrice - previousPrice) < 0 ?

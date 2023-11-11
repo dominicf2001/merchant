@@ -145,12 +145,8 @@ async function sendStockChart(message, args) {
     await message.reply({ embeds: [embed], files: [attachment] });
 }
 async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
-    console.log(pageNum);
-    console.log(pageSize);
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    console.log(startIndex);
-    console.log(endIndex);
     const stocks = (await db_objects_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
     console.log(stocks);
     // getting the 'now' stock history pulls from a cache
@@ -163,6 +159,8 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
     for (const stock of stocks) {
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
+        console.log({ previousPrice });
+        console.log({ currentPrice });
         const username = (await message.client.users.fetch(stock.stock_id)).username;
         const arrow = (currentPrice - previousPrice) < 0 ?
             utilities_1.STOCKDOWN_EMOJI_CODE :

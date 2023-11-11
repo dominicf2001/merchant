@@ -7,8 +7,8 @@ import { client } from './index';
 const OPEN_HOUR: number = 7;
 const CLOSE_HOUR: number = 22;
 const CURRENCY_EMOJI_CODE: string = "<:tendie:1117239821337890886>";
-const STOCKUP_EMOJI_CODE: string = "<:stockdown:1119370974140301352>";
-const STOCKDOWN_EMOJI_CODE: string = "<:stockup:1119370943240863745>";
+const STOCKUP_EMOJI_CODE: string = "<:stockup:1117496842867982407>";
+const STOCKDOWN_EMOJI_CODE: string = "<:stockdown:1117496855870328833>";
 
 function secondsToHms(d: number): string {
     var h = Math.floor(d / 3600);
