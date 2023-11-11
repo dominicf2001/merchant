@@ -14,6 +14,12 @@ export default {
 	data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
         let itemName = findTextArgs(args)[0];
+
+        if (!itemName) {
+            await message.reply("Please specifiy an item.");
+            return;    
+        }
+        
         const item = await Users.getItem(message.author.id, itemName);
 
         if (!item) {

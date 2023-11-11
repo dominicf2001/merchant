@@ -29,13 +29,10 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         99999 :
         (+findNumericArgs(args)[0] ?? 1);
 
-    if (!Number.isInteger(quantity)) {
-        await message.reply(`You can only sell a whole number of shares.`);
-        return;
-    }
+    const latestStock = await Stocks.getLatestStock(stockUser.id);
 
-    if (quantity <= 0) {
-        await message.reply(`You can only sell one or more shares.`);
+    if (!latestStock) {
+        await message.reply(`That stock does not exist.`);
         return;
     }
 
@@ -43,11 +40,14 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         await message.reply(`You cannot own your own stock.`);
         return;
     }
+    
+    if (!Number.isInteger(quantity)) {
+        await message.reply(`You can only sell a whole number of shares.`);
+        return;
+    }
 
-    const latestStock = await Stocks.getLatestStock(stockUser.id);
-
-    if (!latestStock) {
-        await message.reply(`That stock does not exist.`);
+    if (quantity <= 0) {
+        await message.reply(`You can only sell one or more shares.`);
         return;
     }
 
@@ -79,10 +79,22 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
 }
 
 async function sellItem(message: Message, args: string[]): Promise<void> {
-    const itemName: string = findTextArgs(args)[0].toLowerCase();
+    const itemName: string = findTextArgs(args)[0]?.toLowerCase();
     const quantity: number = args.includes("all") ?
         99999 :
         (+findNumericArgs(args)[0] ?? 1);
+
+    if (!itemName) {
+        await message.reply(`Please specify an item or stock.`);
+        return;
+    }
+    
+    const item = await Items.get(itemName);
+    
+    if (!item) {
+        await message.reply(`That item does not exist.`);
+        return;
+    }
     
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only sell a whole number of items.`);
@@ -91,13 +103,6 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
 
     if (quantity <= 0) {
         await message.reply(`You can only sell one or more items.`);
-        return;
-    }
-
-    const item = await Items.get(itemName);
-
-    if (!item) {
-        await message.reply(`That item does not exist.`);
         return;
     }
     

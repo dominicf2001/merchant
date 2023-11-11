@@ -65,21 +65,25 @@ async function buyStock(message, args) {
     }
 }
 async function buyItem(message, args) {
-    const itemName = (0, utilities_1.findTextArgs)(args)[0].toLowerCase();
+    const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase();
     const quantity = args.includes("all") ?
         99999 :
         (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
+    if (!itemName) {
+        await message.reply(`Please specify an item or stock.`);
+        return;
+    }
+    const item = await db_objects_1.Items.get(itemName);
+    if (!item) {
+        await message.reply(`That item doesn't exist.`);
+        return;
+    }
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only purchase a whole number of items.`);
         return;
     }
     if (quantity <= 0) {
         await message.reply(`You can only purchase one or more items.`);
-        return;
-    }
-    const item = await db_objects_1.Items.get(itemName);
-    if (!item) {
-        await message.reply(`That item doesn't exist.`);
         return;
     }
     try {

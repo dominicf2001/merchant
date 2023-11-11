@@ -76,11 +76,23 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
 }
 
 async function buyItem(message: Message, args: string[]): Promise<void> {
-    const itemName: string = findTextArgs(args)[0].toLowerCase();
+    const itemName: string = findTextArgs(args)[0]?.toLowerCase();
     const quantity: number = args.includes("all") ?
         99999 :
         (+findNumericArgs(args)[0] ?? 1);
 
+    if (!itemName) {
+        await message.reply(`Please specify an item or stock.`);
+        return;    
+    }
+
+    const item = await Items.get(itemName);
+
+    if (!item) {
+        await message.reply(`That item doesn't exist.`);
+        return;
+    }
+    
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only purchase a whole number of items.`);
         return;
@@ -88,13 +100,6 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
 
     if (quantity <= 0) {
         await message.reply(`You can only purchase one or more items.`);
-        return;
-    }
-
-    const item = await Items.get(itemName);
-
-    if (!item) {
-        await message.reply(`That item doesn't exist.`);
         return;
     }
 

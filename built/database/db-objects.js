@@ -29,7 +29,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.db = exports.Commands = exports.Stocks = exports.Items = exports.Users = void 0;
 const kysely_1 = require("kysely");
 const luxon_1 = require("luxon");
-const deque_1 = require("@datastructures-js/deque");
 const discord_js_1 = require("discord.js");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -58,7 +57,7 @@ class DataStore {
     async refreshCache() {
         const results = await db.selectFrom(this.tableName).selectAll().execute();
         results.forEach(result => {
-            this.cache.set(result[this.tableID], new deque_1.Deque([result]));
+            this.cache.set(result[this.tableID], [result]);
         });
     }
     async delete(id) {
@@ -69,7 +68,7 @@ class DataStore {
             .execute();
     }
     getFromCache(id) {
-        return this.cache.get(id)?.front();
+        return this.cache.get(id)?.[0];
     }
     async getFromDB(id) {
         return await this.db
@@ -93,7 +92,10 @@ class DataStore {
             // cache hit
             const allData = [];
             for (const id of this.cache.keys()) {
-                allData.push(this.cache.get(id).front());
+                const stockCache = this.cache.get(id);
+                if (stockCache[0]) {
+                    allData.push(stockCache[0]);
+                }
             }
             return allData;
         }
@@ -107,8 +109,6 @@ class DataStore {
     }
     async set(id, data = {}) {
         const newData = { [this.tableID]: id, ...data };
-        console.log("Setting data...");
-        console.log(newData);
         try {
             let result = await this.db
                 .selectFrom(this.tableName)
@@ -130,7 +130,7 @@ class DataStore {
                     .returningAll()
                     .executeTakeFirstOrThrow();
             }
-            this.cache.set(id, new deque_1.Deque([result]));
+            this.cache.set(id, [result]);
         }
         catch (error) {
             console.error(error);
@@ -477,9 +477,13 @@ class Stocks extends DataStore {
     // caches the 'now' stock history for each stock
     async refreshCache() {
         const latestStocks = await this.getLatestStocks();
+        console.log("Cache retrieved: ");
+        console.log(latestStocks);
         for (const latestStock of latestStocks) {
             const stockHistory = await this.getStockHistory(latestStock.stock_id, 'now');
-            this.cache.set(latestStock[this.tableID], new deque_1.Deque(stockHistory));
+            console.log("Stock history: ");
+            console.log(stockHistory);
+            this.cache.set(latestStock[this.tableID], stockHistory);
         }
     }
     async getTotalSharesPurchased(stock_id) {
@@ -512,11 +516,11 @@ class Stocks extends DataStore {
                 .executeTakeFirstOrThrow();
             let cachedStockHistory = this.cache.get(id);
             if (cachedStockHistory) {
-                cachedStockHistory.pushFront(result);
-                cachedStockHistory.popBack();
+                cachedStockHistory.pop();
+                cachedStockHistory.unshift(result);
             }
             else {
-                this.cache.set(id, new deque_1.Deque([result]));
+                this.cache.set(id, [result]);
             }
         });
     }
@@ -526,12 +530,13 @@ class Stocks extends DataStore {
         this.set(stock_id, { price: amount });
     }
     async getLatestStocks() {
-        let latestStocks;
+        let latestStocks = [];
         if (this.cache.size) {
-            let i = 0;
-            for (const stockId in this.cache) {
-                console.log(stockId);
-                latestStocks[i++] = this.cache.get(stockId).front();
+            for (const stockId of this.cache.keys()) {
+                const stockCache = this.cache.get(stockId);
+                if (stockCache[0]) {
+                    latestStocks.push(stockCache[0]);
+                }
             }
         }
         else {
@@ -546,26 +551,27 @@ class Stocks extends DataStore {
                     .as('s2'), join => join.onRef('s1.stock_id', '=', 's2.stock_id').onRef('s1.created_date', '=', 's2.max_created_date'))
                     .orderBy('s1.created_date', 'desc')
                     .execute();
-                return latestStocks;
             }
             catch (error) {
                 console.error("Error getting latest stocks: ", error);
             }
         }
+        return latestStocks;
     }
     async getLatestStock(stock_id) {
         return await this.get(stock_id);
     }
-    async getStockHistory(stock_id, interval = 'now') {
+    async getStockHistory(stock_id, interval) {
         // only 'now' is stored in the cache currently
         if (interval === 'now' && this.getFromCache(stock_id)) {
+            console.log("History cache");
             // cache hit on 'now'
-            return this.cache.get(stock_id).toArray();
+            return this.cache.get(stock_id);
         }
         let intervalOffset;
         switch (interval) {
             case 'now':
-                intervalOffset = { minutes: 10 };
+                intervalOffset = { minutes: 60 };
                 break;
             case 'hour':
                 intervalOffset = { hours: 24 };
@@ -604,18 +610,14 @@ class Stocks extends DataStore {
 class Commands extends DataStore {
     behaviors = new discord_js_1.Collection();
     async refreshCache() {
-        console.log("Refreshing commands");
         const foldersPath = path_1.default.join(process.cwd(), 'built/commands');
         const commandFolders = fs_1.default.readdirSync(foldersPath);
-        console.log(commandFolders);
         for (const folder of commandFolders) {
             const commandsPath = path_1.default.join(foldersPath, folder);
             const commandFiles = fs_1.default.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-            console.log(commandFiles);
             for (const file of commandFiles) {
                 const filePath = path_1.default.join(commandsPath, file);
                 const commandObj = (await Promise.resolve(`${filePath}`).then(s => __importStar(require(s)))).default;
-                console.log(commandObj);
                 if ('data' in commandObj && 'execute' in commandObj) {
                     this.behaviors.set(commandObj.data.command_id, commandObj.execute);
                     this.set(commandObj.data.command_id, commandObj.data);

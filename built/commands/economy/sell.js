@@ -25,21 +25,21 @@ async function sellStock(message, args) {
     const quantity = args.includes("all") ?
         99999 :
         (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
-    if (!Number.isInteger(quantity)) {
-        await message.reply(`You can only sell a whole number of shares.`);
-        return;
-    }
-    if (quantity <= 0) {
-        await message.reply(`You can only sell one or more shares.`);
+    const latestStock = await db_objects_1.Stocks.getLatestStock(stockUser.id);
+    if (!latestStock) {
+        await message.reply(`That stock does not exist.`);
         return;
     }
     if (message.author.id === stockUser.id) {
         await message.reply(`You cannot own your own stock.`);
         return;
     }
-    const latestStock = await db_objects_1.Stocks.getLatestStock(stockUser.id);
-    if (!latestStock) {
-        await message.reply(`That stock does not exist.`);
+    if (!Number.isInteger(quantity)) {
+        await message.reply(`You can only sell a whole number of shares.`);
+        return;
+    }
+    if (quantity <= 0) {
+        await message.reply(`You can only sell one or more shares.`);
         return;
     }
     let userStocks = await db_objects_1.Users.getUserStocks(message.author.id, stockUser.id);
@@ -65,21 +65,25 @@ async function sellStock(message, args) {
     }
 }
 async function sellItem(message, args) {
-    const itemName = (0, utilities_1.findTextArgs)(args)[0].toLowerCase();
+    const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase();
     const quantity = args.includes("all") ?
         99999 :
         (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
+    if (!itemName) {
+        await message.reply(`Please specify an item or stock.`);
+        return;
+    }
+    const item = await db_objects_1.Items.get(itemName);
+    if (!item) {
+        await message.reply(`That item does not exist.`);
+        return;
+    }
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only sell a whole number of items.`);
         return;
     }
     if (quantity <= 0) {
         await message.reply(`You can only sell one or more items.`);
-        return;
-    }
-    const item = await db_objects_1.Items.get(itemName);
-    if (!item) {
-        await message.reply(`That item does not exist.`);
         return;
     }
     const userItem = await db_objects_1.Users.getItem(message.author.id, itemName);

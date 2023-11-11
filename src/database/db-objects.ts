@@ -8,7 +8,6 @@ import { UserStocks as UserStock  } from './schemas/public/UserStocks';
 import { UserCooldowns as UserCooldown } from './schemas/public/UserCooldowns';
 import Database from './schemas/Database';
 import { DateTime } from 'luxon';
-import { Deque } from '@datastructures-js/deque';
 
 import { Collection, Message } from 'discord.js';
 import path from 'path';
@@ -39,7 +38,7 @@ type StockInterval = 'now' | 'hour' | 'day' | 'month';
 type BehaviorFunction = (message: Message, args: string[]) => Promise<void>;
 
 abstract class DataStore<Data> {
-    protected cache: Collection<string, Deque<Data>> = new Collection<string, Deque<Data>>();
+    protected cache: Collection<string, Data[]> = new Collection<string, Data[]>();
     protected db: Kysely<Database>;
     protected references: Collection<string, DataStore<any>> = new Collection<string, DataStore<any>>();
     protected tableName: TableName;
@@ -49,7 +48,7 @@ abstract class DataStore<Data> {
         const results: Data[] = await db.selectFrom(this.tableName).selectAll().execute() as Data[];
 
         results.forEach(result => {
-            this.cache.set(result[this.tableID], new Deque<Data>([result]));
+            this.cache.set(result[this.tableID], [result]);
         });
     }
 
@@ -62,7 +61,7 @@ abstract class DataStore<Data> {
     }
 
     getFromCache(id: string) : Data | undefined {
-        return this.cache.get(id)?.front();        
+        return this.cache.get(id)?.[0];        
     }
 
     async getFromDB(id: string): Promise<Data | undefined> {
@@ -88,7 +87,10 @@ abstract class DataStore<Data> {
             // cache hit
             const allData: Data[] = [];
             for (const id of this.cache.keys()) {
-                allData.push(this.cache.get(id).front());
+                const stockCache = this.cache.get(id);
+                if (stockCache[0]) {
+                    allData.push(stockCache[0]);   
+                }
             }
             return allData;
         } else {
@@ -102,8 +104,6 @@ abstract class DataStore<Data> {
 
     async set(id: string, data: Insertable<Data> | Updateable<Data> = {}): Promise<void> {
         const newData: Data = { [this.tableID]: id as any, ...data } as Data;
-        console.log("Setting data...");
-        console.log(newData);
 
         try {
             let result: Data = await this.db
@@ -127,7 +127,7 @@ abstract class DataStore<Data> {
                     .executeTakeFirstOrThrow() as Data;
             }
 
-            this.cache.set(id, new Deque<Data>([result]));
+            this.cache.set(id, [result]);
         } catch (error) {
             console.error(error);
             throw error;
@@ -136,7 +136,7 @@ abstract class DataStore<Data> {
 
 
     constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID, references: Collection<string, DataStore<any>>) {
-        this.cache = new Collection<TableID, Deque<Data>>();
+        this.cache = new Collection<TableID, Data[]>();
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;
@@ -539,10 +539,14 @@ class Stocks extends DataStore<Stock> {
     // caches the 'now' stock history for each stock
     async refreshCache(): Promise<void> {
         const latestStocks: Stock[] = await this.getLatestStocks();
+        console.log("Cache retrieved: ");
+        console.log(latestStocks);
         
         for (const latestStock of latestStocks) {
             const stockHistory: Stock[] = await this.getStockHistory(latestStock.stock_id, 'now');
-            this.cache.set(latestStock[this.tableID], new Deque<Stock>(stockHistory));   
+            console.log("Stock history: ");
+            console.log(stockHistory);
+            this.cache.set(latestStock[this.tableID], stockHistory)   
         }
     }
 
@@ -581,10 +585,10 @@ class Stocks extends DataStore<Stock> {
 
             let cachedStockHistory = this.cache.get(id);
             if (cachedStockHistory) {
-                cachedStockHistory.pushFront(result);
-                cachedStockHistory.popBack();
+                cachedStockHistory.pop();
+                cachedStockHistory.unshift(result);
             } else {
-                this.cache.set(id, new Deque<Stock>([result]));
+                this.cache.set(id, [result]);
             }
         });
     }
@@ -596,14 +600,16 @@ class Stocks extends DataStore<Stock> {
     }
     
     async getLatestStocks(): Promise<Stock[]> {
-        let latestStocks: Stock[];
+        let latestStocks: Stock[] = [];
         if (this.cache.size) {
-            let i = 0;
-            for (const stockId in this.cache) {
-                console.log(stockId);
-                latestStocks[i++] = this.cache.get(stockId).front();
+            for (const stockId of this.cache.keys()) {
+                const stockCache = this.cache.get(stockId);
+                if (stockCache[0]) {
+                    latestStocks.push(stockCache[0]);
+                }
             }
-        } else {
+        }
+        else {
             try {
                 latestStocks = await this.db
                     .selectFrom('stocks as s1')
@@ -618,28 +624,29 @@ class Stocks extends DataStore<Stock> {
                     )
                     .orderBy('s1.created_date', 'desc')
                     .execute();
-                return latestStocks;
             } catch (error) {
                 console.error("Error getting latest stocks: ", error);
             }
         }
+        return latestStocks;
     }
 
     async getLatestStock(stock_id: string): Promise<Stock | undefined> {
         return await this.get(stock_id);
     }
 
-    async getStockHistory(stock_id: string, interval: StockInterval = 'now'): Promise<Stock[]> {
+    async getStockHistory(stock_id: string, interval: StockInterval): Promise<Stock[]> {
         // only 'now' is stored in the cache currently
         if (interval === 'now' && this.getFromCache(stock_id)) {
+            console.log("History cache");
             // cache hit on 'now'
-            return this.cache.get(stock_id).toArray();
-        } 
+            return this.cache.get(stock_id);
+        }
         
         let intervalOffset: Object;
         switch (interval) {
             case 'now':
-                intervalOffset = { minutes: 10 }
+                intervalOffset = { minutes: 60 }
                 break;
             case 'hour':
                 intervalOffset = { hours: 24 }
@@ -687,19 +694,15 @@ class Commands extends DataStore<Command> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
     async refreshCache(): Promise<void> {
-        console.log("Refreshing commands");
         const foldersPath: string = path.join(process.cwd(), 'built/commands');
         const commandFolders: string[] = fs.readdirSync(foldersPath);
-
-        console.log(commandFolders);
+        
         for (const folder of commandFolders) {
             const commandsPath: string = path.join(foldersPath, folder);
             const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-            console.log(commandFiles);
             for (const file of commandFiles) {
                 const filePath: string = path.join(commandsPath, file);
                 const commandObj = (await import(filePath)).default;
-                console.log(commandObj);
                 if ('data' in commandObj && 'execute' in commandObj) {
                     this.behaviors.set(commandObj.data.command_id, commandObj.execute);
                     this.set(commandObj.data.command_id, commandObj.data);

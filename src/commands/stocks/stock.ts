@@ -32,7 +32,7 @@ export default {
             }
         } else {
             try {
-                let pageNum: number = +findNumericArgs(args)[0] ?? 1;
+                let pageNum: number = +findNumericArgs(args)[0] || 1;
                 await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
             } catch (error) {
                 console.error("Error handling list reply: ", error);
@@ -164,10 +164,16 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
 }
 
 async function sendStockList(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
+    console.log(pageNum);
+    console.log(pageSize);
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
-    
+
+    console.log(startIndex);
+    console.log(endIndex);
     const stocks = (await Stocks.getLatestStocks()).slice(startIndex, endIndex);
+
+    console.log(stocks);
 
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => Stocks.getStockHistory(s.stock_id, 'now')));
@@ -175,7 +181,7 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
     const paginatedMenu = new PaginatedMenuBuilder(id)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
-        .setDescription('To view additional info on a stock: ${inlineCode("$stock @user").');
+        .setDescription(`To view additional info on a stock: ${inlineCode("$stock @user")}.`);
     
     let i = 0;
     for (const stock of stocks){
@@ -187,7 +193,8 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
             STOCKDOWN_EMOJI_CODE :
             STOCKUP_EMOJI_CODE;
 
-        paginatedMenu.addFields({ name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`, value: `${"Previous:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
+        paginatedMenu.addFields({ name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
+                                  value: `${"Previous:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
         ++i;
     };
 

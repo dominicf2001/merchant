@@ -13,6 +13,10 @@ exports.default = {
     data: data,
     async execute(message, args) {
         let itemName = (0, utilities_1.findTextArgs)(args)[0];
+        if (!itemName) {
+            await message.reply("Please specifiy an item.");
+            return;
+        }
         const item = await db_objects_1.Users.getItem(message.author.id, itemName);
         if (!item) {
             await message.reply("You do not have this item!");

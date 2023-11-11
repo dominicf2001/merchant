@@ -30,7 +30,7 @@ exports.default = {
         }
         else {
             try {
-                let pageNum = +(0, utilities_1.findNumericArgs)(args)[0] ?? 1;
+                let pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
                 await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
             }
             catch (error) {
@@ -145,15 +145,20 @@ async function sendStockChart(message, args) {
     await message.reply({ embeds: [embed], files: [attachment] });
 }
 async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
+    console.log(pageNum);
+    console.log(pageSize);
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
+    console.log(startIndex);
+    console.log(endIndex);
     const stocks = (await db_objects_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
+    console.log(stocks);
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => db_objects_1.Stocks.getStockHistory(s.stock_id, 'now')));
     const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
-        .setDescription('To view additional info on a stock: ${inlineCode("$stock @user").');
+        .setDescription(`To view additional info on a stock: ${(0, discord_js_1.inlineCode)("$stock @user")}.`);
     let i = 0;
     for (const stock of stocks) {
         const previousPrice = histories[i][1]?.price ?? 0;
@@ -162,7 +167,8 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
         const arrow = (currentPrice - previousPrice) < 0 ?
             utilities_1.STOCKDOWN_EMOJI_CODE :
             utilities_1.STOCKUP_EMOJI_CODE;
-        paginatedMenu.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(stock.price)}`, value: `${"Previous:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}` });
+        paginatedMenu.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(stock.price)}`,
+            value: `${"Previous:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}` });
         ++i;
     }
     ;
