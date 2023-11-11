@@ -6,7 +6,7 @@ const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'work',
     description: `Make some tendies.`,
-    cooldown_time: 360000,
+    cooldown_time: 30000,
     is_admin: false
 };
 exports.default = {

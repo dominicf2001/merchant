@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.STOCKUP_EMOJI_CODE = exports.STOCKDOWN_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = exports.fetchDiscordUser = exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findTextArgs = exports.findNumericArgs = exports.toUpperCaseString = exports.isAMention = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = void 0;
+exports.STOCKUP_EMOJI_CODE = exports.STOCKDOWN_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = exports.stripIdFromMention = exports.fetchDiscordUser = exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findTextArgs = exports.findNumericArgs = exports.toUpperCaseString = exports.isAMention = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = void 0;
 const discord_js_1 = require("discord.js");
 const { UsersPattern } = discord_js_1.MessageMentions;
 const luxon_1 = require("luxon");
@@ -47,6 +47,14 @@ function isAMention(arg) {
     return arg.startsWith('<@') && arg.endsWith('>');
 }
 exports.isAMention = isAMention;
+function stripIdFromMention(mentionArg) {
+    mentionArg = mentionArg.slice(2, -1);
+    if (mentionArg.startsWith('!')) {
+        mentionArg = mentionArg.slice(1);
+    }
+    return mentionArg;
+}
+exports.stripIdFromMention = stripIdFromMention;
 function findTextArgs(args) {
     return args.filter(arg => isNaN(+arg) && !isAMention(arg));
 }
@@ -59,12 +67,8 @@ function findMentionArgs(args) {
     return args.filter(arg => isAMention(arg));
 }
 exports.findMentionArgs = findMentionArgs;
-function fetchDiscordUser(mentionArg) {
-    mentionArg = mentionArg.slice(2, -1);
-    if (mentionArg.startsWith('!')) {
-        mentionArg = mentionArg.slice(1);
-    }
-    return index_1.client.users.cache.get(mentionArg);
+async function fetchDiscordUser(id) {
+    return await index_1.client.users.fetch(id);
 }
 exports.fetchDiscordUser = fetchDiscordUser;
 class PaginatedMenuBuilder {

@@ -1,5 +1,5 @@
 import { Users } from '../../database/db-objects';
-import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber, findMentionArgs, fetchDiscordUser } from '../../utilities';
+import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
@@ -13,7 +13,7 @@ const data: Command = {
 export default {
 	data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
-		const target = fetchDiscordUser(findMentionArgs(args)[0]);
+		const target = message.mentions.users.first();
 
         if (!target){
             message.reply("Please specify a target.");

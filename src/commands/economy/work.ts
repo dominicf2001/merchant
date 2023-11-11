@@ -6,7 +6,7 @@ import { Commands as Command, CommandsCommandId } from '../../database/schemas/p
 const data: Command = {
     command_id: 'work' as CommandsCommandId,
     description: `Make some tendies.`,
-    cooldown_time: 360000,
+    cooldown_time: 30000,
     is_admin: false
 };
 

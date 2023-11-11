@@ -58,21 +58,23 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
     }
     const prefix = '$';
     const isCommand = message.content.startsWith(prefix);
+    // When a command is called
     if (isCommand) {
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName = args.shift().toLowerCase();
         const command = await db_objects_1.Commands.get(commandName);
         if (!command)
             return;
+        // Check for remaining cooldown
         const remainingCooldownDuration = await db_objects_1.Users.getRemainingCooldownDuration(message.author.id, commandName);
-        if (remainingCooldownDuration) {
+        if (remainingCooldownDuration > 0) {
             await message.reply({ content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${(0, utilities_1.secondsToHms)(remainingCooldownDuration / 1000)}\`.` });
+            return;
         }
-        else {
-            if (command.cooldown_time > 0) {
-                await db_objects_1.Users.createCooldown(message.author.id, command.command_id);
-            }
-            db_objects_1.Commands.execute(command.command_id, message, args);
+        // If no cooldown, execute command and set cooldown
+        db_objects_1.Commands.execute(command.command_id, message, args);
+        if (command.cooldown_time > 0) {
+            await db_objects_1.Users.createCooldown(message.author.id, command.command_id);
         }
     }
     else {

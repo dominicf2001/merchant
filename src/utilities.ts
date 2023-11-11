@@ -43,6 +43,16 @@ function isAMention(arg: string): boolean {
 	return arg.startsWith('<@') && arg.endsWith('>');
 }
 
+function stripIdFromMention(mentionArg: string): string {
+    mentionArg = mentionArg.slice(2, -1);
+
+    if (mentionArg.startsWith('!')) {
+        mentionArg = mentionArg.slice(1);
+    }
+
+    return mentionArg;
+}
+
 function findTextArgs(args: string[]): string[] {
     return args.filter(arg => isNaN(+arg) && !isAMention(arg));
 }
@@ -55,14 +65,8 @@ function findMentionArgs(args: string[]): string[] {
     return args.filter(arg => isAMention(arg));
 }
 
-function fetchDiscordUser(mentionArg: string): User {
-	mentionArg = mentionArg.slice(2, -1);
-
-    if (mentionArg.startsWith('!')) {
-        mentionArg = mentionArg.slice(1);
-    }
-
-    return client.users.cache.get(mentionArg);
+async function fetchDiscordUser(id: string): Promise<User> {
+    return await client.users.fetch(id);
 }
 
 class PaginatedMenuBuilder {
@@ -138,5 +142,5 @@ class PaginatedMenuBuilder {
 const TIMEZONE: string = 'America/New_York';
 
 export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen,isAMention,
-         toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs, PaginatedMenuBuilder, fetchDiscordUser,
+         toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs, PaginatedMenuBuilder, fetchDiscordUser, stripIdFromMention,
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE, STOCKUP_EMOJI_CODE };

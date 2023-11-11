@@ -12,7 +12,7 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const target = (0, utilities_1.fetchDiscordUser)((0, utilities_1.findMentionArgs)(args)[0]);
+        const target = message.mentions.users.first();
         if (!target) {
             message.reply("Please specify a target.");
             return;

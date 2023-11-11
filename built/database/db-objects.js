@@ -92,8 +92,8 @@ class DataStore {
         if (this.cache.size) {
             // cache hit
             const allData = [];
-            for (const id in this.cache) {
-                allData.push(this.cache[id][0]);
+            for (const id of this.cache.keys()) {
+                allData.push(this.cache.get(id).front());
             }
             return allData;
         }
@@ -408,30 +408,40 @@ class Users extends DataStore {
     async getRemainingCooldownDuration(user_id, command_id) {
         const Commands = this.references.get('commands');
         const command = await Commands.get(command_id);
-        const now = luxon_1.DateTime.now();
         const cooldownAmount = command.cooldown_time;
         const userCooldown = await this.db
             .selectFrom('user_cooldowns')
+            .select(['start_date'])
             .where('user_id', '=', user_id)
             .where('command_id', '=', command_id)
             .executeTakeFirst();
-        let remainingDuration = 0;
         if (userCooldown) {
-            const expirationDateTime = luxon_1.DateTime.fromISO(userCooldown.start_date).plus({ milliseconds: cooldownAmount });
-            remainingDuration = expirationDateTime.diff(now, 'milliseconds').milliseconds;
-            if (remainingDuration <= 0) {
-                await Commands.delete(command_id);
-                remainingDuration = 0;
+            const startDateTime = luxon_1.DateTime.fromISO(userCooldown.start_date);
+            if (!startDateTime.isValid) {
+                console.error('Invalid start date:', userCooldown.start_date);
+                return 0;
             }
+            const expirationDateTime = startDateTime.plus({ milliseconds: cooldownAmount });
+            const remainingDuration = expirationDateTime.diffNow('millisecond').milliseconds;
+            if (remainingDuration <= 0) {
+                await this.db
+                    .deleteFrom('user_cooldowns')
+                    .where('user_id', '=', user_id)
+                    .where('command_id', '=', command_id)
+                    .execute();
+                return 0;
+            }
+            return remainingDuration;
         }
-        return remainingDuration;
+        return 0; // No cooldown found
     }
     async createCooldown(user_id, command_id) {
         await this.db
             .insertInto('user_cooldowns')
             .values({
             user_id: user_id,
-            command_id: command_id
+            command_id: command_id,
+            start_date: luxon_1.DateTime.now().toISO()
         })
             .execute();
     }

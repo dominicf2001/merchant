@@ -5,7 +5,7 @@ import { Stocks as Stock, StocksCreatedDate } from './schemas/public/Stocks';
 import { Commands as Command, CommandsCommandId } from './schemas/public/Commands';
 import { UserItems as UserItem } from './schemas/public/UserItems';
 import { UserStocks as UserStock  } from './schemas/public/UserStocks';
-import { UserCooldowns as UserCooldown  } from './schemas/public/UserCooldowns';
+import { UserCooldowns as UserCooldown } from './schemas/public/UserCooldowns';
 import Database from './schemas/Database';
 import { DateTime } from 'luxon';
 import { Deque } from '@datastructures-js/deque';
@@ -87,8 +87,8 @@ abstract class DataStore<Data> {
         if (this.cache.size) {
             // cache hit
             const allData: Data[] = [];
-            for (const id in this.cache) {
-                allData.push(this.cache[id][0]);
+            for (const id of this.cache.keys()) {
+                allData.push(this.cache.get(id).front());
             }
             return allData;
         } else {
@@ -456,36 +456,48 @@ class Users extends DataStore<User> {
     async getRemainingCooldownDuration(user_id: string, command_id: string): Promise<number> {
         const Commands = this.references.get('commands') as Commands;
         const command = await Commands.get(command_id);
-
-        const now: DateTime = DateTime.now();
         const cooldownAmount: number = command.cooldown_time;
 
         const userCooldown: UserCooldown = await this.db
             .selectFrom('user_cooldowns')
+            .select(['start_date'])
             .where('user_id', '=', user_id as UsersUserId)
             .where('command_id', '=', command_id as CommandsCommandId)
             .executeTakeFirst() as UserCooldown;
 
-        let remainingDuration = 0;
         if (userCooldown) {
-            const expirationDateTime: DateTime = DateTime.fromISO(userCooldown.start_date).plus({ milliseconds: cooldownAmount });
-            remainingDuration = expirationDateTime.diff(now, 'milliseconds').milliseconds;
-
-            if (remainingDuration <= 0) {
-                await Commands.delete(command_id);
-                remainingDuration = 0;
+            const startDateTime = DateTime.fromISO(userCooldown.start_date);
+            if (!startDateTime.isValid) {
+                console.error('Invalid start date:', userCooldown.start_date);
+                return 0;
             }
+
+            const expirationDateTime = startDateTime.plus({ milliseconds: cooldownAmount });
+            const remainingDuration = expirationDateTime.diffNow('millisecond').milliseconds;
+            
+            if (remainingDuration <= 0) {
+                await this.db
+                    .deleteFrom('user_cooldowns')
+                    .where('user_id', '=', user_id as UsersUserId)
+                    .where('command_id', '=', command_id as CommandsCommandId)
+                    .execute();
+                return 0;
+            }
+
+            return remainingDuration;
         }
 
-        return remainingDuration;
+        return 0; // No cooldown found
     }
+
 
     async createCooldown(user_id: string, command_id: string): Promise<void> {
         await this.db
             .insertInto('user_cooldowns')
             .values({
                 user_id: user_id as UsersUserId,
-                command_id: command_id as CommandsCommandId
+                command_id: command_id as CommandsCommandId,
+                start_date: DateTime.now().toISO()
             })
             .execute();
     }

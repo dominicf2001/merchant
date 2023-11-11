@@ -26,7 +26,8 @@ exports.default = {
         let i = 1;
         for (const userAndNetworth of topUsers) {
             const { user, netWorth } = userAndNetworth;
-            embed.addFields({ name: `${i++}. ${(0, discord_js_1.inlineCode)((0, discord_js_1.userMention)(user.user_id))}`, value: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(netWorth)}` });
+            const discordUser = await (0, utilities_1.fetchDiscordUser)(user.user_id);
+            embed.addFields({ name: `${i++}. ${(0, discord_js_1.inlineCode)(discordUser.username)}`, value: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(netWorth)}` });
         }
         await message.reply({ embeds: [embed] });
     },
