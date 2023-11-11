@@ -1,13 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.STOCKUP_EMOJI_CODE = exports.STOCKDOWN_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findTextArgs = exports.findNumericArgs = exports.toUpperCaseString = exports.isAMention = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = void 0;
+exports.STOCKUP_EMOJI_CODE = exports.STOCKDOWN_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = exports.fetchDiscordUser = exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findTextArgs = exports.findNumericArgs = exports.toUpperCaseString = exports.isAMention = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = void 0;
 const discord_js_1 = require("discord.js");
+const { UsersPattern } = discord_js_1.MessageMentions;
 const luxon_1 = require("luxon");
+const index_1 = require("./index");
 const OPEN_HOUR = 7;
 exports.OPEN_HOUR = OPEN_HOUR;
 const CLOSE_HOUR = 22;
 exports.CLOSE_HOUR = CLOSE_HOUR;
-const CURRENCY_EMOJI_CODE = "<:tendie:1115074573264764958>";
+const CURRENCY_EMOJI_CODE = "<:tendie:1117239821337890886>";
 exports.CURRENCY_EMOJI_CODE = CURRENCY_EMOJI_CODE;
 const STOCKUP_EMOJI_CODE = "<:stockdown:1119370974140301352>";
 exports.STOCKUP_EMOJI_CODE = STOCKUP_EMOJI_CODE;
@@ -42,7 +44,7 @@ function toUpperCaseString(str) {
 }
 exports.toUpperCaseString = toUpperCaseString;
 function isAMention(arg) {
-    return arg.startsWith('<@') && !arg.endsWith('>');
+    return arg.startsWith('<@') && arg.endsWith('>');
 }
 exports.isAMention = isAMention;
 function findTextArgs(args) {
@@ -57,6 +59,14 @@ function findMentionArgs(args) {
     return args.filter(arg => isAMention(arg));
 }
 exports.findMentionArgs = findMentionArgs;
+function fetchDiscordUser(mentionArg) {
+    mentionArg = mentionArg.slice(2, -1);
+    if (mentionArg.startsWith('!')) {
+        mentionArg = mentionArg.slice(1);
+    }
+    return index_1.client.users.cache.get(mentionArg);
+}
+exports.fetchDiscordUser = fetchDiscordUser;
 class PaginatedMenuBuilder {
     pageNum = 1;
     totalPages = 1;

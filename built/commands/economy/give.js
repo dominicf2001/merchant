@@ -12,15 +12,15 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const target = message.mentions.users.first();
+        const target = (0, utilities_1.fetchDiscordUser)((0, utilities_1.findMentionArgs)(args)[0]);
         if (!target) {
             message.reply("Please specify a target.");
             return;
         }
         let authorBalance = await db_objects_1.Users.getBalance(message.author.id);
         const transferAmount = +(0, utilities_1.findNumericArgs)(args)[0];
-        if (!transferAmount) {
-            message.reply(`Specify how many tendies, ${message.author.username}.`);
+        if (!transferAmount || transferAmount <= 0) {
+            message.reply(`Specify more than zero tendies.`);
             return;
         }
         if (!Number.isInteger(transferAmount)) {
@@ -29,10 +29,6 @@ exports.default = {
         }
         if (transferAmount > authorBalance) {
             message.reply(`You only have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} tendies.`);
-            return;
-        }
-        if (transferAmount <= 0) {
-            message.reply(`Enter an amount greater than zero, ${message.author.username}.`);
             return;
         }
         await db_objects_1.Users.addBalance(message.author.id, -transferAmount);
@@ -44,6 +40,6 @@ exports.default = {
             name: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(transferAmount)} transferred to: ${(0, discord_js_1.inlineCode)(target.username)}`,
             value: `You have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} remaining`
         });
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     },
 };

@@ -1,10 +1,12 @@
 import { APIEmbedField, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle,
-         EmbedBuilder, RestOrArray, APIEmbed, APIActionRowComponent, APIMessageActionRowComponent, normalizeArray, AnyComponentBuilder } from 'discord.js';
+         EmbedBuilder, RestOrArray, normalizeArray, User, MessageMentions } from 'discord.js';
+const { UsersPattern } = MessageMentions;
 import { DateTime } from 'luxon';
+import { client } from './index';
 
 const OPEN_HOUR: number = 7;
 const CLOSE_HOUR: number = 22;
-const CURRENCY_EMOJI_CODE: string = "<:tendie:1115074573264764958>";
+const CURRENCY_EMOJI_CODE: string = "<:tendie:1117239821337890886>";
 const STOCKUP_EMOJI_CODE: string = "<:stockdown:1119370974140301352>";
 const STOCKDOWN_EMOJI_CODE: string = "<:stockup:1119370943240863745>";
 
@@ -37,8 +39,8 @@ function toUpperCaseString(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function isAMention(arg: string): boolean {
-    return arg.startsWith('<@') && !arg.endsWith('>');
+function isAMention(arg: string): boolean {    
+	return arg.startsWith('<@') && arg.endsWith('>');
 }
 
 function findTextArgs(args: string[]): string[] {
@@ -51,6 +53,16 @@ function findNumericArgs(args: string[]): string[] {
 
 function findMentionArgs(args: string[]): string[] {
     return args.filter(arg => isAMention(arg));
+}
+
+function fetchDiscordUser(mentionArg: string): User {
+	mentionArg = mentionArg.slice(2, -1);
+
+    if (mentionArg.startsWith('!')) {
+        mentionArg = mentionArg.slice(1);
+    }
+
+    return client.users.cache.get(mentionArg);
 }
 
 class PaginatedMenuBuilder {
@@ -126,5 +138,5 @@ class PaginatedMenuBuilder {
 const TIMEZONE: string = 'America/New_York';
 
 export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen,isAMention,
-         toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs, PaginatedMenuBuilder,
+         toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs, PaginatedMenuBuilder, fetchDiscordUser,
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE, STOCKUP_EMOJI_CODE };

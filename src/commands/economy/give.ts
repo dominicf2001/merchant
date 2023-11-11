@@ -1,5 +1,5 @@
 import { Users } from '../../database/db-objects';
-import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
+import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber, findMentionArgs, fetchDiscordUser } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
@@ -13,7 +13,7 @@ const data: Command = {
 export default {
 	data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
-		const target = message.mentions.users.first();
+		const target = fetchDiscordUser(findMentionArgs(args)[0]);
 
         if (!target){
             message.reply("Please specify a target.");
@@ -23,8 +23,8 @@ export default {
         let authorBalance: number = await Users.getBalance(message.author.id);
         const transferAmount: number = +findNumericArgs(args)[0];
 
-		if (!transferAmount) {
-            message.reply(`Specify how many tendies, ${message.author.username}.`);
+		if (!transferAmount || transferAmount <= 0) {
+            message.reply(`Specify more than zero tendies.`);
             return;
         }
 
@@ -35,10 +35,6 @@ export default {
 
 		if (transferAmount > authorBalance) {
             message.reply(`You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`);
-            return;
-        }
-		if (transferAmount <= 0) {
-            message.reply(`Enter an amount greater than zero, ${message.author.username}.`);
             return;
         }
 
@@ -54,6 +50,6 @@ export default {
                 value: `You have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} remaining`
             });
 
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     },
 }

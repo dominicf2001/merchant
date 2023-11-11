@@ -72,7 +72,6 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
             if (command.cooldown_time > 0) {
                 await db_objects_1.Users.createCooldown(message.author.id, command.command_id);
             }
-            console.log("test");
             db_objects_1.Commands.execute(command.command_id, message, args);
         }
     }
