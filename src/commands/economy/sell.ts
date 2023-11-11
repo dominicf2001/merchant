@@ -27,7 +27,7 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
     const quantity: number = args.includes("all") ?
         99999 :
-        (+findNumericArgs(args)[0] ?? 1);
+        (+findNumericArgs(args)[0] || 1);
 
     const latestStock = await Stocks.getLatestStock(stockUser.id);
 
@@ -59,7 +59,7 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
     }
 
     try {
-        const totalSold: number = await Users.addStock(message.author.id, stockUser.id, -quantity);
+        const totalSold: number = -(await Users.addStock(message.author.id, stockUser.id, -quantity));
         const totalReturn: number = latestStock.price * totalSold;
 
         await Users.addBalance(message.author.id, totalReturn);
@@ -82,7 +82,7 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
     const itemName: string = findTextArgs(args)[0]?.toLowerCase();
     const quantity: number = args.includes("all") ?
         99999 :
-        (+findNumericArgs(args)[0] ?? 1);
+        (+findNumericArgs(args)[0] || 1);
 
     if (!itemName) {
         await message.reply(`Please specify an item or stock.`);
@@ -114,7 +114,7 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
     }
     
     try {
-        const totalSold: number = await Users.addItem(message.author.id, itemName, -quantity);
+        const totalSold: number = -(await Users.addItem(message.author.id, itemName, -quantity));
         const totalReturn: number = item.price * totalSold;
 
         await Users.addBalance(message.author.id, totalReturn);

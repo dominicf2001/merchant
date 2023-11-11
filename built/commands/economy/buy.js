@@ -24,7 +24,7 @@ async function buyStock(message, args) {
     const stockUser = message.mentions.users.first();
     const quantity = args.includes("all") ?
         99999 :
-        (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
+        (+(0, utilities_1.findNumericArgs)(args)[0] || 1);
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only purchase a whole number of shares.`);
         return;
@@ -46,7 +46,7 @@ async function buyStock(message, args) {
         const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
         // buy as many as possible
         const totalBought = ((latestStock.price * quantity) > authorBalance || args.includes('all')) ?
-            Math.floor((authorBalance / latestStock.price) * 100) / 100 :
+            Math.floor(Math.floor((authorBalance / latestStock.price) * 100) / 100) :
             quantity;
         const totalCost = latestStock.price * totalBought;
         await db_objects_1.Users.addStock(message.author.id, stockUser.id, totalBought);
@@ -68,7 +68,7 @@ async function buyItem(message, args) {
     const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase();
     const quantity = args.includes("all") ?
         99999 :
-        (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
+        (+(0, utilities_1.findNumericArgs)(args)[0] || 1);
     if (!itemName) {
         await message.reply(`Please specify an item or stock.`);
         return;

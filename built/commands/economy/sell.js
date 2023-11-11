@@ -24,7 +24,7 @@ async function sellStock(message, args) {
     const stockUser = message.mentions.users.first();
     const quantity = args.includes("all") ?
         99999 :
-        (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
+        (+(0, utilities_1.findNumericArgs)(args)[0] || 1);
     const latestStock = await db_objects_1.Stocks.getLatestStock(stockUser.id);
     if (!latestStock) {
         await message.reply(`That stock does not exist.`);
@@ -48,7 +48,7 @@ async function sellStock(message, args) {
         return;
     }
     try {
-        const totalSold = await db_objects_1.Users.addStock(message.author.id, stockUser.id, -quantity);
+        const totalSold = -(await db_objects_1.Users.addStock(message.author.id, stockUser.id, -quantity));
         const totalReturn = latestStock.price * totalSold;
         await db_objects_1.Users.addBalance(message.author.id, totalReturn);
         const pluralS = totalSold > 1 ? "s" : "";
@@ -68,7 +68,7 @@ async function sellItem(message, args) {
     const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase();
     const quantity = args.includes("all") ?
         99999 :
-        (+(0, utilities_1.findNumericArgs)(args)[0] ?? 1);
+        (+(0, utilities_1.findNumericArgs)(args)[0] || 1);
     if (!itemName) {
         await message.reply(`Please specify an item or stock.`);
         return;
@@ -92,7 +92,7 @@ async function sellItem(message, args) {
         return;
     }
     try {
-        const totalSold = await db_objects_1.Users.addItem(message.author.id, itemName, -quantity);
+        const totalSold = -(await db_objects_1.Users.addItem(message.author.id, itemName, -quantity));
         const totalReturn = item.price * totalSold;
         await db_objects_1.Users.addBalance(message.author.id, totalReturn);
         const pluralS = quantity > 1 ? "s" : "";

@@ -6,6 +6,7 @@ import { Commands as Command, CommandsCommandId } from '../../database/schemas/p
 import { DateTime } from 'luxon';
 import { ChartConfiguration } from 'chart.js';
 import { client } from '../../index';
+import { StockInterval }  from '../../database/datastores/Stocks';
 
 const STOCK_LIST_ID: string = 'shop';
 const STOCK_LIST_PAGE_SIZE: number = 5;
@@ -41,12 +42,10 @@ export default {
     },
 };
 
-// TODO: move this out
-type StockInterval = 'now' | 'hour' | 'day' | 'month';
 async function sendStockChart(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
     const validIntervals: StockInterval[] = ['now', 'hour', 'day', 'month'];
-    const intervalArg = findTextArgs(args)[0];
+    const intervalArg = findTextArgs(args)[0] ?? 'now';
     const interval: StockInterval | undefined = validIntervals.find(vi => vi === intervalArg);
 
     if (!interval){
@@ -163,13 +162,11 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
     await message.reply({ embeds: [embed], files: [attachment] });
 }
 
-async function sendStockList(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
+async function sendStockList(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {    
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
     
     const stocks = (await Stocks.getLatestStocks()).slice(startIndex, endIndex);
-
-    console.log(stocks);
 
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => Stocks.getStockHistory(s.stock_id, 'now')));
@@ -177,14 +174,12 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
     const paginatedMenu = new PaginatedMenuBuilder(id)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
-        .setDescription(`To view additional info on a stock: ${inlineCode("$stock @user")}.`);
+        .setDescription(`To view additional info: ${inlineCode("$stock @user")}.`);
     
     let i = 0;
     for (const stock of stocks){
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
-        console.log({previousPrice});
-        console.log({currentPrice});
         const username = (await message.client.users.fetch(stock.stock_id)).username;
 
         const arrow = (currentPrice - previousPrice) < 0 ?
@@ -192,7 +187,7 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
             STOCKUP_EMOJI_CODE;
 
         paginatedMenu.addFields({ name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
-                                  value: `${"Previous:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
+                                  value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}` });
         ++i;
     };
 

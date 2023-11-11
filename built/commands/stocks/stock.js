@@ -42,7 +42,7 @@ exports.default = {
 async function sendStockChart(message, args) {
     const stockUser = message.mentions.users.first();
     const validIntervals = ['now', 'hour', 'day', 'month'];
-    const intervalArg = (0, utilities_1.findTextArgs)(args)[0];
+    const intervalArg = (0, utilities_1.findTextArgs)(args)[0] ?? 'now';
     const interval = validIntervals.find(vi => vi === intervalArg);
     if (!interval) {
         await message.reply("Invalid interval.");
@@ -148,25 +148,22 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const stocks = (await db_objects_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
-    console.log(stocks);
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => db_objects_1.Stocks.getStockHistory(s.stock_id, 'now')));
     const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
-        .setDescription(`To view additional info on a stock: ${(0, discord_js_1.inlineCode)("$stock @user")}.`);
+        .setDescription(`To view additional info: ${(0, discord_js_1.inlineCode)("$stock @user")}.`);
     let i = 0;
     for (const stock of stocks) {
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
-        console.log({ previousPrice });
-        console.log({ currentPrice });
         const username = (await message.client.users.fetch(stock.stock_id)).username;
         const arrow = (currentPrice - previousPrice) < 0 ?
             utilities_1.STOCKDOWN_EMOJI_CODE :
             utilities_1.STOCKUP_EMOJI_CODE;
         paginatedMenu.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(stock.price)}`,
-            value: `${"Previous:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}` });
+            value: `${"Previous tick:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}` });
         ++i;
     }
     ;

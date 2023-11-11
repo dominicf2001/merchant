@@ -35,7 +35,7 @@ class Users extends DataStore_1.DataStore {
         });
     }
     async addItem(user_id, item_id, amount) {
-        let amountAddedOrRemoved = 0;
+        let amountAdded = 0;
         await this.db.transaction().execute(async (trx) => {
             // Check if item exists
             const itemExists = !!(await Items_1.Items.get(item_id));
@@ -69,7 +69,7 @@ class Users extends DataStore_1.DataStore {
                         .where('item_id', '=', item_id)
                         .execute();
                 }
-                amountAddedOrRemoved = amount;
+                amountAdded = amount;
             }
             else if (amount < 0) {
                 // If amount is negative, decrement the existing record.
@@ -87,7 +87,7 @@ class Users extends DataStore_1.DataStore {
                             .where('user_id', '=', user_id)
                             .where('item_id', '=', item_id)
                             .execute();
-                        amountAddedOrRemoved = -userItem.quantity; // All items were removed
+                        amountAdded = -userItem.quantity; // All items were removed
                     }
                     else {
                         await trx
@@ -96,12 +96,12 @@ class Users extends DataStore_1.DataStore {
                             .where('user_id', '=', user_id)
                             .where('item_id', '=', item_id)
                             .execute();
-                        amountAddedOrRemoved = amount; // The specified negative amount was removed
+                        amountAdded = amount; // The specified negative amount was removed
                     }
                 }
             }
         });
-        return amountAddedOrRemoved;
+        return amountAdded;
     }
     async setBalance(user_id, amount) {
         if (amount < 0)
@@ -194,7 +194,7 @@ class Users extends DataStore_1.DataStore {
             .execute();
     }
     async addStock(user_id, stock_id, amount) {
-        let amountSoldOrBought = 0;
+        let amountAdded = 0;
         await this.db.transaction().execute(async (trx) => {
             const currentStockPrice = (await Stocks_1.Stocks.getLatestStock(stock_id))?.price;
             // prevents a user from being created and from inserting a non-existent stock
@@ -213,7 +213,7 @@ class Users extends DataStore_1.DataStore {
                     purchase_price: currentStockPrice,
                 })
                     .execute();
-                amountSoldOrBought = amount;
+                amountAdded = amount;
             }
             else if (amount < 0) {
                 // If amount is negative, decrement the existing records.
@@ -255,11 +255,11 @@ class Users extends DataStore_1.DataStore {
                             .execute();
                         remainingAmountToDecrement = 0; // Stop, as all amount has been decremented
                     }
-                    amountSoldOrBought = amount - remainingAmountToDecrement;
+                    amountAdded = amount + remainingAmountToDecrement;
                 }
             }
         });
-        return amountSoldOrBought;
+        return amountAdded;
     }
     async getRemainingCooldownDuration(user_id, command_id) {
         const command = await Commands_1.Commands.get(command_id);

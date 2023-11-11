@@ -4,6 +4,7 @@ exports.Stocks = void 0;
 const DataStore_1 = require("./DataStore");
 const luxon_1 = require("luxon");
 const kysely_1 = require("kysely");
+const Users_1 = require("./Users");
 class Stocks extends DataStore_1.DataStore {
     // caches the 'now' stock history for each stock
     async refreshCache() {
@@ -34,6 +35,8 @@ class Stocks extends DataStore_1.DataStore {
             .executeTakeFirst();
     }
     async set(id, data = {}) {
+        // create the user associated with this stock if they dont exist
+        await Users_1.Users.set(id);
         const newData = {
             stock_id: id,
             created_date: data.created_date ?? luxon_1.DateTime.now().toISO(),

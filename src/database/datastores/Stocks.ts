@@ -4,6 +4,7 @@ import { Stocks as Stock, StocksCreatedDate } from '../schemas/public/Stocks';
 import { DateTime } from 'luxon';
 import { Kysely, Updateable, Insertable, sql } from 'kysely';
 import Database from '../schemas/Database';
+import { Users } from './Users';
 
 export type StockInterval = 'now' | 'hour' | 'day' | 'month';
 
@@ -42,6 +43,9 @@ class Stocks extends DataStore<Stock> {
     }
 
     async set(id: string, data: Insertable<Stock> | Updateable<Stock> = {}): Promise<void> {
+        // create the user associated with this stock if they dont exist
+        await Users.set(id);
+        
         const newData: Stock = {
             stock_id: id as UsersUserId,
             created_date: data.created_date ?? DateTime.now().toISO() as StocksCreatedDate,

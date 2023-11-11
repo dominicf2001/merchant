@@ -49,7 +49,7 @@ class Users extends DataStore<User> {
     }
     
     async addItem(user_id: string, item_id: string, amount: number): Promise<number> {
-        let amountAddedOrRemoved = 0;
+        let amountAdded = 0;
 
         await this.db.transaction().execute(async trx => {
             // Check if item exists
@@ -88,7 +88,7 @@ class Users extends DataStore<User> {
                         .execute();
                 }
 
-                amountAddedOrRemoved = amount;
+                amountAdded = amount;
             } else if (amount < 0) {
                 // If amount is negative, decrement the existing record.
                 const userItem = await trx
@@ -106,7 +106,7 @@ class Users extends DataStore<User> {
                             .where('user_id', '=', user_id as any)
                             .where('item_id', '=', item_id as any)
                             .execute();
-                        amountAddedOrRemoved = -userItem.quantity;  // All items were removed
+                        amountAdded = -userItem.quantity;  // All items were removed
                     } else {
                         await trx
                             .updateTable('user_items')
@@ -114,13 +114,13 @@ class Users extends DataStore<User> {
                             .where('user_id', '=', user_id as any)
                             .where('item_id', '=', item_id as any)
                             .execute();
-                        amountAddedOrRemoved = amount;  // The specified negative amount was removed
+                        amountAdded = amount;  // The specified negative amount was removed
                     }
                 }
             }
         });
 
-        return amountAddedOrRemoved;
+        return amountAdded;
     }
 
 
@@ -212,7 +212,7 @@ class Users extends DataStore<User> {
             .execute() as UserStock[];
 
         // Populate with the latest stock information
-        let stockPromises: Promise<Stock>[] = [];
+         let stockPromises: Promise<Stock>[] = [];
         for (const stock of userStock) {
             stockPromises.push(Stocks.getLatestStock(stock.stock_id));
         }
@@ -238,7 +238,7 @@ class Users extends DataStore<User> {
     }
     
     async addStock(user_id: string, stock_id: string, amount: number): Promise<number> {
-        let amountSoldOrBought = 0;
+        let amountAdded = 0;
         
         await this.db.transaction().execute(async trx => {
             const currentStockPrice: number = (await Stocks.getLatestStock(stock_id))?.price;
@@ -262,7 +262,7 @@ class Users extends DataStore<User> {
                     })
                     .execute();
                 
-                amountSoldOrBought = amount;
+                amountAdded = amount;
             }
             else if (amount < 0) {
                 // If amount is negative, decrement the existing records.
@@ -310,11 +310,11 @@ class Users extends DataStore<User> {
 
                         remainingAmountToDecrement = 0;  // Stop, as all amount has been decremented
                     }
-                    amountSoldOrBought = amount - remainingAmountToDecrement;
+                    amountAdded = amount + remainingAmountToDecrement;
                 }
             }
         });
-        return amountSoldOrBought;
+        return amountAdded;
     }
     
     async getRemainingCooldownDuration(user_id: string, command_id: string): Promise<number> {
