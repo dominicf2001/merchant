@@ -134,8 +134,10 @@ class PaginatedMenuBuilder {
         return buttonsRow;
     }
     
-    constructor(id: string) {
+    constructor(id: string, pageSize: number, pageNum: number) {
         this.id = id;
+        this.pageSize = pageSize;
+        this.pageNum = pageNum;
     }
 }
 

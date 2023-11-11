@@ -150,7 +150,7 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
     const stocks = (await db_objects_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => db_objects_1.Stocks.getStockHistory(s.stock_id, 'now')));
-    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id)
+    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
         .setDescription(`To view additional info: ${(0, discord_js_1.inlineCode)("$stock @user")}.`);
@@ -187,5 +187,5 @@ index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => 
     pageNum = (customId === `${STOCK_LIST_ID}Previous`) ?
         pageNum = Math.max(pageNum - 1, 1) :
         pageNum + 1;
-    await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE);
+    await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
 });

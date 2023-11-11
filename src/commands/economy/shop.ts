@@ -17,14 +17,14 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        const pageNum = +findNumericArgs(args)[0] ?? 1;
+        const pageNum = +findNumericArgs(args)[0] || 1;
         await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     }
 };
 
 // TODO: abstract this?
 async function sendShopMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
-    const paginatedMenu = new PaginatedMenuBuilder(id)
+    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum)
         .setColor('Blurple')
         .setTitle('Shop')
         .setDescription('To view additional info on an item, see $help [item].');
@@ -66,5 +66,5 @@ client.on(Events.InteractionCreate, async interaction => {
         pageNum = Math.max(pageNum - 1, 1) :
         pageNum + 1;
     
-    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE);
+    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
 });

@@ -171,7 +171,7 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => Stocks.getStockHistory(s.stock_id, 'now')));
 
-    const paginatedMenu = new PaginatedMenuBuilder(id)
+    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
         .setDescription(`To view additional info: ${inlineCode("$stock @user")}.`);
@@ -218,5 +218,5 @@ client.on(Events.InteractionCreate, async interaction => {
         pageNum = Math.max(pageNum - 1, 1) :
         pageNum + 1;
     
-    await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE);
+    await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
 });

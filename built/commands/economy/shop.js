@@ -15,13 +15,13 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] ?? 1;
+        const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
         await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     }
 };
 // TODO: abstract this?
 async function sendShopMenu(message, id, pageSize = 5, pageNum = 1) {
-    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id)
+    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum)
         .setColor('Blurple')
         .setTitle('Shop')
         .setDescription('To view additional info on an item, see $help [item].');
@@ -53,5 +53,5 @@ index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => 
     pageNum = (customId === `${SHOP_ID}Previous`) ?
         pageNum = Math.max(pageNum - 1, 1) :
         pageNum + 1;
-    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE);
+    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
 });
