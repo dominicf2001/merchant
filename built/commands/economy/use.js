@@ -24,8 +24,8 @@ exports.default = {
             return;
         }
         try {
-            await db_objects_1.Users.addItem(message.author.id, itemName, -1);
             await db_objects_1.Items.use(itemName, message, args);
+            await db_objects_1.Users.addItem(message.author.id, itemName, -1);
         }
         catch (error) {
             await message.reply(error.message);

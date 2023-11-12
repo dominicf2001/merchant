@@ -23,7 +23,7 @@ module.exports = {
             await message.channel.send(`<@${target.id}> has been unmuted.`);
         }
         catch (error) {
-            await message.channel.send(`<@${target.id}> could not be unmuted.`);
+            throw new Error(`<@${target.id}> could not be unmuted. Please try again.`);
         }
     }
 };

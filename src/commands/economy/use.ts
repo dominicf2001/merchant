@@ -29,8 +29,8 @@ export default {
         }
 
         try {
-            await Users.addItem(message.author.id, itemName, -1);
             await Items.use(itemName, message, args);
+            await Users.addItem(message.author.id, itemName, -1);
         }
         catch (error) {
             await message.reply(error.message);
