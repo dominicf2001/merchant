@@ -108,6 +108,10 @@ async function buyItem(message, args) {
         totalBought = (totalBought > freeInventorySpace) ?
             freeInventorySpace :
             totalBought;
+        if (!totalBought) {
+            await message.reply(`You are too poor to purchase this item.`);
+            return;
+        }
         const totalCost = item.price * totalBought;
         await db_objects_1.Users.addItem(message.author.id, itemName, totalBought);
         await db_objects_1.Users.addBalance(message.author.id, -totalCost);

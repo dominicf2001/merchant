@@ -128,6 +128,11 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         totalBought = (totalBought > freeInventorySpace) ?
             freeInventorySpace :
             totalBought;
+
+        if (!totalBought) {
+            await message.reply(`You are too poor to purchase this item.`);
+            return;    
+        }
         
         const totalCost: number = item.price * totalBought;
 

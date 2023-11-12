@@ -14,20 +14,26 @@ exports.default = {
     data: data,
     async use(message, args) {
         const target = message.mentions.members.first();
-        const color = (0, utilities_1.toUpperCaseString)((0, utilities_1.findTextArgs)(args)[0]);
+        const color = (0, utilities_1.toUpperCaseString)((0, utilities_1.findTextArgs)(args)[1]);
         // TODO: don't take error throwing approach?
         if (!color) {
             throw new Error('Please specify a color.');
         }
+        console.log(color);
+        console.log(discord_js_1.Colors[color]);
         if (!discord_js_1.Colors[color]) {
             throw new Error('Invalid color.');
         }
         if (!target) {
             throw new Error('Please specify a target.');
         }
-        if (message.author.id !== target.id) {
-            await db_objects_1.Users.addArmor(target.id, -1);
-            await message.reply("This user was protected by :shield: armor. It is now broken and they are exposed.");
+        if (!target.moderatable) {
+            throw new Error('This user is immune to dyes.');
+        }
+        const targetArmor = await db_objects_1.Users.getArmor(target.id);
+        if (targetArmor && message.author.id !== target.id) {
+            db_objects_1.Users.addArmor(target.id, -1);
+            await message.channel.send('Blocked by `armor`! This user is now exposed.');
             return;
         }
         try {
@@ -50,7 +56,7 @@ exports.default = {
         }
         catch (error) {
             console.error(error);
-            throw new Error("Something went wrong when setting the color.");
+            throw new Error("Could not use dye. Please try again.");
         }
     }
 };

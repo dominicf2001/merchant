@@ -26,7 +26,7 @@ module.exports = {
             target.timeout(null);
             await message.channel.send(`<@${target.id}> has been unmuted.`);
         } catch (error) {
-            throw new Error(`<@${target.id}> could not be unmuted. Please try again.`);
+            throw new Error(`Could not use unmute. Please try again.`);
         }
     }
 }

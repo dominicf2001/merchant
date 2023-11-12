@@ -22,13 +22,14 @@ exports.default = {
         if (!target.moderatable) {
             throw new Error('This user is immune to mutes.');
         }
+        if (target.isCommunicationDisabled().valueOf()) {
+            throw new Error(`<@${target.id}> is already muted.`);
+        }
         const targetArmor = await db_objects_1.Users.getArmor(target.id);
         if (targetArmor) {
             db_objects_1.Users.addArmor(target.id, -1);
-            throw new Error('Blocked by `armor`!. This user is now exposed.');
-        }
-        if (target.isCommunicationDisabled().valueOf()) {
-            throw new Error(`<@${target.id}> is already muted.`);
+            await message.channel.send('Blocked by `armor`! This user is now exposed.');
+            return;
         }
         try {
             await target.timeout(durationMs);
@@ -36,7 +37,7 @@ exports.default = {
         }
         catch (error) {
             console.error(error);
-            throw new Error(`<@${target.id}> could not be muted. Please try again.`);
+            throw new Error(`Could not use mute. Please try again.`);
         }
     }
 };

@@ -13,7 +13,7 @@ const data: Item = {
 export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
-        const msgToSend = findTextArgs(args).join(" ");
+        const msgToSend = findTextArgs(args).slice(1).join(" ");
 
         const attachmentsArray = [...message.attachments.values()];
 
@@ -21,14 +21,10 @@ export default {
             throw new Error("You need to provide a message or an attachment.");
         }
 
-        try {
-            await message.delete();
-        } catch (error) {
-            throw new Error("Failed to delete message.");
-        }
+        await message.delete();
 
         await message.channel.send({
-            content: msgToSend ? `@everyone\n\n <@${message.author.id}> says: ${msgToSend}` : '@everyone',
+            content: msgToSend ? `@everyone\n\n <@${message.author.id}> says: ${inlineCode(msgToSend)}` : '@everyone',
             files: attachmentsArray,
         });
     }

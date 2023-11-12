@@ -15,13 +15,15 @@ export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
         const target = message.mentions.members.first();
-		const color = toUpperCaseString(findTextArgs(args)[0]) as ColorResolvable & string;
+		const color = toUpperCaseString(findTextArgs(args)[1]) as ColorResolvable & string;
         
         // TODO: don't take error throwing approach?
         if (!color) {
             throw new Error('Please specify a color.');
         }
 
+        console.log(color);
+        console.log(Colors[color]);
         if (!Colors[color]){
             throw new Error('Invalid color.');
         }
@@ -30,9 +32,14 @@ export default {
             throw new Error('Please specify a target.');
         }
 
-        if (message.author.id !== target.id) {
-            await Users.addArmor(target.id, -1);
-            await message.reply("This user was protected by :shield: armor. It is now broken and they are exposed.");
+        if (!target.moderatable) {
+            throw new Error('This user is immune to dyes.');   
+        }
+
+        const targetArmor = await Users.getArmor(target.id);
+        if (targetArmor && message.author.id !== target.id) {
+            Users.addArmor(target.id, -1);
+            await message.channel.send('Blocked by `armor`! This user is now exposed.');
             return;
         }
 
@@ -58,7 +65,7 @@ export default {
             await message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
         } catch (error) {
             console.error(error);
-            throw new Error("Something went wrong when setting the color.");
+            throw new Error("Could not use dye. Please try again.");
         }
     }
 }
