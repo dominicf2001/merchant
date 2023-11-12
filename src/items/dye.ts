@@ -17,13 +17,10 @@ export default {
         const target = message.mentions.members.first();
 		const color = toUpperCaseString(findTextArgs(args)[1]) as ColorResolvable & string;
         
-        // TODO: don't take error throwing approach?
         if (!color) {
             throw new Error('Please specify a color.');
         }
-
-        console.log(color);
-        console.log(Colors[color]);
+        
         if (!Colors[color]){
             throw new Error('Invalid color.');
         }
@@ -38,7 +35,7 @@ export default {
 
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor && message.author.id !== target.id) {
-            Users.addArmor(target.id, -1);
+            await Users.addArmor(target.id, -1);
             await message.channel.send('Blocked by `armor`! This user is now exposed.');
             return;
         }
@@ -62,7 +59,7 @@ export default {
             const highestPosition = message.guild.roles.highest.position;
             await colorRole.setPosition(highestPosition - 1);
 
-            await message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
+            await message.reply(`<@${target.id}>'s color has been changed to ${color}`);
         } catch (error) {
             console.error(error);
             throw new Error("Could not use dye. Please try again.");

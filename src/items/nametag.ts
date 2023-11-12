@@ -34,14 +34,14 @@ export default {
 
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor && message.author.id !== target.id) {
-            Users.addArmor(target.id, -1);
-            await message.channel.send('Blocked by `armor`! This user is now exposed.');
+            await Users.addArmor(target.id, -1);
+            await message.reply('Blocked by `armor`! This user is now exposed.');
             return;
         }
 
         try {
             await target.setNickname(newNickname);
-            await message.channel.send(`Nickname of <@${target.id}> has been changed to ${newNickname}`);
+            await message.reply(`Nickname of <@${target.id}> has been changed to ${newNickname}`);
         } catch (error) {
             // TODO: make an explicit permissions check?
             throw new Error("Could not use nametag. Please try again");

@@ -16,7 +16,7 @@ export default {
     async execute(message: Message, args: string[]): Promise<void> {
         try {
             const tendiesMade = getRandomInt(100, 500);
-            Users.addBalance(message.author.id, tendiesMade);
+            await Users.addBalance(message.author.id, tendiesMade);
 
             const embed = new EmbedBuilder()
                 .setColor("Blurple")

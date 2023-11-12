@@ -20,7 +20,7 @@ export default {
                 throw new Error("You can only apply one armor at a time.");
             }
 
-            Users.addArmor(message.author.id, 1);
+            await Users.addArmor(message.author.id, 1);
 
             const embed = new EmbedBuilder()
                 .setColor("Blurple")

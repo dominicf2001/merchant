@@ -33,14 +33,14 @@ export default {
 
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor) {
-            Users.addArmor(target.id, -1);
-            await message.channel.send('Blocked by `armor`! This user is now exposed.');
+            await Users.addArmor(target.id, -1);
+            await message.reply('Blocked by `armor`! This user is now exposed.');
             return;
         }
         
         try {
             await target.timeout(durationMs);
-            await message.channel.send(`<@${target.id}> has been muted for ${durationMin} minutes.`);
+            await message.reply(`<@${target.id}> has been muted for ${durationMin} minutes.`);
         } catch (error) {
             console.error(error);
             throw new Error(`Could not use mute. Please try again.`);

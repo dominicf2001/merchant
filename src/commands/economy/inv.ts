@@ -32,7 +32,7 @@ export default {
             embed.addFields({ name: `${itemEmojiCode} ${item.item_id} - Q. ${formatNumber(item.quantity)}`, value: ` ` });
         });
 
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     },
 }
 

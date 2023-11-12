@@ -14,7 +14,6 @@ const data: Command = {
 export default {
 	data: data,
 	async execute(message: Message, args: string[]): Promise<void> {
-        console.log("Execute!");
         const authorBalance = await Users.getBalance(message.author.id);
         
         const embed = new EmbedBuilder()

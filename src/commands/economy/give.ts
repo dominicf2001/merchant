@@ -17,7 +17,7 @@ export default {
 		const target = message.mentions.users.first();
 
         if (!target){
-            message.reply("Please specify a target.");
+            await message.reply("Please specify a target.");
             return;
         }
 
@@ -25,17 +25,17 @@ export default {
         const transferAmount: number = +findNumericArgs(args)[0];
 
 		if (!transferAmount || transferAmount <= 0) {
-            message.reply(`Specify more than zero tendies.`);
+            await message.reply(`Specify more than zero tendies.`);
             return;
         }
 
         if (!Number.isInteger(transferAmount)) {
-            message.reply(`You can only give a whole number of tendies.`);
+            await message.reply(`You can only give a whole number of tendies.`);
             return;
         }
 
 		if (transferAmount > authorBalance) {
-            message.reply(`You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`);
+            await message.reply(`You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`);
             return;
         }
 
