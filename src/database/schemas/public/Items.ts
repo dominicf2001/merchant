@@ -14,6 +14,8 @@ export default interface ItemsTable {
 
   description: ColumnType<string, string | null, string | null>;
 
+  usage: ColumnType<string, string | null, string | null>;
+
   emoji_code: ColumnType<string, string | null, string | null>;
 }
 

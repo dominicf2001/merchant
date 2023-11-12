@@ -1,17 +1,19 @@
-import { Message, Colors, ColorResolvable } from 'discord.js';
+import { Message, Colors, ColorResolvable, inlineCode } from 'discord.js';
 import { findTextArgs, toUpperCaseString } from '../utilities';
 import { Users } from '../database/db-objects';
+import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 
-module.exports = {
-    data: {
-        name: 'dye',
-        description: "Sets the color of any user's nickname.",
-        price: 1500,
-        icon: ":art:",
-        usage: `$use dye [color] @user\n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`,
-        role: 1
-    },
-    async use(message: Message, args: string[]) {
+const data: Item = {
+    item_id: 'dye' as ItemsItemId,
+    price: 1500,
+    emoji_code: ":art:",
+    description: "Sets the color of any user's name",
+    usage: `${inlineCode("$use dye [color] \n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable")}`
+}
+
+export default {
+    data: data,
+    async use(message: Message, args: string[]): Promise<void> {
         const target = message.mentions.members.first();
 		const color = toUpperCaseString(findTextArgs(args)[0]) as ColorResolvable & string;
         
@@ -53,7 +55,7 @@ module.exports = {
             const highestPosition = message.guild.roles.highest.position;
             await colorRole.setPosition(highestPosition - 1);
 
-            message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
+            await message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
         } catch (error) {
             console.error(error);
             throw new Error("Something went wrong when setting the color.");

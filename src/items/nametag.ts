@@ -1,17 +1,18 @@
-import { Message } from 'discord.js';
+import { Message, inlineCode } from 'discord.js';
 import { findTextArgs } from '../utilities';
+import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 
-module.exports = {
-    data: {
-        name: 'nametag',
-        description: "Sets any user's nickname.",
-        price: 2000,
-        icon: ":label:",
-        attack: 1,
-        usage: '$use nametag @target [name]',
-        role: 2
-    },
-    async use(message: Message, args: string[]) {
+const data: Item = {
+    item_id: 'nametag' as ItemsItemId,
+    price: 2000,
+    emoji_code: ":label:",
+    description: "Sets any user's nickname",
+    usage: `${inlineCode("$use nametag [@user]")}`
+};
+
+export default {
+    data: data,
+    async use(message: Message, args: string[]): Promise<void> {
         const target = message.mentions.members.first();
         const newNickname = findTextArgs(args).join(" ");
 

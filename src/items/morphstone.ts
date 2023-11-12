@@ -1,13 +1,17 @@
-// module.exports = {
-//     data: {
-//         name: 'morphstone',
-//         price: 5000,
-//         icon: ":rock:",
-//         description: "Allows you to set the server name, banner, icon or channel name.",
-//         usage: "$use morphstone [name/channel/icon/banner] [name/attachment]",
-//         role: 4
-//     },
-//     async use(message, args) {
+// import { EmbedBuilder, Message, inlineCode } from "discord.js";
+// import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
+
+// const data: Item = {
+//     item_id: 'morphstone' as ItemsItemId,
+//     price: 5000,
+//     emoji_code: ":rock:",
+//     description: "Allows you to set the server name, banner, icon or channel name",
+//     usage: `${inlineCode("$use morphstone [name/channel/icon/banner] [name/attachment]")}`
+// };
+
+// export default {
+//     data: data,
+//     async use(message: Message, args: string[]): Promise<void> {
 //         const morphObject = args[0];
 //         const morphArgs = args.filter(arg => arg !== morphObject);
 

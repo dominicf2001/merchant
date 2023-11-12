@@ -1,13 +1,17 @@
-// module.exports = {
-//     data: {
-//         name: 'battery',
-//         price: 500,
-//         icon: ":battery:",
-//         description: 'Enables nexxy.',
-//         usage: '$use battery',
-//         role: 1
-//     },
-//     async use(message, args) {
+// import { Message, inlineCode } from "discord.js";
+// import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
+
+// const data: Item = {
+//     item_id: 'battery' as ItemsItemId,
+//     price: 500,
+//     emoji_code: ":battery:",
+//     description: "Enables nexxy",
+//     usage: `${inlineCode("$use battery")}`
+// }
+
+// export default {
+//     data: data,
+//     async use(message: Message, args: string[]): Promise<void> {
 //         let target;
 //         try {
 //             target = await message.guild.members.fetch("1030224702939070494");

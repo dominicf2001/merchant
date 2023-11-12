@@ -1,14 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const discord_js_1 = require("discord.js");
+const data = {
+    item_id: 'unmute',
+    price: 750,
+    emoji_code: ":loud_sound:",
+    description: "Unmutes a user",
+    usage: `${(0, discord_js_1.inlineCode)("$use unmute [@user]")}`
+};
 module.exports = {
-    data: {
-        name: 'unmute',
-        price: 2000,
-        icon: ":loud_sound:",
-        description: "Unmutes a user.",
-        usage: "$use unmute @target",
-        role: 2
-    },
+    data: data,
     async use(message, args) {
         let target = message.mentions.members.first();
         if (!target) {
@@ -19,10 +20,10 @@ module.exports = {
         }
         try {
             target.timeout(null);
-            return message.channel.send(`<@${target.id}> has been unmuted.`);
+            await message.channel.send(`<@${target.id}> has been unmuted.`);
         }
         catch (error) {
-            return message.channel.send(`<@${target.id}> could not be unmuted.`);
+            await message.channel.send(`<@${target.id}> could not be unmuted.`);
         }
     }
 };

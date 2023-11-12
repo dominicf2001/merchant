@@ -1,13 +1,17 @@
-// module.exports = {
-//     data: {
-//         name: 'wrench',
-//         price: 4000,
-//         icon: ":wrench:",
-//         description: "Creates a new channel or emoji.",
-//         usage: "$use wrench [channel/emoji] [name] [attachment (emoji only)]",
-//         role: 4
-//     },
-//     async use(message, args) {
+// import { Message, inlineCode } from "discord.js";
+// import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
+
+// const data: Item = {
+//     item_id: 'wrench' as ItemsItemId,
+//     price: 4000,
+//     emoji_code: ":wrench:",
+//     description: "Creates a new channel or emoji",
+//     usage: `${inlineCode("$use wrench [channel/emoji] [name] [attachment (emoji only)]")}`
+// };
+
+// export default {
+//     data: data,
+//     async use(message: Message, args: string[]): Promise<void> {
 //         const wrenchObject = args[0];
 //         const wrenchArgs = args.filter(arg => arg !== wrenchObject);
 

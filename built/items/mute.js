@@ -1,15 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-module.exports = {
-    data: {
-        name: 'mute',
-        attack: 1,
-        price: 2500,
-        icon: ":mute:",
-        description: "Mutes a user for 5 minutes.",
-        usage: "$use mute @target",
-        role: 3
-    },
+const discord_js_1 = require("discord.js");
+// TODO: should pull from the global json paramter file?
+const durationMin = 5;
+const durationMs = durationMin * 60000;
+const data = {
+    item_id: 'mute',
+    price: 2500,
+    emoji_code: ":mute:",
+    description: `Mutes a user for ${durationMin} minutes`,
+    usage: `${(0, discord_js_1.inlineCode)("$use mute [@user]")}`
+};
+exports.default = {
+    data: data,
     async use(message, args) {
         let target = message.mentions.members.first();
         if (!target) {
@@ -19,15 +22,12 @@ module.exports = {
             throw new Error(`<@${target.id}> has already been muted.`);
         }
         try {
-            // TODO: should pull from the global json paramter file?
-            const durationMin = 5;
-            const durationMs = durationMin * 60000;
             target.timeout(durationMs);
-            message.channel.send(`<@${target.id}> has been muted for ${durationMin} minutes.`);
+            await message.channel.send(`<@${target.id}> has been muted for ${durationMin} minutes.`);
         }
         catch (error) {
             console.error(error);
-            message.channel.send(`<@${target.id}> could not be muted.`);
+            await message.channel.send(`<@${target.id}> could not be muted.`);
         }
     }
 };

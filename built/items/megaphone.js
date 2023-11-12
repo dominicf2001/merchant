@@ -1,15 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const discord_js_1 = require("discord.js");
 const utilities_1 = require("../utilities");
-module.exports = {
-    data: {
-        name: 'megaphone',
-        price: 200000,
-        icon: ":mega:",
-        description: "Sends your message and/or attachment as an @everyone.",
-        usage: "$use megaphone [message AND/OR attachment]",
-        role: 2
-    },
+const data = {
+    item_id: 'megaphone',
+    price: 20000,
+    emoji_code: ":mega:",
+    description: "Sends your message and/or attachment as an @everyone",
+    usage: `${(0, discord_js_1.inlineCode)("$use megaphone [message/attachment]")}\n${(0, discord_js_1.inlineCode)("$use megaphone [message] [attachment]")}`
+};
+exports.default = {
+    data: data,
     async use(message, args) {
         const msgToSend = (0, utilities_1.findTextArgs)(args).join(" ");
         const attachmentsArray = [...message.attachments.values()];
@@ -22,7 +23,7 @@ module.exports = {
         catch (error) {
             throw new Error("Failed to delete message.");
         }
-        return message.channel.send({
+        await message.channel.send({
             content: msgToSend ? `@everyone\n\n <@${message.author.id}> says: ${msgToSend}` : '@everyone',
             files: attachmentsArray,
         });

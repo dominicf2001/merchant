@@ -3,15 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const utilities_1 = require("../utilities");
 const db_objects_1 = require("../database/db-objects");
-module.exports = {
-    data: {
-        name: 'dye',
-        description: "Sets the color of any user's nickname.",
-        price: 1500,
-        icon: ":art:",
-        usage: `$use dye [color] @user\n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable.`,
-        role: 1
-    },
+const data = {
+    item_id: 'dye',
+    price: 1500,
+    emoji_code: ":art:",
+    description: "Sets the color of any user's name",
+    usage: `${(0, discord_js_1.inlineCode)("$use dye [color] \n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable")}`
+};
+exports.default = {
+    data: data,
     async use(message, args) {
         const target = message.mentions.members.first();
         const color = (0, utilities_1.toUpperCaseString)((0, utilities_1.findTextArgs)(args)[0]);
@@ -46,7 +46,7 @@ module.exports = {
             await target.roles.add(colorRole);
             const highestPosition = message.guild.roles.highest.position;
             await colorRole.setPosition(highestPosition - 1);
-            message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
+            await message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
         }
         catch (error) {
             console.error(error);

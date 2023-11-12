@@ -1,3 +1,6 @@
+// import { Message, inlineCode } from "discord.js";
+// import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
+
 // const blacklist = {
 //     "992276497912049785": 1,
 //     "1132451468750893199": 2,
@@ -18,16 +21,17 @@
 //     "1132452681110278144": 17
 // };
 
-// module.exports = {
-//     data: {
-//         name: 'hammer',
-//         price: 3000,
-//         icon: ":hammer:",
-//         description: "Destroys a channel or emoji.",
-//         usage: "$use hammer [channel/emoji] [name]",
-//         role: 3
-//     },
-//     async use(message, args) {
+// const data: Item = {
+//     item_id: 'hammer' as ItemsItemId,
+//     price: 3000,
+//     emoji_code: ":hammer:",
+//     description: "Destroys a channel or emoji",
+//     usage: `${inlineCode("$use hammer [channel/emoji] [name]")}`
+// };
+
+// export default {
+//     data: data,
+//     async use(message: Message, args: string[]): Promise<void> {
 //         const hammerObject = args[0];
 //         const hammerArgs = args.filter(arg => arg !== hammerObject);
 

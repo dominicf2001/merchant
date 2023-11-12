@@ -55,6 +55,8 @@ async function main() {
                 col.notNull().defaultTo(0).check(sql`price >= 0`))
             .addColumn('description', 'varchar', col =>
                 col.notNull().defaultTo(""))
+            .addColumn('usage', 'varchar', col =>
+                col.notNull().defaultTo(""))
             .addColumn('emoji_code', 'varchar(30)', col =>
                 col.notNull().defaultTo(':black_small_square:'))
             .execute();

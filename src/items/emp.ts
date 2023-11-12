@@ -1,6 +1,15 @@
-// import { Message } from 'discord.js';
+// import { Message, inlineCode } from 'discord.js';
+// import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 
-// module.exports = {
+// const data: Item = {
+//     item_id: 'emp' as ItemsItemId,
+//     price: 1000,
+//     emoji_code: ":zap:",
+//     description: "Disables nexxy",
+//     usage: `${inlineCode("$use emp")}`
+// };
+
+// export default {
 //     data: {
 //         name: 'emp',
 //         price: 1000,

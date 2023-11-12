@@ -1,15 +1,17 @@
-import { Message } from 'discord.js';
+import { Message, inlineCode } from 'discord.js';
+import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
+
+const data: Item = {
+    item_id: 'unmute' as ItemsItemId,
+    price: 750,
+    emoji_code: ":loud_sound:",
+    description: "Unmutes a user",
+    usage: `${inlineCode("$use unmute [@user]")}`
+};
 
 module.exports = {
-    data: {
-        name: 'unmute',
-        price: 2000,
-        icon: ":loud_sound:",
-        description: "Unmutes a user.",
-        usage: "$use unmute @target",
-        role: 2
-    },
-    async use(message: Message, args: string[]) {
+    data: data,
+    async use(message: Message, args: string[]): Promise<void> {
         let target = message.mentions.members.first();
 
         if (!target) {
@@ -22,9 +24,9 @@ module.exports = {
         
         try {
             target.timeout(null);
-            return message.channel.send(`<@${target.id}> has been unmuted.`);
+            await message.channel.send(`<@${target.id}> has been unmuted.`);
         } catch (error) {
-            return message.channel.send(`<@${target.id}> could not be unmuted.`);
+            await message.channel.send(`<@${target.id}> could not be unmuted.`);
         }
     }
 }
