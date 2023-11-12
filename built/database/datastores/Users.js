@@ -80,14 +80,15 @@ class Users extends DataStore_1.DataStore {
                     .where('item_id', '=', item_id)
                     .executeTakeFirst();
                 if (userItem) {
-                    const newQuantity = userItem.quantity + amount; // amount is negative
+                    const oldQuantity = userItem.quantity;
+                    const newQuantity = oldQuantity + amount; // amount is negative
                     if (newQuantity <= 0) {
                         await trx
                             .deleteFrom('user_items')
                             .where('user_id', '=', user_id)
                             .where('item_id', '=', item_id)
                             .execute();
-                        amountAdded = -userItem.quantity; // All items were removed
+                        amountAdded = -oldQuantity; // All items were removed
                     }
                     else {
                         await trx
@@ -96,7 +97,7 @@ class Users extends DataStore_1.DataStore {
                             .where('user_id', '=', user_id)
                             .where('item_id', '=', item_id)
                             .execute();
-                        amountAdded = amount; // The specified negative amount was removed
+                        amountAdded = amount;
                     }
                 }
             }

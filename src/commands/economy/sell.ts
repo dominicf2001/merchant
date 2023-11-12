@@ -65,7 +65,9 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
 
         await Users.addBalance(message.author.id, totalReturn);
 
-        const pluralS: string = totalSold > 1 ? "s" : "";
+        const pluralS: string = totalSold > 1 ?
+            "s" :
+            "";
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .addFields({
@@ -80,7 +82,10 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
 }
 
 async function sellItem(message: Message, args: string[]): Promise<void> {
-    const itemName: string = findTextArgs(args)[0]?.toLowerCase();
+    const itemName: string = findTextArgs(args)[0]?.toLowerCase() === 'all' ?
+        findTextArgs(args)[1]?.toLowerCase() :
+        findTextArgs(args)[0]?.toLowerCase();
+    
     const quantity: number = args.includes("all") ?
         99999 :
         (+findNumericArgs(args)[0] || 1);
@@ -106,7 +111,7 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
         await message.reply(`You can only sell one or more items.`);
         return;
     }
-    
+
     const userItem = await Users.getItem(message.author.id, itemName);
 
     if (!userItem) {
@@ -120,7 +125,7 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
 
         await Users.addBalance(message.author.id, totalReturn);
         
-        const pluralS: string = quantity > 1 ? "s" : "";
+        const pluralS: string = totalSold > 1 ? "s" : "";
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .addFields({

@@ -52,7 +52,9 @@ async function sellStock(message, args) {
         const totalSold = -(await db_objects_1.Users.addStock(message.author.id, stockUser.id, -quantity));
         const totalReturn = latestStock.price * totalSold;
         await db_objects_1.Users.addBalance(message.author.id, totalReturn);
-        const pluralS = totalSold > 1 ? "s" : "";
+        const pluralS = totalSold > 1 ?
+            "s" :
+            "";
         const embed = new discord_js_1.EmbedBuilder()
             .setColor("Blurple")
             .addFields({
@@ -66,7 +68,9 @@ async function sellStock(message, args) {
     }
 }
 async function sellItem(message, args) {
-    const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase();
+    const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase() === 'all' ?
+        (0, utilities_1.findTextArgs)(args)[1]?.toLowerCase() :
+        (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase();
     const quantity = args.includes("all") ?
         99999 :
         (+(0, utilities_1.findNumericArgs)(args)[0] || 1);
@@ -96,7 +100,7 @@ async function sellItem(message, args) {
         const totalSold = -(await db_objects_1.Users.addItem(message.author.id, itemName, -quantity));
         const totalReturn = item.price * totalSold;
         await db_objects_1.Users.addBalance(message.author.id, totalReturn);
-        const pluralS = quantity > 1 ? "s" : "";
+        const pluralS = totalSold > 1 ? "s" : "";
         const embed = new discord_js_1.EmbedBuilder()
             .setColor("Blurple")
             .addFields({

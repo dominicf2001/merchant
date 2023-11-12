@@ -77,7 +77,10 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
 }
 
 async function buyItem(message: Message, args: string[]): Promise<void> {
-    const itemName: string = findTextArgs(args)[0]?.toLowerCase();
+    const itemName: string = findTextArgs(args)[0]?.toLowerCase() === 'all' ?
+        findTextArgs(args)[1]?.toLowerCase() :
+        findTextArgs(args)[0]?.toLowerCase();
+    
     const quantity: number = args.includes("all") ?
         99999 :
         (+findNumericArgs(args)[0] || 1);
@@ -104,40 +107,44 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         return;
     }
 
+    // TODO: move to json parameter file?
+    const MAX_ITEM_COUNT: number = 5;
+    const itemCount: number = await Users.getItemCount(message.author.id);
+    const freeInventorySpace = MAX_ITEM_COUNT - itemCount;
+
+    if (freeInventorySpace <= 0) {
+        await message.reply(`You can only store ${MAX_ITEM_COUNT} items at a time.`);
+        return;
+    }
+
     try {
         // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
-        const authorBalance: number = await Users.getBalance(message.author.id);
         // buy as many as possible
-        const totalBought: number = ((item.price * quantity) > authorBalance || args.includes('all')) ?
-            Math.floor((authorBalance / item.price) * 100) / 100 :
+        const authorBalance: number = await Users.getBalance(message.author.id);
+        let totalBought: number = ((item.price * quantity) > authorBalance || args.includes('all')) ?
+            Math.floor(Math.floor((authorBalance / item.price) * 100) / 100) :
             quantity;
+        // Dont exceed max inventory size
+        totalBought = (totalBought > freeInventorySpace) ?
+            freeInventorySpace :
+            totalBought;
+        
         const totalCost: number = item.price * totalBought;
 
-        const pluralS = quantity > 1 ? "s" : "";
-        if (totalCost > authorBalance) {
-            message.reply(`You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies. ${formatNumber(quantity)} ${item.item_id}${pluralS} costs ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)} tendies.`);
-            return;
-        }
+        await Users.addItem(message.author.id, itemName, totalBought);
+        await Users.addBalance(message.author.id, -totalCost);
 
-        // TODO: move to json parameter file?
-        const MAX_ITEM_COUNT: number = 5;
-        const itemCount: number = await Users.getItemCount(message.author.id);
-
-        if (itemCount >= MAX_ITEM_COUNT) {
-            message.reply(`You can only store ${MAX_ITEM_COUNT} items at a time.`);
-            return;
-        }
-
-        await Users.addBalance(message.author.id, -(totalCost));
-        await Users.addItem(message.author.id, itemName, itemCount);
-
+        const pluralS = totalBought > 1 ?
+            "s" :
+            "";
+        
         const embed = new EmbedBuilder()
             .setColor("Blurple")
             .addFields({
-                name: `${formatNumber(quantity)} ${item.item_id}${pluralS} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
+                name: `${formatNumber(totalBought)} ${item.item_id}${pluralS} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
                 value: ' '
             });
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     }
     catch (error) {
         console.error(error);
