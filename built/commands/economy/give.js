@@ -5,7 +5,8 @@ const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
 const data = {
     command_id: 'give',
-    description: `Share your tendies.\n${(0, discord_js_1.inlineCode)("$give @target [(amount)]")}`,
+    description: `Share your tendies`,
+    usage: `${(0, discord_js_1.inlineCode)("$give [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: false
 };

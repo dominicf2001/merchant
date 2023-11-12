@@ -5,7 +5,8 @@ import { CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
 
 const data: Command = {
     command_id: 'bal' as CommandsCommandId,
-    description: `View your balance.\n${inlineCode("$bal")}`,
+    description: `View your balance`,
+    usage: `${inlineCode("$bal")}`,
     cooldown_time: 0,
     is_admin: false
 };

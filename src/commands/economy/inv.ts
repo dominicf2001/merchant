@@ -1,11 +1,12 @@
 import { Users, Items } from '../../database/db-objects';
 import { formatNumber } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
-import { Message, EmbedBuilder } from 'discord.js';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 const data: Command = {
     command_id: 'inv' as CommandsCommandId,
     description: `View your inventory`,
+    usage: `${inlineCode("$inv")}`,
     cooldown_time: 0,
     is_admin: false
 };

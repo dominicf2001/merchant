@@ -12,6 +12,8 @@ export default interface CommandsTable {
 
   description: ColumnType<string, string | null, string | null>;
 
+  usage: ColumnType<string, string | null, string | null>;
+
   cooldown_time: ColumnType<number, number | null, number | null>;
 
   is_admin: ColumnType<boolean, boolean | null, boolean | null>;

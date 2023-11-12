@@ -6,6 +6,7 @@ import { Commands as Command, CommandsCommandId } from '../../database/schemas/p
 const data: Command = {
     command_id: 'setprice' as CommandsCommandId,
     description: `Set a stock price`,
+    usage: `${inlineCode("$setprice [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: true
 };
@@ -40,6 +41,5 @@ export default {
             console.error("Error setting price: ", error);
             await message.reply("Error setting price.");
         }
-
     },
 };

@@ -5,7 +5,8 @@ import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 const data: Command = {
     command_id: 'buy' as CommandsCommandId,
-    description: `Buy an item or a stock. ${inlineCode("$buy [(item) OR @(user)] [(quantity) OR all]")}\n For stocks only $buy will always purchase as many as possible`,
+    description: `Buy an item or stock`,
+    usage: `${inlineCode("$buy [item/@user]")}\n${inlineCode("$buy [item/@user] [#amount/all]")}`,
     cooldown_time: 0,
     is_admin: false
 };

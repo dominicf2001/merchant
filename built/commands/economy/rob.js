@@ -13,7 +13,8 @@ function isValidRobType(robType) {
 }
 const data = {
     command_id: 'rob',
-    description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${(0, discord_js_1.inlineCode)("$rob @target [tendies/item]")}`,
+    description: `Rob user of tendies or a random item with a chance of failure + fine`,
+    usage: `${(0, discord_js_1.inlineCode)("$rob [@user] [tendies/item]")}`,
     cooldown_time: 5000,
     is_admin: false
 };

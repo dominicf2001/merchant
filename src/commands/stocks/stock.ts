@@ -17,7 +17,8 @@ const backgroundColour = "white";
 
 const data: Command = {
     command_id: 'stock' as CommandsCommandId,
-    description: `View stocks`,
+    description: `View the stock list or a stock chart`,
+    usage: `${inlineCode("$stock")}\n${inlineCode("$stock [@user]")}\n${inlineCode("$stock [@user] [now/hour/day/month]")}`,
     cooldown_time: 0,
     is_admin: false
 };

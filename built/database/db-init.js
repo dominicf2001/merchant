@@ -65,6 +65,7 @@ async function main() {
         await db.schema.createTable('commands')
             .addColumn('command_id', 'varchar(30)', col => col.notNull().primaryKey())
             .addColumn('description', 'varchar', col => col.notNull().defaultTo(""))
+            .addColumn('usage', 'varchar', col => col.notNull().defaultTo(""))
             .addColumn('cooldown_time', 'integer', col => col.notNull().defaultTo(0))
             .addColumn('is_admin', 'boolean', col => col.notNull().defaultTo(false))
             .execute();

@@ -6,6 +6,7 @@ const discord_js_1 = require("discord.js");
 const data = {
     command_id: 'inv',
     description: `View your inventory`,
+    usage: `${(0, discord_js_1.inlineCode)("$inv")}`,
     cooldown_time: 0,
     is_admin: false
 };

@@ -1,7 +1,7 @@
 import { Items } from '../../database/db-objects';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
-import { Message, Events, ButtonInteraction } from 'discord.js';
+import { Message, Events, ButtonInteraction, inlineCode } from 'discord.js';
 import { client } from '../../index';
 
 const SHOP_ID: string = 'shop';
@@ -10,6 +10,7 @@ const SHOP_PAGE_SIZE: number = 5;
 const data: Command = {
     command_id: 'shop' as CommandsCommandId,
     description: `View the shop`,
+    usage: `${inlineCode("$shop")}`,
     cooldown_time: 0,
     is_admin: false
 };

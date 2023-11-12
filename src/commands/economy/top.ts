@@ -5,7 +5,8 @@ import { Commands as Command, CommandsCommandId } from '../../database/schemas/p
 
 const data: Command = {
     command_id: 'top' as CommandsCommandId,
-    description: `See who are the goodest boys.`,
+    description: `See who are the goodest boys`,
+    usage: `${inlineCode("$top")}`,
     cooldown_time: 0,
     is_admin: false
 };

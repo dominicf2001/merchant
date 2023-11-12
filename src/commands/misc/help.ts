@@ -1,6 +1,6 @@
 import { Commands, Items } from '../../database/db-objects';
 import { PaginatedMenuBuilder, findTextArgs, findNumericArgs } from '../../utilities';
-import { Message, Events, ButtonInteraction, EmbedBuilder } from 'discord.js';
+import { Message, Events, ButtonInteraction, EmbedBuilder, inlineCode } from 'discord.js';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { client } from '../../index';
 
@@ -9,7 +9,8 @@ const HELP_PAGE_SIZE: number = 5;
 
 const data: Command = {
     command_id: 'help' as CommandsCommandId,
-    description: `Displays available commands or displays info on a command/item.`,
+    description: `Displays available commands or displays info on a command/item`,
+    usage: `${inlineCode("$help")}\n${inlineCode("$help [item/command]")}`,
     cooldown_time: 0,
     is_admin: false
 };
@@ -55,14 +56,14 @@ export default {
             const pageNum = +findNumericArgs(args)[0] || 1;
             await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
         }
-	},
+	}
 };
 
 async function sendHelpMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
     const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum)
         .setColor('Blurple')
         .setTitle('Commands')
-        .setDescription("$help [command/item] for additional info on a specific command/item's usage");
+        .setDescription(`${inlineCode("$help [command/item]")} for more info on a command/item's usage`);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
@@ -71,7 +72,7 @@ async function sendHelpMenu(message: Message | ButtonInteraction, id: string, pa
                          .slice(startIndex, endIndex + 1);
     
     commands.forEach(command => {
-        paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}` });
+        paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}\n${command.usage}` });
     }) 
 
     const embed = paginatedMenu.createEmbed();

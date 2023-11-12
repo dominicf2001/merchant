@@ -5,7 +5,8 @@ import { CURRENCY_EMOJI_CODE, findNumericArgs } from '../../utilities';
 
 const data: Command = {
     command_id: 'setbal' as CommandsCommandId,
-    description: `(ADMIN) Set a users role.\n${inlineCode("$setbal @target [role]")}`,
+    description: `Set a users role"`,
+    usage: `${inlineCode("$setbal [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: true
 };

@@ -5,7 +5,8 @@ import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 const data: Command = {
     command_id: 'sell' as CommandsCommandId,
-    description: `sell an item or a stock.\n${inlineCode("$sell [item/@user] [quantity/all]")}`,
+    description: `sell an item or a stock`,
+    usage: `${inlineCode("$sell [item/@user]")}\n${inlineCode("$sell [item/@user] [#amount/all]")}`,
     cooldown_time: 0,
     is_admin: false
 };

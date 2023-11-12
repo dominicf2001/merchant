@@ -13,7 +13,8 @@ const height = 1400;
 const backgroundColour = "white";
 const data = {
     command_id: 'stock',
-    description: `View stocks`,
+    description: `View the stock list or a stock chart`,
+    usage: `${(0, discord_js_1.inlineCode)("$stock")}\n${(0, discord_js_1.inlineCode)("$stock [@user]")}\n${(0, discord_js_1.inlineCode)("$stock [@user] [now/hour/day/month]")}`,
     cooldown_time: 0,
     is_admin: false
 };

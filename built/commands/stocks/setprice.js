@@ -6,6 +6,7 @@ const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'setprice',
     description: `Set a stock price`,
+    usage: `${(0, discord_js_1.inlineCode)("$setprice [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: true
 };

@@ -1,11 +1,12 @@
 import { Users } from '../../database/db-objects';
-import { Message, EmbedBuilder } from 'discord.js';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 import { CURRENCY_EMOJI_CODE, getRandomInt } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 
 const data: Command = {
     command_id: 'work' as CommandsCommandId,
-    description: `Make some tendies.`,
+    description: `Make some tendies`,
+    usage: `${inlineCode("$work")}`,
     cooldown_time: 30000,
     is_admin: false
 };

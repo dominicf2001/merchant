@@ -8,7 +8,8 @@ const HELP_ID = 'help';
 const HELP_PAGE_SIZE = 5;
 const data = {
     command_id: 'help',
-    description: `Displays available commands or displays info on a command/item.`,
+    description: `Displays available commands or displays info on a command/item`,
+    usage: `${(0, discord_js_1.inlineCode)("$help")}\n${(0, discord_js_1.inlineCode)("$help [item/command]")}`,
     cooldown_time: 0,
     is_admin: false
 };
@@ -47,20 +48,20 @@ exports.default = {
             const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
             await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
         }
-    },
+    }
 };
 async function sendHelpMenu(message, id, pageSize = 5, pageNum = 1) {
     const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum)
         .setColor('Blurple')
         .setTitle('Commands')
-        .setDescription("$help [command/item] for additional info on a specific command/item's usage");
+        .setDescription(`${(0, discord_js_1.inlineCode)("$help [command/item]")} for more info on a command/item's usage`);
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const commands = (await db_objects_1.Commands.getAll())
         .filter(command => !command.is_admin)
         .slice(startIndex, endIndex + 1);
     commands.forEach(command => {
-        paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}` });
+        paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}\n${command.usage}` });
     });
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();

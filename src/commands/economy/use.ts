@@ -5,7 +5,8 @@ import { Message, inlineCode } from 'discord.js';
 
 const data: Command = {
     command_id: 'use' as CommandsCommandId,
-    description: `Use an item.\n${inlineCode("$use [item]")}\n${inlineCode("$use [item] @target")}`,
+    description: `Use an item`,
+    usage: `${inlineCode("$use [item]")}\n${inlineCode("$use [item] [@user]")}`,
     cooldown_time: 0,
     is_admin: false
 };

@@ -5,7 +5,8 @@ const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'bal',
-    description: `View your balance.\n${(0, discord_js_1.inlineCode)("$bal")}`,
+    description: `View your balance`,
+    usage: `${(0, discord_js_1.inlineCode)("$bal")}`,
     cooldown_time: 0,
     is_admin: false
 };

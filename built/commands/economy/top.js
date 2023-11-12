@@ -5,7 +5,8 @@ const db_objects_1 = require("../../database/db-objects");
 const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'top',
-    description: `See who are the goodest boys.`,
+    description: `See who are the goodest boys`,
+    usage: `${(0, discord_js_1.inlineCode)("$top")}`,
     cooldown_time: 0,
     is_admin: false
 };

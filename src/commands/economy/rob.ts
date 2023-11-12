@@ -14,7 +14,8 @@ function isValidRobType(robType: string): robType is RobType {
 
 const data: Command = {
     command_id: 'rob' as CommandsCommandId,
-    description: `Rob a user of their tendies or a random item. Chance to fail and lose tendies.\n${inlineCode("$rob @target [tendies/item]")}`,
+    description: `Rob user of tendies or a random item with a chance of failure + fine`,
+    usage: `${inlineCode("$rob [@user] [tendies/item]")}`,
     cooldown_time: 5000,
     is_admin: false
 };

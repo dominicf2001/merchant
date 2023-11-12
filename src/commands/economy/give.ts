@@ -5,7 +5,8 @@ import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
 const data: Command = {
     command_id: 'give' as CommandsCommandId,
-    description: `Share your tendies.\n${inlineCode("$give @target [(amount)]")}`,
+    description: `Share your tendies`,
+    usage: `${inlineCode("$give [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: false
 };

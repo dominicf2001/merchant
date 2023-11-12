@@ -5,7 +5,8 @@ const discord_js_1 = require("discord.js");
 const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'work',
-    description: `Make some tendies.`,
+    description: `Make some tendies`,
+    usage: `${(0, discord_js_1.inlineCode)("$work")}`,
     cooldown_time: 30000,
     is_admin: false
 };

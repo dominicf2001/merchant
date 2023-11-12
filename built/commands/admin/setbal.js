@@ -5,7 +5,8 @@ const discord_js_1 = require("discord.js");
 const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'setbal',
-    description: `(ADMIN) Set a users role.\n${(0, discord_js_1.inlineCode)("$setbal @target [role]")}`,
+    description: `Set a users role"`,
+    usage: `${(0, discord_js_1.inlineCode)("$setbal [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: true
 };

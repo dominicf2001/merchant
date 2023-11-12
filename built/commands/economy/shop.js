@@ -9,6 +9,7 @@ const SHOP_PAGE_SIZE = 5;
 const data = {
     command_id: 'shop',
     description: `View the shop`,
+    usage: `${(0, discord_js_1.inlineCode)("$shop")}`,
     cooldown_time: 0,
     is_admin: false
 };

@@ -8,6 +8,7 @@ const data = {
     command_id: 'pf',
     description: `View your portfolio`,
     cooldown_time: 0,
+    usage: `${(0, discord_js_1.inlineCode)("$pf")}\n${(0, discord_js_1.inlineCode)("$pf [@user]")}`,
     is_admin: false
 };
 exports.default = {
@@ -35,7 +36,7 @@ async function sendStockList(message, args) {
     const portfolio = await db_objects_1.Users.getPortfolio(message.author.id);
     const embed = new discord_js_1.EmbedBuilder()
         .setColor("Blurple")
-        .setDescription(`To view additional info: ${(0, discord_js_1.inlineCode)("$pf @user [page#]")}`);
+        .setDescription(`To view additional info: ${(0, discord_js_1.inlineCode)("$pf [@user] [page #]")}`);
     let totalValue = 0;
     let totalChange = 0;
     for (const stock of portfolio) {

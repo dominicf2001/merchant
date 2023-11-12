@@ -5,7 +5,8 @@ const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
 const data = {
     command_id: 'sell',
-    description: `sell an item or a stock.\n${(0, discord_js_1.inlineCode)("$sell [item/@user] [quantity/all]")}`,
+    description: `sell an item or a stock`,
+    usage: `${(0, discord_js_1.inlineCode)("$sell [item/@user]")}\n${(0, discord_js_1.inlineCode)("$sell [item/@user] [#amount/all]")}`,
     cooldown_time: 0,
     is_admin: false
 };

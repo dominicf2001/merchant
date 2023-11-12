@@ -1,5 +1,5 @@
 import { Users, Items, Stocks } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
+import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE,STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 import { DateTime } from 'luxon';
@@ -8,6 +8,7 @@ const data: Command = {
     command_id: 'pf' as CommandsCommandId,
     description: `View your portfolio`,
     cooldown_time: 0,
+    usage: `${inlineCode("$pf")}\n${inlineCode("$pf [@user]")}`,
     is_admin: false
 };
 
@@ -35,7 +36,7 @@ async function sendStockList(message: Message, args: string[]): Promise<void> {
     
     const embed = new EmbedBuilder()
         .setColor("Blurple")
-        .setDescription(`To view additional info: ${inlineCode("$pf @user [page#]")}`);
+        .setDescription(`To view additional info: ${inlineCode("$pf [@user] [page #]")}`);
 
     let totalValue: number = 0;
     let totalChange: number = 0;
