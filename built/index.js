@@ -27,24 +27,24 @@ exports.client = client;
 client.once(discord_js_1.Events.ClientReady, async () => {
     console.log('Ready as ' + client.user.tag);
 });
-client.on(discord_js_1.Events.InviteCreate, (invite) => {
+client.on(discord_js_1.Events.InviteCreate, async (invite) => {
     if (invite.inviter.bot)
         return;
     if ((0, utilities_1.marketIsOpen)()) {
-        db_objects_1.Users.addActivityPoints(invite.inviterId, 1);
+        await db_objects_1.Users.addActivityPoints(invite.inviterId, 1);
     }
 });
-client.on(discord_js_1.Events.MessageReactionAdd, (_, user) => {
+client.on(discord_js_1.Events.MessageReactionAdd, async (_, user) => {
     if (user.bot)
         return;
     if ((0, utilities_1.marketIsOpen)()) {
-        db_objects_1.Users.addActivityPoints(user.id, 1);
+        await db_objects_1.Users.addActivityPoints(user.id, 1);
     }
 });
-client.on(discord_js_1.Events.VoiceStateUpdate, (oldState, newState) => {
+client.on(discord_js_1.Events.VoiceStateUpdate, async (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         if ((0, utilities_1.marketIsOpen)()) {
-            db_objects_1.Users.addActivityPoints(newState.member.user.id, 1);
+            await db_objects_1.Users.addActivityPoints(newState.member.user.id, 1);
         }
     }
 });
@@ -54,7 +54,7 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
         return;
     const userExists = !!db_objects_1.Users.get(message.author.id);
     if (!userExists) {
-        db_objects_1.Users.set(message.author.id);
+        await db_objects_1.Users.set(message.author.id);
     }
     const prefix = '$';
     const isCommand = message.content.startsWith(prefix);
@@ -65,6 +65,10 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
         const command = await db_objects_1.Commands.get(commandName);
         if (!command)
             return;
+        if (command.is_admin && message.member.moderatable) {
+            await message.reply("You do not have permission to use this command.");
+            return;
+        }
         // Check for remaining cooldown
         const remainingCooldownDuration = await db_objects_1.Users.getRemainingCooldownDuration(message.author.id, commandName);
         if (remainingCooldownDuration > 0) {
@@ -72,7 +76,7 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
             return;
         }
         // If no cooldown, execute command and set cooldown
-        db_objects_1.Commands.execute(command.command_id, message, args);
+        await db_objects_1.Commands.execute(command.command_id, message, args);
         if (command.cooldown_time > 0) {
             await db_objects_1.Users.createCooldown(message.author.id, command.command_id);
         }
@@ -81,12 +85,12 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
         // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
         if ((0, utilities_1.marketIsOpen)()) {
             const mentionedUsers = message.mentions.users;
-            mentionedUsers.forEach(user => {
+            mentionedUsers.forEach(async (user) => {
                 if (user.id != message.author.id && !user.bot) {
-                    db_objects_1.Users.addActivityPoints(user.id, 1);
+                    await db_objects_1.Users.addActivityPoints(user.id, 1);
                 }
             });
-            db_objects_1.Users.addActivityPoints(message.author.id, 1);
+            await db_objects_1.Users.addActivityPoints(message.author.id, 1);
         }
     }
 });

@@ -26,18 +26,21 @@ export default {
                 .setTitle(`${name}`);
 
             const command = await Commands.get(name);
-
+            
             if (command) {
+                const adminSpecifier: string = command.is_admin ?
+                    " (admin)" :
+                    "";
+                
                 embed.addFields({
-                    name: `${command.command_id}`,
+                    name: `${command.command_id}${adminSpecifier}`,
                     value: ` `
                 });
                 embed.setDescription(`${command.description}`);
                 await message.reply({ embeds: [embed] });
                 return;
             }
-
-
+            
             const item = await Items.get(name);
             
             if (item){
@@ -51,7 +54,6 @@ export default {
             }
 
             await message.reply("This item or command does not exist.");
-
         } else {
             const pageNum = +findNumericArgs(args)[0] || 1;
             await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
@@ -64,7 +66,6 @@ async function sendHelpMenu(message: Message | ButtonInteraction, id: string, pa
     const endIndex: number = startIndex + pageSize;
     const commands = await Commands.getAll();
     const slicedCommands = commands
-        .filter(command => !command.is_admin)
         .slice(startIndex, endIndex);
 
     const totalPages = Math.ceil(commands.length / pageSize);
@@ -74,7 +75,10 @@ async function sendHelpMenu(message: Message | ButtonInteraction, id: string, pa
         .setDescription(`${inlineCode("$help [command/item]")} for more info on a command/item's usage`);
     
     slicedCommands.forEach(command => {
-        paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}\n${command.usage}` });
+        const adminSpecifier: string = command.is_admin ?
+            " (admin)" :
+            "";
+        paginatedMenu.addFields({ name: `${command.command_id}${adminSpecifier}`, value: `${command.description}\n${command.usage}` });
     });
 
     const embed = paginatedMenu.createEmbed();

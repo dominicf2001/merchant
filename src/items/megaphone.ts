@@ -24,7 +24,9 @@ export default {
         await message.delete();
 
         await message.channel.send({
-            content: msgToSend ? `@everyone\n\n <@${message.author.id}> says: ${inlineCode(msgToSend)}` : '@everyone',
+            content: msgToSend ?
+                `@everyone\n\n <@${message.author.id}> says: ${inlineCode(msgToSend)}` :
+                '@everyone',
             files: attachmentsArray,
         });
     }

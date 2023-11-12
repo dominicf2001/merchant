@@ -5,7 +5,7 @@ import { CURRENCY_EMOJI_CODE, findNumericArgs } from '../../utilities';
 
 const data: Command = {
     command_id: 'setbal' as CommandsCommandId,
-    description: `Set a users role"`,
+    description: `Set a users balance`,
     usage: `${inlineCode("$setbal [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: true
@@ -33,7 +33,7 @@ export default {
             return;
         }
 
-        Users.setBalance(target.id, newBalance);
+        await Users.setBalance(target.id, newBalance);
 
         const embed = new EmbedBuilder()
             .setColor("Blurple")

@@ -19,7 +19,9 @@ exports.default = {
         }
         await message.delete();
         await message.channel.send({
-            content: msgToSend ? `@everyone\n\n <@${message.author.id}> says: ${(0, discord_js_1.inlineCode)(msgToSend)}` : '@everyone',
+            content: msgToSend ?
+                `@everyone\n\n <@${message.author.id}> says: ${(0, discord_js_1.inlineCode)(msgToSend)}` :
+                '@everyone',
             files: attachmentsArray,
         });
     }

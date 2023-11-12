@@ -5,7 +5,7 @@ const discord_js_1 = require("discord.js");
 const utilities_1 = require("../../utilities");
 const data = {
     command_id: 'setbal',
-    description: `Set a users role"`,
+    description: `Set a users balance`,
     usage: `${(0, discord_js_1.inlineCode)("$setbal [@user] [#amount]")}`,
     cooldown_time: 0,
     is_admin: true
@@ -29,7 +29,7 @@ exports.default = {
             await message.reply("You must specify a target.");
             return;
         }
-        db_objects_1.Users.setBalance(target.id, newBalance);
+        await db_objects_1.Users.setBalance(target.id, newBalance);
         const embed = new discord_js_1.EmbedBuilder()
             .setColor("Blurple")
             .setFields({

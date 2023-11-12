@@ -25,26 +25,26 @@ client.once(Events.ClientReady, async () => {
     console.log('Ready as ' + client.user.tag);
 });
 
-client.on(Events.InviteCreate, (invite) => {
+client.on(Events.InviteCreate, async (invite) => {
     if (invite.inviter.bot) return;
     
     if (marketIsOpen()) {
-        Users.addActivityPoints(invite.inviterId, 1);
+        await Users.addActivityPoints(invite.inviterId, 1);
     }
 });
 
-client.on(Events.MessageReactionAdd, (_, user) => {
+client.on(Events.MessageReactionAdd, async (_, user) => {
     if (user.bot) return;
     
     if (marketIsOpen()) {
-        Users.addActivityPoints(user.id, 1);
+        await Users.addActivityPoints(user.id, 1);
     }
 });
 
-client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     if (!oldState.channel && newState.channel && !newState.member.user.bot) {
         if (marketIsOpen()) {
-            Users.addActivityPoints(newState.member.user.id, 1);
+            await Users.addActivityPoints(newState.member.user.id, 1);
         }
     }
 });
@@ -52,11 +52,12 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
 
 // COMMAND HANDLING
 client.on(Events.MessageCreate, async message => {
-    if (message.author.bot) return;
+    if (message.author.bot)
+        return;
     
     const userExists: boolean = !!Users.get(message.author.id);
     if (!userExists) {
-        Users.set(message.author.id);
+        await Users.set(message.author.id);
     }
 
     const prefix: string = '$';
@@ -71,6 +72,11 @@ client.on(Events.MessageCreate, async message => {
         if (!command)
             return;
 
+        if (command.is_admin && message.member.moderatable) {
+            await message.reply("You do not have permission to use this command.");
+            return;
+        }
+
         // Check for remaining cooldown
         const remainingCooldownDuration: number = await Users.getRemainingCooldownDuration(message.author.id, commandName);
         if (remainingCooldownDuration > 0) {
@@ -79,7 +85,7 @@ client.on(Events.MessageCreate, async message => {
         }
 
         // If no cooldown, execute command and set cooldown
-        Commands.execute(command.command_id, message, args);
+        await Commands.execute(command.command_id, message, args);
         if (command.cooldown_time > 0) {
             await Users.createCooldown(message.author.id, command.command_id);
         }
@@ -88,12 +94,12 @@ client.on(Events.MessageCreate, async message => {
         // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
         if (marketIsOpen()) {
             const mentionedUsers = message.mentions.users;
-            mentionedUsers.forEach(user => {
+            mentionedUsers.forEach(async user => {
                 if (user.id != message.author.id && !user.bot) {
-                    Users.addActivityPoints(user.id, 1);
+                    await Users.addActivityPoints(user.id, 1);
                 }
             });
-            Users.addActivityPoints(message.author.id, 1);
+            await Users.addActivityPoints(message.author.id, 1);
         }
     }
 });
