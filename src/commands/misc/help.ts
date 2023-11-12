@@ -56,24 +56,26 @@ export default {
             const pageNum = +findNumericArgs(args)[0] || 1;
             await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
         }
-	}
+    }
 };
 
 async function sendHelpMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
-    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum)
+    const startIndex: number = (pageNum - 1) * pageSize;
+    const endIndex: number = startIndex + pageSize;
+    const commands = await Commands.getAll();
+    const slicedCommands = commands
+        .filter(command => !command.is_admin)
+        .slice(startIndex, endIndex);
+
+    const totalPages = Math.ceil(commands.length / pageSize);
+    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
         .setColor('Blurple')
         .setTitle('Commands')
         .setDescription(`${inlineCode("$help [command/item]")} for more info on a command/item's usage`);
-
-    const startIndex: number = (pageNum - 1) * pageSize;
-    const endIndex: number = startIndex + pageSize;
-    const commands = (await Commands.getAll())
-                         .filter(command => !command.is_admin)
-                         .slice(startIndex, endIndex + 1);
     
-    commands.forEach(command => {
+    slicedCommands.forEach(command => {
         paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}\n${command.usage}` });
-    }) 
+    });
 
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();

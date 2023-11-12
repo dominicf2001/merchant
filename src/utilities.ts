@@ -96,10 +96,6 @@ class PaginatedMenuBuilder {
 
     addFields(...fields: RestOrArray<APIEmbedField>): PaginatedMenuBuilder {
         this.fields.push(...normalizeArray(fields));
-
-        // Recalculate the total pages.
-        this.totalPages = Math.ceil(this.fields.length / this.pageSize);
-
         return this;
     }
 
@@ -134,10 +130,11 @@ class PaginatedMenuBuilder {
         return buttonsRow;
     }
     
-    constructor(id: string, pageSize: number, pageNum: number) {
+    constructor(id: string, pageSize: number, pageNum: number, totalPages: number) {
         this.id = id;
         this.pageSize = pageSize;
         this.pageNum = pageNum;
+        this.totalPages = totalPages;
     }
 }
 

@@ -51,16 +51,18 @@ exports.default = {
     }
 };
 async function sendHelpMenu(message, id, pageSize = 5, pageNum = 1) {
-    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum)
+    const startIndex = (pageNum - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const commands = await db_objects_1.Commands.getAll();
+    const slicedCommands = commands
+        .filter(command => !command.is_admin)
+        .slice(startIndex, endIndex);
+    const totalPages = Math.ceil(commands.length / pageSize);
+    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
         .setColor('Blurple')
         .setTitle('Commands')
         .setDescription(`${(0, discord_js_1.inlineCode)("$help [command/item]")} for more info on a command/item's usage`);
-    const startIndex = (pageNum - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const commands = (await db_objects_1.Commands.getAll())
-        .filter(command => !command.is_admin)
-        .slice(startIndex, endIndex + 1);
-    commands.forEach(command => {
+    slicedCommands.forEach(command => {
         paginatedMenu.addFields({ name: `${command.command_id}`, value: `${command.description}\n${command.usage}` });
     });
     const embed = paginatedMenu.createEmbed();

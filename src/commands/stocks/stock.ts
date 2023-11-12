@@ -8,7 +8,7 @@ import { ChartConfiguration } from 'chart.js';
 import { client } from '../../index';
 import { StockInterval }  from '../../database/datastores/Stocks';
 
-const STOCK_LIST_ID: string = 'shop';
+const STOCK_LIST_ID: string = 'stock';
 const STOCK_LIST_PAGE_SIZE: number = 5;
 
 const width = 3000;
@@ -167,18 +167,20 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
     
-    const stocks = (await Stocks.getLatestStocks()).slice(startIndex, endIndex);
+    const stocks = await Stocks.getLatestStocks();
+    const slicedStocks = stocks.slice(startIndex, endIndex);
 
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => Stocks.getStockHistory(s.stock_id, 'now')));
 
-    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum)
+    const totalPages = Math.ceil(stocks.length / pageSize);
+    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
         .setDescription(`To view additional info: ${inlineCode("$stock @user")}.`);
     
     let i = 0;
-    for (const stock of stocks){
+    for (const stock of slicedStocks){
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
         const username = (await message.client.users.fetch(stock.stock_id)).username;

@@ -9,20 +9,20 @@ import fs from 'fs';
 class Items extends DataStore<Item> {
     private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     
-    // async refreshCache(): Promise<void> {
-    //     const itemsPath = path.join(process.cwd(), 'built/items');
-    //     const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
-    //     for (const file of itemFiles) {
-    //         const filePath = path.join(itemsPath, file);
-    //         const itemObj = await import(filePath);
-    //         if ('data' in itemObj && 'use' in itemObj) {
-    //             this.behaviors.set(itemObj.data.item_id, itemObj.use);
-    //             this.set(itemObj.data.item_id, new Deque<Item>([itemObj.data]));
-    //         } else {
-    //             console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-    //         }
-    //     }
-    // }
+    async refreshCache(): Promise<void> {
+        const itemsPath = path.join(process.cwd(), 'built/items');
+        const itemFiles = fs.readdirSync(itemsPath).filter(file => file.endsWith('.js'));
+        for (const file of itemFiles) {
+            const filePath = path.join(itemsPath, file);
+            const itemObj = (await import(filePath)).default;
+            if ('data' in itemObj && 'use' in itemObj) {
+                this.behaviors.set(itemObj.data.item_id, itemObj.use);
+                this.set(itemObj.data.item_id, itemObj.data);
+            } else {
+                console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
+            }
+        }
+    }
 
     async use(item_id: string, message: Message, args: string[]): Promise<void> {
         const use: BehaviorFunction = this.behaviors.get(item_id);

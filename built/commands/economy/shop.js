@@ -22,16 +22,18 @@ exports.default = {
 };
 // TODO: abstract this?
 async function sendShopMenu(message, id, pageSize = 5, pageNum = 1) {
-    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum)
-        .setColor('Blurple')
-        .setTitle('Shop')
-        .setDescription('To view additional info on an item, see $help [item].');
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const items = (await db_objects_1.Items.getAll())
+    const items = await db_objects_1.Items.getAll();
+    const slicedItems = items
         .sort((itemA, itemB) => itemA.price - itemB.price)
-        .slice(startIndex, endIndex + 1);
-    items.forEach(item => {
+        .slice(startIndex, endIndex);
+    const totalPages = Math.ceil(items.length / pageSize);
+    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
+        .setColor('Blurple')
+        .setTitle('Shop')
+        .setDescription(`To view additional info on an item, see ${(0, discord_js_1.inlineCode)("$help [item]")}.`);
+    slicedItems.forEach(item => {
         paginatedMenu.addFields({ name: `${item.emoji_code} ${item.item_id} - ${utilities_1.CURRENCY_EMOJI_CODE} - ${(0, utilities_1.formatNumber)(item.price)}`, value: `${item.description}` });
     });
     const embed = paginatedMenu.createEmbed();

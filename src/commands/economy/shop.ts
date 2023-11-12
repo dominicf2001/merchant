@@ -25,20 +25,22 @@ export default {
 
 // TODO: abstract this?
 async function sendShopMenu(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
-    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum)
-        .setColor('Blurple')
-        .setTitle('Shop')
-        .setDescription('To view additional info on an item, see $help [item].');
-
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
-    const items = (await Items.getAll())
+    const items = await Items.getAll();
+    const slicedItems = items
         .sort((itemA, itemB) => itemA.price - itemB.price)
-        .slice(startIndex, endIndex + 1);
+        .slice(startIndex, endIndex);
+
+    const totalPages = Math.ceil(items.length / pageSize);
+    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
+        .setColor('Blurple')
+        .setTitle('Shop')
+        .setDescription(`To view additional info on an item, see ${inlineCode("$help [item]")}.`);
     
-    items.forEach(item => {
+    slicedItems.forEach(item => {
         paginatedMenu.addFields({ name: `${item.emoji_code} ${item.item_id} - ${CURRENCY_EMOJI_CODE} - ${formatNumber(item.price)}`, value: `${item.description}` });
-    }) 
+    });
 
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();

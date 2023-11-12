@@ -6,7 +6,7 @@ const utilities_1 = require("../../utilities");
 const discord_js_1 = require("discord.js");
 const luxon_1 = require("luxon");
 const index_1 = require("../../index");
-const STOCK_LIST_ID = 'shop';
+const STOCK_LIST_ID = 'stock';
 const STOCK_LIST_PAGE_SIZE = 5;
 const width = 3000;
 const height = 1400;
@@ -148,15 +148,17 @@ async function sendStockChart(message, args) {
 async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
     const startIndex = (pageNum - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const stocks = (await db_objects_1.Stocks.getLatestStocks()).slice(startIndex, endIndex);
+    const stocks = await db_objects_1.Stocks.getLatestStocks();
+    const slicedStocks = stocks.slice(startIndex, endIndex);
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(stocks.map(s => db_objects_1.Stocks.getStockHistory(s.stock_id, 'now')));
-    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum)
+    const totalPages = Math.ceil(stocks.length / pageSize);
+    const paginatedMenu = new utilities_1.PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
         .setColor('Blurple')
         .setTitle('Stocks :chart_with_upwards_trend:')
         .setDescription(`To view additional info: ${(0, discord_js_1.inlineCode)("$stock @user")}.`);
     let i = 0;
-    for (const stock of stocks) {
+    for (const stock of slicedStocks) {
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
         const username = (await message.client.users.fetch(stock.stock_id)).username;

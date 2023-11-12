@@ -94,8 +94,6 @@ class PaginatedMenuBuilder {
     }
     addFields(...fields) {
         this.fields.push(...(0, discord_js_1.normalizeArray)(fields));
-        // Recalculate the total pages.
-        this.totalPages = Math.ceil(this.fields.length / this.pageSize);
         return this;
     }
     createEmbed() {
@@ -122,10 +120,11 @@ class PaginatedMenuBuilder {
             .addComponents(previousBtn, nextBtn);
         return buttonsRow;
     }
-    constructor(id, pageSize, pageNum) {
+    constructor(id, pageSize, pageNum, totalPages) {
         this.id = id;
         this.pageSize = pageSize;
         this.pageNum = pageNum;
+        this.totalPages = totalPages;
     }
 }
 exports.PaginatedMenuBuilder = PaginatedMenuBuilder;
