@@ -23,7 +23,8 @@ export default {
                 .addFields({ value: `You make: ${CURRENCY_EMOJI_CODE} ${tendiesMade} tendies!`, name: ` ` });
 
             await message.reply({ embeds: [embed] });
-        } catch (error) {
+        }
+        catch (error) {
             console.error(error);
             await message.reply('There was an error while trying to work!');
         }

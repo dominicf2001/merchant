@@ -27,6 +27,6 @@ exports.default = {
             const itemEmojiCode = emojiCodes[index];
             embed.addFields({ name: `${itemEmojiCode} ${item.item_id} - Q. ${(0, utilities_1.formatNumber)(item.quantity)}`, value: ` ` });
         });
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     },
 };

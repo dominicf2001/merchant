@@ -15,21 +15,21 @@ exports.default = {
     async execute(message, args) {
         const target = message.mentions.users.first();
         if (!target) {
-            message.reply("Please specify a target.");
+            await message.reply("Please specify a target.");
             return;
         }
         let authorBalance = await db_objects_1.Users.getBalance(message.author.id);
         const transferAmount = +(0, utilities_1.findNumericArgs)(args)[0];
         if (!transferAmount || transferAmount <= 0) {
-            message.reply(`Specify more than zero tendies.`);
+            await message.reply(`Specify more than zero tendies.`);
             return;
         }
         if (!Number.isInteger(transferAmount)) {
-            message.reply(`You can only give a whole number of tendies.`);
+            await message.reply(`You can only give a whole number of tendies.`);
             return;
         }
         if (transferAmount > authorBalance) {
-            message.reply(`You only have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} tendies.`);
+            await message.reply(`You only have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} tendies.`);
             return;
         }
         await db_objects_1.Users.addBalance(message.author.id, -transferAmount);

@@ -27,13 +27,13 @@ exports.default = {
         }
         const targetArmor = await db_objects_1.Users.getArmor(target.id);
         if (targetArmor) {
-            db_objects_1.Users.addArmor(target.id, -1);
-            await message.channel.send('Blocked by `armor`! This user is now exposed.');
+            await db_objects_1.Users.addArmor(target.id, -1);
+            await message.reply('Blocked by `armor`! This user is now exposed.');
             return;
         }
         try {
             await target.timeout(durationMs);
-            await message.channel.send(`<@${target.id}> has been muted for ${durationMin} minutes.`);
+            await message.reply(`<@${target.id}> has been muted for ${durationMin} minutes.`);
         }
         catch (error) {
             console.error(error);

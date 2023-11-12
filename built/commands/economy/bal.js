@@ -13,7 +13,6 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        console.log("Execute!");
         const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
         const embed = new discord_js_1.EmbedBuilder()
             .setColor("Blurple")

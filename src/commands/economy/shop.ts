@@ -18,8 +18,14 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        const pageNum = +findNumericArgs(args)[0] || 1;
-        await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        try {
+            const pageNum = +findNumericArgs(args)[0] || 1;
+            await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        }
+        catch (error) {
+            console.error(error);
+            await message.reply('An error occurred when getting the shop. Please try again later.');
+        }
     }
 };
 

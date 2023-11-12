@@ -17,7 +17,7 @@ exports.default = {
             if (authorArmor >= 1) {
                 throw new Error("You can only apply one armor at a time.");
             }
-            db_objects_1.Users.addArmor(message.author.id, 1);
+            await db_objects_1.Users.addArmor(message.author.id, 1);
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({

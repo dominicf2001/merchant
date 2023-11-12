@@ -25,15 +25,15 @@ exports.default = {
         const target = message.mentions.users.first();
         // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
         if (!target) {
-            message.reply("Please specify a target.");
+            await message.reply("Please specify a target.");
             return;
         }
         if (target.id === message.author.id) {
-            message.reply("You cannot rob yourself.");
+            await message.reply("You cannot rob yourself.");
             return;
         }
         if (!isValidRobType(robType)) {
-            message.reply("Invalid rob type.");
+            await message.reply("Invalid rob type.");
             return;
         }
         // TODO: move to json
@@ -62,11 +62,11 @@ exports.default = {
                     const targetItems = await db_objects_1.Users.getItems(target.id);
                     const authorItemCount = await db_objects_1.Users.getItemCount(message.author.id);
                     if (authorItemCount >= MAX_ITEM_COUNT) {
-                        message.reply("Your inventory is full.");
+                        await message.reply("Your inventory is full.");
                         return;
                     }
                     if (!targetItems.length) {
-                        message.reply("This user has no items.");
+                        await message.reply("This user has no items.");
                         return;
                     }
                     const item = targetItems[Math.floor(Math.random() * targetItems.length)];
@@ -88,6 +88,6 @@ exports.default = {
             name: reply,
             value: ` `
         });
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
     },
 };

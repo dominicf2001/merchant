@@ -15,12 +15,9 @@ exports.default = {
     async use(message, args) {
         const target = message.mentions.members.first();
         const color = (0, utilities_1.toUpperCaseString)((0, utilities_1.findTextArgs)(args)[1]);
-        // TODO: don't take error throwing approach?
         if (!color) {
             throw new Error('Please specify a color.');
         }
-        console.log(color);
-        console.log(discord_js_1.Colors[color]);
         if (!discord_js_1.Colors[color]) {
             throw new Error('Invalid color.');
         }
@@ -32,7 +29,7 @@ exports.default = {
         }
         const targetArmor = await db_objects_1.Users.getArmor(target.id);
         if (targetArmor && message.author.id !== target.id) {
-            db_objects_1.Users.addArmor(target.id, -1);
+            await db_objects_1.Users.addArmor(target.id, -1);
             await message.channel.send('Blocked by `armor`! This user is now exposed.');
             return;
         }
@@ -52,7 +49,7 @@ exports.default = {
             await target.roles.add(colorRole);
             const highestPosition = message.guild.roles.highest.position;
             await colorRole.setPosition(highestPosition - 1);
-            await message.channel.send(`<@${target.id}>'s color has been changed to ${color}`);
+            await message.reply(`<@${target.id}>'s color has been changed to ${color}`);
         }
         catch (error) {
             console.error(error);

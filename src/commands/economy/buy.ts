@@ -15,12 +15,24 @@ export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.size === 1) {
-            await buyStock(message, args);
+            try {
+                await buyStock(message, args);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when buying this stock. Please try again later.');
+            }
         }
         else {
-            await buyItem(message, args);
+            try {
+                await buyItem(message, args);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when buying this item. Please try again later.');
+            }
         }
-    },
+    }
 };
 
 async function buyStock(message: Message, args: string[]): Promise<void> {
@@ -51,43 +63,39 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
         return;
     }
 
-    try {
-        const authorBalance: number = await Users.getBalance(message.author.id);
-        // buy as many as possible
-        const totalBought: number = ((latestStock.price * quantity) > authorBalance || args.includes('all')) ?
-            Math.floor(Math.floor((authorBalance / latestStock.price) * 100) / 100) :
-            quantity;
-        const totalCost: number = latestStock.price * totalBought;
-        
-        await Users.addStock(message.author.id, stockUser.id, totalBought);
-        await Users.addBalance(message.author.id, -(totalCost));
+    const authorBalance: number = await Users.getBalance(message.author.id);
+    // buy as many as possible
+    const totalBought: number = ((latestStock.price * quantity) > authorBalance || args.includes('all')) ?
+        Math.floor(Math.floor((authorBalance / latestStock.price) * 100) / 100) :
+        quantity;
+    const totalCost: number = latestStock.price * totalBought;
 
-        const pluralS: string = quantity > 1 ? "s" : "";
-        const embed = new EmbedBuilder()
-            .setColor('Blurple')
-            .addFields({
-                name: `${formatNumber(totalBought)} share${pluralS} of ${inlineCode(stockUser.tag)} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
-                value: ' '
-            });
+    await Users.addStock(message.author.id, stockUser.id, totalBought);
+    await Users.addBalance(message.author.id, -(totalCost));
 
-        await message.reply({ embeds: [embed] });
-    } catch (error) {
-        console.error(error);
-    }
+    const pluralS: string = quantity > 1 ? "s" : "";
+    const embed = new EmbedBuilder()
+        .setColor('Blurple')
+        .addFields({
+            name: `${formatNumber(totalBought)} share${pluralS} of ${inlineCode(stockUser.tag)} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
+            value: ' '
+        });
+
+    await message.reply({ embeds: [embed] });
 }
 
 async function buyItem(message: Message, args: string[]): Promise<void> {
     const itemName: string = findTextArgs(args)[0]?.toLowerCase() === 'all' ?
         findTextArgs(args)[1]?.toLowerCase() :
         findTextArgs(args)[0]?.toLowerCase();
-    
+
     const quantity: number = args.includes("all") ?
         99999 :
         (+findNumericArgs(args)[0] || 1);
 
     if (!itemName) {
         await message.reply(`Please specify an item or stock.`);
-        return;    
+        return;
     }
 
     const item = await Items.get(itemName);
@@ -96,7 +104,7 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         await message.reply(`That item doesn't exist.`);
         return;
     }
-    
+
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only purchase a whole number of items.`);
         return;
@@ -116,42 +124,36 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         await message.reply(`You can only store ${MAX_ITEM_COUNT} items at a time.`);
         return;
     }
+    // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
+    // buy as many as possible
+    const authorBalance: number = await Users.getBalance(message.author.id);
+    let totalBought: number = ((item.price * quantity) > authorBalance || args.includes('all')) ?
+        Math.floor(Math.floor((authorBalance / item.price) * 100) / 100) :
+        quantity;
+    // Dont exceed max inventory size
+    totalBought = (totalBought > freeInventorySpace) ?
+        freeInventorySpace :
+        totalBought;
 
-    try {
-        // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
-        // buy as many as possible
-        const authorBalance: number = await Users.getBalance(message.author.id);
-        let totalBought: number = ((item.price * quantity) > authorBalance || args.includes('all')) ?
-            Math.floor(Math.floor((authorBalance / item.price) * 100) / 100) :
-            quantity;
-        // Dont exceed max inventory size
-        totalBought = (totalBought > freeInventorySpace) ?
-            freeInventorySpace :
-            totalBought;
-
-        if (!totalBought) {
-            await message.reply(`You are too poor to purchase this item.`);
-            return;    
-        }
-        
-        const totalCost: number = item.price * totalBought;
-
-        await Users.addItem(message.author.id, itemName, totalBought);
-        await Users.addBalance(message.author.id, -totalCost);
-
-        const pluralS = totalBought > 1 ?
-            "s" :
-            "";
-        
-        const embed = new EmbedBuilder()
-            .setColor("Blurple")
-            .addFields({
-                name: `${formatNumber(totalBought)} ${item.item_id}${pluralS} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
-                value: ' '
-            });
-        await message.reply({ embeds: [embed] });
+    if (!totalBought) {
+        await message.reply(`You are too poor to purchase this item.`);
+        return;
     }
-    catch (error) {
-        console.error(error);
-    }
+
+    const totalCost: number = item.price * totalBought;
+
+    await Users.addItem(message.author.id, itemName, totalBought);
+    await Users.addBalance(message.author.id, -totalCost);
+
+    const pluralS = totalBought > 1 ?
+        "s" :
+        "";
+
+    const embed = new EmbedBuilder()
+        .setColor("Blurple")
+        .addFields({
+            name: `${formatNumber(totalBought)} ${item.item_id}${pluralS} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
+            value: ' '
+        });
+    await message.reply({ embeds: [embed] });
 }

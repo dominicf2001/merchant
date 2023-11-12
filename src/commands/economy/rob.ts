@@ -22,92 +22,98 @@ const data: Command = {
 
 export default {
     data: data,
-	async execute(message: Message, args: string[]): Promise<void> {
-		const robType: RobType = (findTextArgs(args)[0] ?? 'tendies') as RobType;
-        const target = message.mentions.users.first();
-        // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
+    async execute(message: Message, args: string[]): Promise<void> {
+        try {
+            const robType: RobType = (findTextArgs(args)[0] ?? 'tendies') as RobType;
+            const target = message.mentions.users.first();
+            // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
 
-        if (!target){
-            await message.reply("Please specify a target.");
-            return;
-        }
+            if (!target) {
+                await message.reply("Please specify a target.");
+                return;
+            }
 
-        if (target.id === message.author.id){
-            await message.reply("You cannot rob yourself.");
-            return;
-        }
+            if (target.id === message.author.id) {
+                await message.reply("You cannot rob yourself.");
+                return;
+            }
 
-        if (!isValidRobType(robType)) {
-            await message.reply("Invalid rob type.");
-            return;
-        }
-        // TODO: move to json
-        const TENDIES_ROB_CHANCE = 70;
-        const ITEM_ROB_CHANCE = 20;
-        const MAX_ITEM_COUNT = 5;
-        let reply = "";
-        
-        switch (robType) {
-            case 'tendies':
-                if (getRandomInt(1, 100) > TENDIES_ROB_CHANCE) {
-                    const targetBalance = await Users.getBalance(target.id);
-                    const robAmount: number = Math.floor(targetBalance * getRandomFloat(.01, .10));
-                    
-                    await Users.addBalance(message.author.id, robAmount);
-                    await Users.addBalance(target.id, -robAmount);
+            if (!isValidRobType(robType)) {
+                await message.reply("Invalid rob type.");
+                return;
+            }
+            // TODO: move to json
+            const TENDIES_ROB_CHANCE = 70;
+            const ITEM_ROB_CHANCE = 20;
+            const MAX_ITEM_COUNT = 5;
+            let reply = "";
 
-                    reply = `You have robbed ${CURRENCY_EMOJI_CODE} ${formatNumber(robAmount)} from: ${inlineCode(target.username)}.`;
-                }
-                else {
-                    const authorBalance = await Users.getBalance(message.author.id);
-                    const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
+            switch (robType) {
+                case 'tendies':
+                    if (getRandomInt(1, 100) > TENDIES_ROB_CHANCE) {
+                        const targetBalance = await Users.getBalance(target.id);
+                        const robAmount: number = Math.floor(targetBalance * getRandomFloat(.01, .10));
 
-                    await Users.addBalance(message.author.id, -penaltyAmount);
+                        await Users.addBalance(message.author.id, robAmount);
+                        await Users.addBalance(target.id, -robAmount);
 
-                    reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
-                }
-                break;
-            case 'item':
-                if (getRandomInt(1, 100) > ITEM_ROB_CHANCE) {
-                    const targetItems = await Users.getItems(target.id);
-                    const authorItemCount: number = await Users.getItemCount(message.author.id);
-
-
-                    if (authorItemCount >= MAX_ITEM_COUNT) {
-                        await message.reply("Your inventory is full.");
-                        return;
+                        reply = `You have robbed ${CURRENCY_EMOJI_CODE} ${formatNumber(robAmount)} from: ${inlineCode(target.username)}.`;
                     }
+                    else {
+                        const authorBalance = await Users.getBalance(message.author.id);
+                        const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
 
-                    if (!targetItems.length) {
-                        await message.reply("This user has no items.");
-                        return;
+                        await Users.addBalance(message.author.id, -penaltyAmount);
+
+                        reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
                     }
+                    break;
+                case 'item':
+                    if (getRandomInt(1, 100) > ITEM_ROB_CHANCE) {
+                        const targetItems = await Users.getItems(target.id);
+                        const authorItemCount: number = await Users.getItemCount(message.author.id);
 
-                    const item = targetItems[Math.floor(Math.random() * targetItems.length)];
 
-                    await Users.addItem(target.id, item.item_id, -1);
-                    await Users.addItem(message.author.id, item.item_id, 1);
+                        if (authorItemCount >= MAX_ITEM_COUNT) {
+                            await message.reply("Your inventory is full.");
+                            return;
+                        }
 
-                    reply = `You have robbed ${item.item_id} from: ${inlineCode(target.username)}.`;
-                }
-                else {
-                    const authorBalance = await Users.getBalance(message.author.id);
-                    const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
+                        if (!targetItems.length) {
+                            await message.reply("This user has no items.");
+                            return;
+                        }
 
-                    await Users.addBalance(message.author.id, -penaltyAmount);
+                        const item = targetItems[Math.floor(Math.random() * targetItems.length)];
 
-                    reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
-                }
-                break;
+                        await Users.addItem(target.id, item.item_id, -1);
+                        await Users.addItem(message.author.id, item.item_id, 1);
+
+                        reply = `You have robbed ${item.item_id} from: ${inlineCode(target.username)}.`;
+                    }
+                    else {
+                        const authorBalance = await Users.getBalance(message.author.id);
+                        const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
+
+                        await Users.addBalance(message.author.id, -penaltyAmount);
+
+                        reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
+                    }
+                    break;
+            }
+
+            const embed = new EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                    name: reply,
+                    value: ` `
+                });
+
+            await message.reply({ embeds: [embed] });
         }
-
-        const embed = new EmbedBuilder()
-            .setColor("Blurple")
-            .setFields({
-                name: reply,
-                value: ` `
-            });
-
-        await message.reply({ embeds: [embed] });
-    },
+        catch (error) {
+            console.error(error);
+            await message.reply('An error occurred when robbing. Please try again later.');
+        }
+    }
 }

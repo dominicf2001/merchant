@@ -15,12 +15,23 @@ export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.size == 1) {
-            await sellStock(message, args);
+            try {
+                await sellStock(message, args);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when selling this stock. Please try again later.');
+            }
         }
         else {
-            await sellItem(message, args);
+            try {
+                await sellItem(message, args);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when selling this item. Please try again later.');
+            }
         }
-
     }
 };
 
@@ -41,7 +52,7 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         await message.reply(`You cannot own your own stock.`);
         return;
     }
-    
+
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only sell a whole number of shares.`);
         return;
@@ -58,34 +69,29 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         await message.reply(`You do not own any shares of this stock.`);
         return;
     }
+    const totalSold: number = -(await Users.addStock(message.author.id, stockUser.id, -quantity));
+    const totalReturn: number = latestStock.price * totalSold;
 
-    try {
-        const totalSold: number = -(await Users.addStock(message.author.id, stockUser.id, -quantity));
-        const totalReturn: number = latestStock.price * totalSold;
+    await Users.addBalance(message.author.id, totalReturn);
 
-        await Users.addBalance(message.author.id, totalReturn);
+    const pluralS: string = totalSold > 1 ?
+        "s" :
+        "";
+    const embed = new EmbedBuilder()
+        .setColor("Blurple")
+        .addFields({
+            name: `${formatNumber(totalSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
+            value: ' '
+        });
 
-        const pluralS: string = totalSold > 1 ?
-            "s" :
-            "";
-        const embed = new EmbedBuilder()
-            .setColor("Blurple")
-            .addFields({
-                name: `${formatNumber(totalSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
-                value: ' '
-            });
-
-        await message.reply({ embeds: [embed] });
-    } catch (error) {
-        console.error(error);
-    }
+    await message.reply({ embeds: [embed] });
 }
 
 async function sellItem(message: Message, args: string[]): Promise<void> {
     const itemName: string = findTextArgs(args)[0]?.toLowerCase() === 'all' ?
         findTextArgs(args)[1]?.toLowerCase() :
         findTextArgs(args)[0]?.toLowerCase();
-    
+
     const quantity: number = args.includes("all") ?
         99999 :
         (+findNumericArgs(args)[0] || 1);
@@ -94,14 +100,14 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
         await message.reply(`Please specify an item or stock.`);
         return;
     }
-    
+
     const item = await Items.get(itemName);
-    
+
     if (!item) {
         await message.reply(`That item does not exist.`);
         return;
     }
-    
+
     if (!Number.isInteger(quantity)) {
         await message.reply(`You can only sell a whole number of items.`);
         return;
@@ -118,22 +124,19 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
         await message.reply(`You do not have this item.`);
         return;
     }
-    
-    try {
-        const totalSold: number = -(await Users.addItem(message.author.id, itemName, -quantity));
-        const totalReturn: number = item.price * totalSold;
 
-        await Users.addBalance(message.author.id, totalReturn);
-        
-        const pluralS: string = totalSold > 1 ? "s" : "";
-        const embed = new EmbedBuilder()
-            .setColor("Blurple")
-            .addFields({
-                name: `${formatNumber(totalSold)} ${itemName}${pluralS} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
-                value: ' '
-            });
-        await message.reply({ embeds: [embed] });
-    } catch (error) {
-        console.error(error);
-    }
+
+    const totalSold: number = -(await Users.addItem(message.author.id, itemName, -quantity));
+    const totalReturn: number = item.price * totalSold;
+
+    await Users.addBalance(message.author.id, totalReturn);
+
+    const pluralS: string = totalSold > 1 ? "s" : "";
+    const embed = new EmbedBuilder()
+        .setColor("Blurple")
+        .addFields({
+            name: `${formatNumber(totalSold)} ${itemName}${pluralS} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
+            value: ' '
+        });
+    await message.reply({ embeds: [embed] });
 }
