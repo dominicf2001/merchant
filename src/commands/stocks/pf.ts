@@ -19,13 +19,15 @@ export default {
             try {
                 await sendPurchaseHistoryList(message, args);
             } catch (error) {
-                console.error("Error handling chart reply: ", error);
+                console.error(error);
+                await message.reply('An error occurred when getting your portfolio. Please try again later.');
             }
         } else {
             try {
                 await sendStockList(message, args);
             } catch (error) {
-                console.error("Error handling list reply: ", error);
+                console.error(error);
+                await message.reply('An error occurred when getting your portfolio. Please try again later.');
             }
         }
     }

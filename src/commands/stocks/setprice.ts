@@ -12,24 +12,25 @@ const data: Command = {
 };
 
 export default {
-	data: data,
+    data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        const stockUser = message.mentions.members.first();
-        const newPrice: number = +findNumericArgs(args);
-
-        if (!newPrice) {
-            await message.reply("Please specify a price.");
-            return;            
-        }
-        
-        if (message.author.id != "608852453315837964") {
-            await message.reply("You do not have permission to use this.");
-            return;
-        }
-
         try {
+            const stockUser = message.mentions.members.first();
+            const newPrice: number = +findNumericArgs(args);
+
+            if (!newPrice) {
+                await message.reply("Please specify a price.");
+                return;
+            }
+
+            if (message.author.id != "608852453315837964") {
+                await message.reply("You do not have permission to use this.");
+                return;
+            }
+
+
             await Stocks.updateStockPrice(stockUser.id, newPrice);
-            
+
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({
@@ -37,9 +38,10 @@ export default {
                     value: ` `
                 });
             await message.reply({ embeds: [embed] });
-        } catch(error) {
-            console.error("Error setting price: ", error);
-            await message.reply("Error setting price.");
+        }
+        catch (error) {
+            console.error(error);
+            await message.reply('An error occurred when setting the stock price. Please try again later.');
         }
     },
 };

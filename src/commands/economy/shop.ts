@@ -57,23 +57,28 @@ async function sendShopMenu(message: Message | ButtonInteraction, id: string, pa
 }
 
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isButton()) {
-        return;
+    try {
+        if (!interaction.isButton()) {
+            return;
+        }
+
+        const { customId } = interaction;
+
+        if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
+            return;
+
+        const authorId = interaction.message.mentions.users.first().id;
+        if (interaction.user.id !== authorId)
+            return;
+
+        let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
+        pageNum = (customId === `${SHOP_ID}Previous`) ?
+            pageNum = Math.max(pageNum - 1, 1) :
+            pageNum + 1;
+
+        await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     }
-    
-    const { customId } = interaction;
-
-    if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
-        return;
-
-    const authorId = interaction.message.mentions.users.first().id;
-    if (interaction.user.id !== authorId)
-        return;
-
-    let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-    pageNum = (customId === `${SHOP_ID}Previous`) ?
-        pageNum = Math.max(pageNum - 1, 1) :
-        pageNum + 1;
-    
-    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+    catch (error) {
+        console.error(error);
+    }
 });
