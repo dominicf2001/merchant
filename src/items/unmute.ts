@@ -1,4 +1,4 @@
-import { Message, inlineCode } from 'discord.js';
+import { Message, inlineCode, EmbedBuilder } from 'discord.js';
 import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 
 const data: Item = {
@@ -24,7 +24,14 @@ module.exports = {
         
         try {
             await target.timeout(null);
-            await message.reply(`<@${target.id}> has been unmuted.`);
+            const embed = new EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                    name: `${inlineCode(target.user.username)} has been unmuted`,
+                    value: ` `
+                });
+
+            await message.reply({ embeds: [embed] });
         } catch (error) {
             throw new Error(`Could not use unmute. Please try again.`);
         }

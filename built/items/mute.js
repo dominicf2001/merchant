@@ -28,12 +28,24 @@ exports.default = {
         const targetArmor = await db_objects_1.Users.getArmor(target.id);
         if (targetArmor) {
             await db_objects_1.Users.addArmor(target.id, -1);
-            await message.reply('Blocked by `armor`! This user is now exposed.');
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `Blocked by :shield: armor!`,
+                value: `This user is now exposed`
+            });
+            await message.reply({ embeds: [embed] });
             return;
         }
         try {
             await target.timeout(durationMs);
-            await message.reply(`<@${target.id}> has been muted for ${durationMin} minutes.`);
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `${(0, discord_js_1.inlineCode)(target.user.username)} has been muted for ${durationMin} minutes`,
+                value: ` `
+            });
+            await message.reply({ embeds: [embed] });
         }
         catch (error) {
             console.error(error);

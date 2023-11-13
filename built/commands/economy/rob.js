@@ -21,73 +21,79 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const robType = ((0, utilities_1.findTextArgs)(args)[0] ?? 'tendies');
-        const target = message.mentions.users.first();
-        // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
-        if (!target) {
-            await message.reply("Please specify a target.");
-            return;
-        }
-        if (target.id === message.author.id) {
-            await message.reply("You cannot rob yourself.");
-            return;
-        }
-        if (!isValidRobType(robType)) {
-            await message.reply("Invalid rob type.");
-            return;
-        }
-        // TODO: move to json
-        const TENDIES_ROB_CHANCE = 70;
-        const ITEM_ROB_CHANCE = 20;
-        const MAX_ITEM_COUNT = 5;
-        let reply = "";
-        switch (robType) {
-            case 'tendies':
-                if ((0, utilities_1.getRandomInt)(1, 100) > TENDIES_ROB_CHANCE) {
-                    const targetBalance = await db_objects_1.Users.getBalance(target.id);
-                    const robAmount = Math.floor(targetBalance * (0, utilities_1.getRandomFloat)(.01, .10));
-                    await db_objects_1.Users.addBalance(message.author.id, robAmount);
-                    await db_objects_1.Users.addBalance(target.id, -robAmount);
-                    reply = `You have robbed ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(robAmount)} from: ${(0, discord_js_1.inlineCode)(target.username)}.`;
-                }
-                else {
-                    const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
-                    const penaltyAmount = Math.floor(authorBalance * (0, utilities_1.getRandomFloat)(.03, .15));
-                    await db_objects_1.Users.addBalance(message.author.id, -penaltyAmount);
-                    reply = `You failed at robbing ${(0, discord_js_1.inlineCode)(target.username)}. You have been fined ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(penaltyAmount)} `;
-                }
-                break;
-            case 'item':
-                if ((0, utilities_1.getRandomInt)(1, 100) > ITEM_ROB_CHANCE) {
-                    const targetItems = await db_objects_1.Users.getItems(target.id);
-                    const authorItemCount = await db_objects_1.Users.getItemCount(message.author.id);
-                    if (authorItemCount >= MAX_ITEM_COUNT) {
-                        await message.reply("Your inventory is full.");
-                        return;
+        try {
+            const robType = ((0, utilities_1.findTextArgs)(args)[0] ?? 'tendies');
+            const target = message.mentions.users.first();
+            // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
+            if (!target) {
+                await message.reply("Please specify a target.");
+                return;
+            }
+            if (target.id === message.author.id) {
+                await message.reply("You cannot rob yourself.");
+                return;
+            }
+            if (!isValidRobType(robType)) {
+                await message.reply("Invalid rob type.");
+                return;
+            }
+            // TODO: move to json
+            const TENDIES_ROB_CHANCE = 70;
+            const ITEM_ROB_CHANCE = 20;
+            const MAX_ITEM_COUNT = 5;
+            let reply = "";
+            switch (robType) {
+                case 'tendies':
+                    if ((0, utilities_1.getRandomInt)(1, 100) > TENDIES_ROB_CHANCE) {
+                        const targetBalance = await db_objects_1.Users.getBalance(target.id);
+                        const robAmount = Math.floor(targetBalance * (0, utilities_1.getRandomFloat)(.01, .10));
+                        await db_objects_1.Users.addBalance(message.author.id, robAmount);
+                        await db_objects_1.Users.addBalance(target.id, -robAmount);
+                        reply = `You have robbed ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(robAmount)} from: ${(0, discord_js_1.inlineCode)(target.username)}.`;
                     }
-                    if (!targetItems.length) {
-                        await message.reply("This user has no items.");
-                        return;
+                    else {
+                        const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
+                        const penaltyAmount = Math.floor(authorBalance * (0, utilities_1.getRandomFloat)(.03, .15));
+                        await db_objects_1.Users.addBalance(message.author.id, -penaltyAmount);
+                        reply = `You failed at robbing ${(0, discord_js_1.inlineCode)(target.username)}. You have been fined ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(penaltyAmount)} `;
                     }
-                    const item = targetItems[Math.floor(Math.random() * targetItems.length)];
-                    await db_objects_1.Users.addItem(target.id, item.item_id, -1);
-                    await db_objects_1.Users.addItem(message.author.id, item.item_id, 1);
-                    reply = `You have robbed ${item.item_id} from: ${(0, discord_js_1.inlineCode)(target.username)}.`;
-                }
-                else {
-                    const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
-                    const penaltyAmount = Math.floor(authorBalance * (0, utilities_1.getRandomFloat)(.03, .15));
-                    await db_objects_1.Users.addBalance(message.author.id, -penaltyAmount);
-                    reply = `You failed at robbing ${(0, discord_js_1.inlineCode)(target.username)}. You have been fined ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(penaltyAmount)} `;
-                }
-                break;
+                    break;
+                case 'item':
+                    if ((0, utilities_1.getRandomInt)(1, 100) > ITEM_ROB_CHANCE) {
+                        const targetItems = await db_objects_1.Users.getItems(target.id);
+                        const authorItemCount = await db_objects_1.Users.getItemCount(message.author.id);
+                        if (authorItemCount >= MAX_ITEM_COUNT) {
+                            await message.reply("Your inventory is full.");
+                            return;
+                        }
+                        if (!targetItems.length) {
+                            await message.reply("This user has no items.");
+                            return;
+                        }
+                        const item = targetItems[Math.floor(Math.random() * targetItems.length)];
+                        await db_objects_1.Users.addItem(target.id, item.item_id, -1);
+                        await db_objects_1.Users.addItem(message.author.id, item.item_id, 1);
+                        reply = `You have robbed ${item.item_id} from: ${(0, discord_js_1.inlineCode)(target.username)}.`;
+                    }
+                    else {
+                        const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
+                        const penaltyAmount = Math.floor(authorBalance * (0, utilities_1.getRandomFloat)(.03, .15));
+                        await db_objects_1.Users.addBalance(message.author.id, -penaltyAmount);
+                        reply = `You failed at robbing ${(0, discord_js_1.inlineCode)(target.username)}. You have been fined ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(penaltyAmount)} `;
+                    }
+                    break;
+            }
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: reply,
+                value: ` `
+            });
+            await message.reply({ embeds: [embed] });
         }
-        const embed = new discord_js_1.EmbedBuilder()
-            .setColor("Blurple")
-            .setFields({
-            name: reply,
-            value: ` `
-        });
-        await message.reply({ embeds: [embed] });
-    },
+        catch (error) {
+            console.error(error);
+            await message.reply('An error occurred when robbing. Please try again later.');
+        }
+    }
 };

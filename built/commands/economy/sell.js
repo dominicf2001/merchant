@@ -14,10 +14,22 @@ exports.default = {
     data: data,
     async execute(message, args) {
         if (message.mentions.users.size == 1) {
-            await sellStock(message, args);
+            try {
+                await sellStock(message, args);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when selling this stock. Please try again later.');
+            }
         }
         else {
-            await sellItem(message, args);
+            try {
+                await sellItem(message, args);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when selling this item. Please try again later.');
+            }
         }
     }
 };
@@ -48,24 +60,19 @@ async function sellStock(message, args) {
         await message.reply(`You do not own any shares of this stock.`);
         return;
     }
-    try {
-        const totalSold = -(await db_objects_1.Users.addStock(message.author.id, stockUser.id, -quantity));
-        const totalReturn = latestStock.price * totalSold;
-        await db_objects_1.Users.addBalance(message.author.id, totalReturn);
-        const pluralS = totalSold > 1 ?
-            "s" :
-            "";
-        const embed = new discord_js_1.EmbedBuilder()
-            .setColor("Blurple")
-            .addFields({
-            name: `${(0, utilities_1.formatNumber)(totalSold)} share${pluralS} of ${(0, discord_js_1.inlineCode)(stockUser.tag)} sold for ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(totalReturn)}`,
-            value: ' '
-        });
-        await message.reply({ embeds: [embed] });
-    }
-    catch (error) {
-        console.error(error);
-    }
+    const totalSold = -(await db_objects_1.Users.addStock(message.author.id, stockUser.id, -quantity));
+    const totalReturn = latestStock.price * totalSold;
+    await db_objects_1.Users.addBalance(message.author.id, totalReturn);
+    const pluralS = totalSold > 1 ?
+        "s" :
+        "";
+    const embed = new discord_js_1.EmbedBuilder()
+        .setColor("Blurple")
+        .addFields({
+        name: `${(0, utilities_1.formatNumber)(totalSold)} share${pluralS} of ${(0, discord_js_1.inlineCode)(stockUser.tag)} sold for ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(totalReturn)}`,
+        value: ' '
+    });
+    await message.reply({ embeds: [embed] });
 }
 async function sellItem(message, args) {
     const itemName = (0, utilities_1.findTextArgs)(args)[0]?.toLowerCase() === 'all' ?
@@ -96,20 +103,15 @@ async function sellItem(message, args) {
         await message.reply(`You do not have this item.`);
         return;
     }
-    try {
-        const totalSold = -(await db_objects_1.Users.addItem(message.author.id, itemName, -quantity));
-        const totalReturn = item.price * totalSold;
-        await db_objects_1.Users.addBalance(message.author.id, totalReturn);
-        const pluralS = totalSold > 1 ? "s" : "";
-        const embed = new discord_js_1.EmbedBuilder()
-            .setColor("Blurple")
-            .addFields({
-            name: `${(0, utilities_1.formatNumber)(totalSold)} ${itemName}${pluralS} sold for ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(totalReturn)}`,
-            value: ' '
-        });
-        await message.reply({ embeds: [embed] });
-    }
-    catch (error) {
-        console.error(error);
-    }
+    const totalSold = -(await db_objects_1.Users.addItem(message.author.id, itemName, -quantity));
+    const totalReturn = item.price * totalSold;
+    await db_objects_1.Users.addBalance(message.author.id, totalReturn);
+    const pluralS = totalSold > 1 ? "s" : "";
+    const embed = new discord_js_1.EmbedBuilder()
+        .setColor("Blurple")
+        .addFields({
+        name: `${(0, utilities_1.formatNumber)(totalSold)} ${item.emoji_code} ${itemName}${pluralS} sold for ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(totalReturn)}`,
+        value: ' '
+    });
+    await message.reply({ embeds: [embed] });
 }

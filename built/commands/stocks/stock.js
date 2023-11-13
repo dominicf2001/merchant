@@ -26,7 +26,8 @@ exports.default = {
                 await sendStockChart(message, args);
             }
             catch (error) {
-                console.error("Error handling chart reply: ", error);
+                console.error(error);
+                await message.reply('An error occurred when getting this stock. Please try again later.');
             }
         }
         else {
@@ -35,7 +36,8 @@ exports.default = {
                 await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
             }
             catch (error) {
-                console.error("Error handling list reply: ", error);
+                console.error(error);
+                await message.reply('An error occurred when getting the stocks. Please try again later.');
             }
         }
     },
@@ -165,8 +167,10 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
         const arrow = (currentPrice - previousPrice) < 0 ?
             utilities_1.STOCKDOWN_EMOJI_CODE :
             utilities_1.STOCKUP_EMOJI_CODE;
-        paginatedMenu.addFields({ name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(stock.price)}`,
-            value: `${"Previous tick:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}` });
+        paginatedMenu.addFields({
+            name: `${arrow} ${(0, discord_js_1.inlineCode)(username)} - ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(stock.price)}`,
+            value: `${"Previous tick:"} ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(previousPrice)}`
+        });
         ++i;
     }
     ;
@@ -177,18 +181,23 @@ async function sendStockList(message, id, pageSize = 5, pageNum = 1) {
         await message.reply({ embeds: [embed], components: [buttons] });
 }
 index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isButton()) {
-        return;
+    try {
+        if (!interaction.isButton()) {
+            return;
+        }
+        const { customId } = interaction;
+        if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
+            return;
+        const authorId = interaction.message.mentions.users.first().id;
+        if (interaction.user.id !== authorId)
+            return;
+        let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
+        pageNum = (customId === `${STOCK_LIST_ID}Previous`) ?
+            pageNum = Math.max(pageNum - 1, 1) :
+            pageNum + 1;
+        await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
     }
-    const { customId } = interaction;
-    if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
-        return;
-    const authorId = interaction.message.mentions.users.first().id;
-    if (interaction.user.id !== authorId)
-        return;
-    let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-    pageNum = (customId === `${STOCK_LIST_ID}Previous`) ?
-        pageNum = Math.max(pageNum - 1, 1) :
-        pageNum + 1;
-    await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
+    catch (error) {
+        console.error(error);
+    }
 });

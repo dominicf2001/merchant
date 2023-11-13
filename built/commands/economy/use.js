@@ -13,22 +13,28 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        let itemName = (0, utilities_1.findTextArgs)(args)[0];
-        if (!itemName) {
-            await message.reply("Please specifiy an item.");
-            return;
-        }
-        const item = await db_objects_1.Users.getItem(message.author.id, itemName);
-        if (!item) {
-            await message.reply("You do not have this item!");
-            return;
-        }
         try {
-            await db_objects_1.Items.use(itemName, message, args);
-            await db_objects_1.Users.addItem(message.author.id, itemName, -1);
+            let itemName = (0, utilities_1.findTextArgs)(args)[0];
+            if (!itemName) {
+                await message.reply("Please specifiy an item.");
+                return;
+            }
+            const item = await db_objects_1.Users.getItem(message.author.id, itemName);
+            if (!item) {
+                await message.reply("You do not have this item!");
+                return;
+            }
+            try {
+                await db_objects_1.Items.use(itemName, message, args.slice(1));
+                await db_objects_1.Users.addItem(message.author.id, itemName, -1);
+            }
+            catch (error) {
+                await message.reply(error.message);
+            }
         }
         catch (error) {
-            await message.reply(error.message);
+            console.error(error);
+            await message.reply('An error occurred when using this item. Please try again later.');
         }
-    },
+    }
 };

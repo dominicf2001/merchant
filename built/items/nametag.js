@@ -13,8 +13,8 @@ const data = {
 exports.default = {
     data: data,
     async use(message, args) {
-        const target = message.mentions.members.first();
-        const newNickname = (0, utilities_1.findTextArgs)(args).slice(1).join(" ");
+        const target = message.mentions.members.first() ?? message.member;
+        const newNickname = (0, utilities_1.findTextArgs)(args).join(" ");
         if (!target) {
             throw new Error('Please specify a target.');
         }
@@ -30,12 +30,24 @@ exports.default = {
         const targetArmor = await db_objects_1.Users.getArmor(target.id);
         if (targetArmor && message.author.id !== target.id) {
             await db_objects_1.Users.addArmor(target.id, -1);
-            await message.reply('Blocked by `armor`! This user is now exposed.');
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `Blocked by :shield: armor!`,
+                value: `This user is now exposed`
+            });
+            await message.reply({ embeds: [embed] });
             return;
         }
         try {
             await target.setNickname(newNickname);
-            await message.reply(`Nickname of <@${target.id}> has been changed to ${newNickname}`);
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `${(0, discord_js_1.inlineCode)(target.user.username)}'s nickname has been changed`,
+                value: ` `
+            });
+            await message.reply({ embeds: [embed] });
         }
         catch (error) {
             // TODO: make an explicit permissions check?

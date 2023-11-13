@@ -12,17 +12,18 @@ const data = {
 exports.default = {
     data: data,
     async use(message, args) {
-        const msgToSend = (0, utilities_1.findTextArgs)(args).slice(1).join(" ");
+        const msgToSend = (0, utilities_1.findTextArgs)(args).join(" ");
         const attachmentsArray = [...message.attachments.values()];
         if (!msgToSend && message.attachments.size === 0) {
             throw new Error("You need to provide a message or an attachment.");
         }
         await message.delete();
-        await message.channel.send({
-            content: msgToSend ?
-                `@everyone\n\n <@${message.author.id}> says: ${(0, discord_js_1.inlineCode)(msgToSend)}` :
-                '@everyone',
-            files: attachmentsArray,
+        const embed = new discord_js_1.EmbedBuilder()
+            .setColor("Blurple")
+            .setFields({
+            name: `${msgToSend}`,
+            value: `${(0, discord_js_1.inlineCode)('-')} <@${message.author.id}>`
         });
+        await message.channel.send({ content: '@everyone', embeds: [embed], files: attachmentsArray, });
     }
 };

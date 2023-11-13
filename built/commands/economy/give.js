@@ -13,34 +13,40 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const target = message.mentions.users.first();
-        if (!target) {
-            await message.reply("Please specify a target.");
-            return;
+        try {
+            const target = message.mentions.users.first();
+            if (!target) {
+                await message.reply("Please specify a target.");
+                return;
+            }
+            let authorBalance = await db_objects_1.Users.getBalance(message.author.id);
+            const transferAmount = +(0, utilities_1.findNumericArgs)(args)[0];
+            if (!transferAmount || transferAmount <= 0) {
+                await message.reply(`Specify more than zero tendies.`);
+                return;
+            }
+            if (!Number.isInteger(transferAmount)) {
+                await message.reply(`You can only give a whole number of tendies.`);
+                return;
+            }
+            if (transferAmount > authorBalance) {
+                await message.reply(`You only have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} tendies.`);
+                return;
+            }
+            await db_objects_1.Users.addBalance(message.author.id, -transferAmount);
+            authorBalance -= transferAmount;
+            await db_objects_1.Users.addBalance(target.id, +transferAmount);
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(transferAmount)} transferred to: ${(0, discord_js_1.inlineCode)(target.username)}`,
+                value: `You have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} remaining`
+            });
+            await message.reply({ embeds: [embed] });
         }
-        let authorBalance = await db_objects_1.Users.getBalance(message.author.id);
-        const transferAmount = +(0, utilities_1.findNumericArgs)(args)[0];
-        if (!transferAmount || transferAmount <= 0) {
-            await message.reply(`Specify more than zero tendies.`);
-            return;
+        catch (error) {
+            console.error(error);
+            await message.reply('An error occurred when giving. Please try again later.');
         }
-        if (!Number.isInteger(transferAmount)) {
-            await message.reply(`You can only give a whole number of tendies.`);
-            return;
-        }
-        if (transferAmount > authorBalance) {
-            await message.reply(`You only have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} tendies.`);
-            return;
-        }
-        await db_objects_1.Users.addBalance(message.author.id, -transferAmount);
-        authorBalance -= transferAmount;
-        await db_objects_1.Users.addBalance(target.id, +transferAmount);
-        const embed = new discord_js_1.EmbedBuilder()
-            .setColor("Blurple")
-            .setFields({
-            name: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(transferAmount)} transferred to: ${(0, discord_js_1.inlineCode)(target.username)}`,
-            value: `You have ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)} remaining`
-        });
-        await message.reply({ embeds: [embed] });
-    },
+    }
 };

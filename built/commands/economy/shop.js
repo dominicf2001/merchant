@@ -16,8 +16,14 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
-        await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        try {
+            const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
+            await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        }
+        catch (error) {
+            console.error(error);
+            await message.reply('An error occurred when getting the shop. Please try again later.');
+        }
     }
 };
 // TODO: abstract this?
@@ -43,18 +49,23 @@ async function sendShopMenu(message, id, pageSize = 5, pageNum = 1) {
         await message.reply({ embeds: [embed], components: [buttons] });
 }
 index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isButton()) {
-        return;
+    try {
+        if (!interaction.isButton()) {
+            return;
+        }
+        const { customId } = interaction;
+        if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
+            return;
+        const authorId = interaction.message.mentions.users.first().id;
+        if (interaction.user.id !== authorId)
+            return;
+        let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
+        pageNum = (customId === `${SHOP_ID}Previous`) ?
+            pageNum = Math.max(pageNum - 1, 1) :
+            pageNum + 1;
+        await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     }
-    const { customId } = interaction;
-    if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
-        return;
-    const authorId = interaction.message.mentions.users.first().id;
-    if (interaction.user.id !== authorId)
-        return;
-    let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-    pageNum = (customId === `${SHOP_ID}Previous`) ?
-        pageNum = Math.max(pageNum - 1, 1) :
-        pageNum + 1;
-    await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+    catch (error) {
+        console.error(error);
+    }
 });

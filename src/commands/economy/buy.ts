@@ -152,7 +152,7 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .addFields({
-            name: `${formatNumber(totalBought)} ${item.item_id}${pluralS} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
+            name: `${formatNumber(totalBought)} ${item.emoji_code} ${item.item_id}${pluralS} bought for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalCost)}`,
             value: ' '
         });
     await message.reply({ embeds: [embed] });

@@ -13,10 +13,16 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
-        const embed = new discord_js_1.EmbedBuilder()
-            .setColor("Blurple")
-            .addFields({ value: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)}`, name: `Balance` });
-        await message.reply({ embeds: [embed] });
+        try {
+            const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .addFields({ value: `${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(authorBalance)}`, name: `Balance` });
+            await message.reply({ embeds: [embed] });
+        }
+        catch (error) {
+            console.error('An error occurred: ', error);
+            await message.reply('An error occurred when getting your balance. Please try again later.');
+        }
     },
 };

@@ -18,38 +18,50 @@ exports.default = {
     data: data,
     async execute(message, args) {
         if (args.length) {
-            const name = (0, utilities_1.findTextArgs)(args)[0].toLowerCase();
-            const embed = new discord_js_1.EmbedBuilder()
-                .setColor("Blurple")
-                .setTitle(`${name}`);
-            const command = await db_objects_1.Commands.get(name);
-            if (command) {
-                const adminSpecifier = command.is_admin ?
-                    " (admin)" :
-                    "";
-                embed.addFields({
-                    name: `${command.command_id}${adminSpecifier}`,
-                    value: ` `
-                });
-                embed.setDescription(`${command.description}`);
-                await message.reply({ embeds: [embed] });
-                return;
+            try {
+                const name = (0, utilities_1.findTextArgs)(args)[0].toLowerCase();
+                const embed = new discord_js_1.EmbedBuilder()
+                    .setColor("Blurple")
+                    .setTitle(`${name}`);
+                const command = await db_objects_1.Commands.get(name);
+                if (command) {
+                    const adminSpecifier = command.is_admin ?
+                        " (admin)" :
+                        "";
+                    embed.addFields({
+                        name: `${command.command_id}${adminSpecifier}`,
+                        value: ` `
+                    });
+                    embed.setDescription(`${command.description}`);
+                    await message.reply({ embeds: [embed] });
+                    return;
+                }
+                const item = await db_objects_1.Items.get(name);
+                if (item) {
+                    embed.addFields({
+                        name: `${item.item_id}`,
+                        value: ` `
+                    });
+                    embed.setDescription(`${item.description}`);
+                    await message.reply({ embeds: [embed] });
+                    return;
+                }
+                await message.reply("This item or command does not exist.");
             }
-            const item = await db_objects_1.Items.get(name);
-            if (item) {
-                embed.addFields({
-                    name: `${item.item_id}`,
-                    value: ` `
-                });
-                embed.setDescription(`${item.description}`);
-                await message.reply({ embeds: [embed] });
-                return;
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when getting help for this item or command. Please try again later.');
             }
-            await message.reply("This item or command does not exist.");
         }
         else {
-            const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
-            await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
+            try {
+                const pageNum = +(0, utilities_1.findNumericArgs)(args)[0] || 1;
+                await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
+            }
+            catch (error) {
+                console.error(error);
+                await message.reply('An error occurred when getting help. Please try again later.');
+            }
         }
     }
 };
@@ -77,18 +89,23 @@ async function sendHelpMenu(message, id, pageSize = 5, pageNum = 1) {
         await message.reply({ embeds: [embed], components: [buttons] });
 }
 index_1.client.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isButton()) {
-        return;
+    try {
+        if (!interaction.isButton()) {
+            return;
+        }
+        const { customId } = interaction;
+        if (![`${HELP_ID}Previous`, `${HELP_ID}Next`].includes(customId))
+            return;
+        const authorId = interaction.message.mentions.users.first().id;
+        if (interaction.user.id !== authorId)
+            return;
+        let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
+        pageNum = (customId === `${HELP_ID}Previous`) ?
+            pageNum = Math.max(pageNum - 1, 1) :
+            pageNum + 1;
+        await sendHelpMenu(interaction, HELP_ID, HELP_PAGE_SIZE, pageNum);
     }
-    const { customId } = interaction;
-    if (![`${HELP_ID}Previous`, `${HELP_ID}Next`].includes(customId))
-        return;
-    const authorId = interaction.message.mentions.users.first().id;
-    if (interaction.user.id !== authorId)
-        return;
-    let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-    pageNum = (customId === `${HELP_ID}Previous`) ?
-        pageNum = Math.max(pageNum - 1, 1) :
-        pageNum + 1;
-    await sendHelpMenu(interaction, HELP_ID, HELP_PAGE_SIZE, pageNum);
+    catch (error) {
+        console.error(error);
+    }
 });

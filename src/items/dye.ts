@@ -1,4 +1,4 @@
-import { Message, Colors, ColorResolvable, inlineCode } from 'discord.js';
+import { Message, Colors, ColorResolvable, inlineCode, EmbedBuilder } from 'discord.js';
 import { findTextArgs, toUpperCaseString } from '../utilities';
 import { Users } from '../database/db-objects';
 import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
@@ -15,18 +15,20 @@ export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
         const target = message.mentions.members.first();
-		const color = toUpperCaseString(findTextArgs(args)[1]) as ColorResolvable & string;
-        
-        if (!color) {
+        const colorArg: string = findTextArgs(args)[0];
+
+        if (!colorArg) {
             throw new Error('Please specify a color.');
+        }
+        
+		const color = toUpperCaseString(colorArg) as ColorResolvable & string;
+
+        if (!target) {
+            throw new Error('Please specify a target.');
         }
         
         if (!Colors[color]){
             throw new Error('Invalid color.');
-        }
-
-        if (!target) {
-            throw new Error('Please specify a target.');
         }
 
         if (!target.moderatable) {
@@ -36,7 +38,14 @@ export default {
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor && message.author.id !== target.id) {
             await Users.addArmor(target.id, -1);
-            await message.channel.send('Blocked by `armor`! This user is now exposed.');
+            const embed = new EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                    name: `Blocked by :shield: armor!`,
+                    value: `This user is now exposed`
+                });
+
+            await message.reply({ embeds: [embed] });
             return;
         }
 
@@ -59,10 +68,17 @@ export default {
             const highestPosition = message.guild.roles.highest.position;
             await colorRole.setPosition(highestPosition - 1);
 
-            await message.reply(`<@${target.id}>'s color has been changed to ${color}`);
+            const embed = new EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                    name: `${inlineCode(target.user.username)}'s color has been changed to ${color}`,
+                    value: ` `
+                });
+
+            await message.reply({ embeds: [embed] });
         } catch (error) {
             console.error(error);
-            throw new Error("Could not use dye. Please try again.");
+            throw new Error("An error occurred when using dye. Please try again later.");
         }
     }
 }

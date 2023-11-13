@@ -20,7 +20,13 @@ module.exports = {
         }
         try {
             await target.timeout(null);
-            await message.reply(`<@${target.id}> has been unmuted.`);
+            const embed = new discord_js_1.EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                name: `${(0, discord_js_1.inlineCode)(target.user.username)} has been unmuted`,
+                value: ` `
+            });
+            await message.reply({ embeds: [embed] });
         }
         catch (error) {
             throw new Error(`Could not use unmute. Please try again.`);

@@ -23,12 +23,6 @@ export default {
                 return;
             }
 
-            if (message.author.id != "608852453315837964") {
-                await message.reply("You do not have permission to use this.");
-                return;
-            }
-
-
             await Stocks.updateStockPrice(stockUser.id, newPrice);
 
             const embed = new EmbedBuilder()

@@ -18,12 +18,6 @@ export default {
             const newBalance: number = +findNumericArgs(args)[0];
             const target = message.mentions.users.first() ?? message.author;
 
-            // TODO: pull or lookup
-            if (message.author.id != "608852453315837964") {
-                await message.reply("You do not have permission to use this.");
-                return;
-            }
-
             if (!newBalance) {
                 await message.reply("You must specify a balance.");
                 return;
@@ -39,7 +33,7 @@ export default {
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({
-                    name: `${inlineCode(userMention(target.id))}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
+                    name: `${inlineCode(target.username)}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
                     value: ` `
                 });
 

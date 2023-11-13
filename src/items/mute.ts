@@ -1,4 +1,4 @@
-import { Message, inlineCode } from 'discord.js';
+import { Message, inlineCode, EmbedBuilder } from 'discord.js';
 import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 import { Users } from '../database/db-objects';
 
@@ -34,13 +34,28 @@ export default {
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor) {
             await Users.addArmor(target.id, -1);
-            await message.reply('Blocked by `armor`! This user is now exposed.');
+
+            const embed = new EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                    name: `Blocked by :shield: armor!`,
+                    value: `This user is now exposed`
+                });
+
+            await message.reply({ embeds: [embed] });
             return;
         }
         
         try {
             await target.timeout(durationMs);
-            await message.reply(`<@${target.id}> has been muted for ${durationMin} minutes.`);
+            const embed = new EmbedBuilder()
+                .setColor("Blurple")
+                .setFields({
+                    name: `${inlineCode(target.user.username)} has been muted for ${durationMin} minutes`,
+                    value: ` `
+                });
+
+            await message.reply({ embeds: [embed] });
         } catch (error) {
             console.error(error);
             throw new Error(`Could not use mute. Please try again.`);

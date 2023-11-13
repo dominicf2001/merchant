@@ -13,17 +13,13 @@ const data = {
 exports.default = {
     data: data,
     async execute(message, args) {
-        const stockUser = message.mentions.members.first();
-        const newPrice = +(0, utilities_1.findNumericArgs)(args);
-        if (!newPrice) {
-            await message.reply("Please specify a price.");
-            return;
-        }
-        if (message.author.id != "608852453315837964") {
-            await message.reply("You do not have permission to use this.");
-            return;
-        }
         try {
+            const stockUser = message.mentions.members.first();
+            const newPrice = +(0, utilities_1.findNumericArgs)(args);
+            if (!newPrice) {
+                await message.reply("Please specify a price.");
+                return;
+            }
             await db_objects_1.Stocks.updateStockPrice(stockUser.id, newPrice);
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
@@ -34,8 +30,8 @@ exports.default = {
             await message.reply({ embeds: [embed] });
         }
         catch (error) {
-            console.error("Error setting price: ", error);
-            await message.reply("Error setting price.");
+            console.error(error);
+            await message.reply('An error occurred when setting the stock price. Please try again later.');
         }
     },
 };
