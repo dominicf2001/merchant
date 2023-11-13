@@ -1,122 +1,59 @@
-// const { getBalance, getActivity, setActivity } = require("./database/utilities/userUtilities.js");
-// const { getPortfolioValue, getStockPurchasedShares, setStockPrice, getAllLatestStocks } = require("./database/utilities/stockUtilities.js");
-// const { getRandomFloat } = require("./utilities.js");
-// const { getNetWorth } = require("./database/utilities/userUtilities.js");
-// const fs = require('fs');
-// const path = require('path');
-// const { Users, Stocks } = require("./database/dbObjects.js");
-// const { Op, Sequelize } = require("sequelize");
-// const sequelize = new Sequelize('database', 'username', 'password', {
-// 	host: 'localhost',
-// 	dialect: 'sqlite',
-//     logging: false,
-//     storage: './database/database.sqlite'
-// });
+import { Users, Stocks } from './database/db-objects';
 
-// const WEIGHTS = {
-//     share: 0.02,
-//     activity: 0.07,
-//     random: 0.04,
-//     netWorth: 0.01,
-//     price: 0.92
-// };
+// New Price = Current Price + (Momentum Factor * Momentum Multiplier) + Activity Impact + Volatility Impact + External Factors − Decay Rate
+export async function updateStockPrices(): Promise<void> {
+    const BASELINE_ACTIVITY = 50;
+    const ACTIVITY_SCALE_FACTOR = 0.1;
+    
+    const BASELINE_VOLATILITY = 10;
+    const VOLATILITY_SCALE_FACTOR = 0.05;
+    
+    const MOMENTUM_MULTIPLIER = 0.1;
+    
+    const SMOOTHING_FACTOR = 0.3;
+    const DECAY_RATE = .05;
+    
+    const allUsers = await Users.getAll();
 
-// const BASE_PRICE = 29;
-// const SCALING_FACTOR = 20;
-// const DECAY_RATE = 0.006;
+    await Promise.all(allUsers.map(async user => {
+        const oldPrice = (await Stocks.getLatestStock(user.user_id)).price;
+        const activityPoints = user.activity_points;
+        const prevEMA = user.activity_points_ema;
+        const prevEMSD = user.activity_points_emsd;
 
-// function getRandomFactor() {
-//     const direction = Math.random() < 0.5 ? -1 : 1;
-//     return getRandomFloat(10, 50) * direction;
-// }
+        // calculate new EMA and EMSD
+        const newEMA = (activityPoints * SMOOTHING_FACTOR) + (prevEMA * (1 - SMOOTHING_FACTOR));
 
-// function calculateDecayedActivity(activity, lastActiveTime) {
-//     const currentTime = Date.now();
-//     const timeDifference = currentTime - lastActiveTime;
-//     const timeDifferenceInHours = timeDifference / 1000 / 60 / 60;
+        const deviation = activityPoints - newEMA;
+        const squaredDeviation = Math.pow(deviation, 2);
+        const newEMSD = (squaredDeviation * SMOOTHING_FACTOR) + (prevEMSD * (1 - SMOOTHING_FACTOR));
 
-//     const decayedActivity = activity * Math.exp(-DECAY_RATE * timeDifferenceInHours);
+        // calculate momentum
+        const momentum = newEMA - prevEMA;
+        const momentumImpact = momentum * MOMENTUM_MULTIPLIER;
+        
+        // calculate impacts
+        const activityImpact = ((newEMA - BASELINE_ACTIVITY) / BASELINE_ACTIVITY) * ACTIVITY_SCALE_FACTOR;
+        const volatilityImpact = ((newEMSD - BASELINE_VOLATILITY) / BASELINE_VOLATILITY) * VOLATILITY_SCALE_FACTOR;
+        const decayImpact = oldPrice * DECAY_RATE;
 
-//     return decayedActivity;
-// }
+        // calculate new price - TODO: momentum
+        const newPrice = oldPrice + momentumImpact + activityImpact + volatilityImpact - decayImpact;
 
-// function calculateAmount(weights, purchasedShares, activity, randomFactor, netWorth, stockPrice, shockFactor) {
-//     const weightedSum = (
-//         purchasedShares * weights.share +
-//         activity +
-//         randomFactor * weights.random +
-//         netWorth * weights.netWorth +
-//         stockPrice * weights.price +
-//         shockFactor
-//     );
+        // update storage
+        await Users.set(user.user_id, {
+            activity_points_ema: newEMA,
+            activity_points_emsd: newEMSD,
+            activity_points: 0
+        });
 
-//     const weightedDivisor = (weights.share + weights.activity + weights.random + weights.netWorth + weights.price);
+        await Stocks.updateStockPrice(user.user_id, newPrice);
+    }));
+}
 
-//     let amount = BASE_PRICE + weightedSum / weightedDivisor;
 
-//     return amount < 0 ? 0 : amount;
-// }
 
-// let shockFactors = {};
-// let shockIntensities = {};
-// function getShockFactorForStock(stockId) {
-//     const chance = Math.random();
-//     if(shockFactors[stockId] === undefined || shockFactors[stockId] === 0) {
-//         if(chance < 0.03) {
-//             console.log("Shock has occured");
-//             shockFactors[stockId] = getRandomFloat(-13, -2);
-//             shockIntensities[stockId] = getRandomFloat(0.70, 0.95);
-//         } else if(chance < 0.05) {
-//             console.log("Shock has occured");
-//             shockFactors[stockId] = getRandomFloat(2, 13);
-//             shockIntensities[stockId] = getRandomFloat(0.70, 0.95);
-//         } else {
-//             shockFactors[stockId] = 0;
-//             shockIntensities[stockId] = 1;
-//         }
-//     }
-//     return shockFactors[stockId];
-// }
 
-// async function calculateAndUpdateStocks(){
-//     console.log("Recalculating stocks...");
-//     try {
-//         const latestStocks = await getAllLatestStocks();
-//         for (let latestStock of latestStocks) {
-//             const user = await Users.findOne({
-//                 where: {
-//                     user_id: latestStock.user_id
-//                 }
-//             });
-//             if (!user) continue;
-
-//             let activity = getActivity(user.user_id);
-//             const lastActiveDate = user.last_active_date ? new Date(user.last_active_date) : new Date();
-//             activity = calculateDecayedActivity(activity, lastActiveDate);
-
-//             const netWorth = SCALING_FACTOR * Math.log(1 + (await getNetWorth(user.user_id)));
-//             const randomFactor = getRandomFactor();
-//             const purchasedShares = SCALING_FACTOR * Math.log(1 + (await getStockPurchasedShares(user.user_id)));
-
-//             let shockFactorForThisStock = getShockFactorForStock(latestStock.id);
-
-//             const amount = calculateAmount(WEIGHTS, purchasedShares, activity, randomFactor, netWorth, latestStock.price, shockFactorForThisStock);
-
-//             setStockPrice(user.user_id, Math.round(amount));
-//             setActivity(user.user_id, activity);
-
-//             if (shockFactorForThisStock !== 0) {
-//                 shockFactors[latestStock.id] *= shockIntensities[latestStock.id];
-//                 if (Math.abs(shockFactors[latestStock.id]) < 0.01) {
-//                     shockFactors[latestStock.id] = 0;
-//                 }
-//             }
-//         }
-//         console.log("Finished recalculating stocks.");
-//     } catch (error) {
-//         console.error(error);
-//     }
-// }
 
 // // TODO: move to a function on Stocks
 // async function stockCleanUp() {

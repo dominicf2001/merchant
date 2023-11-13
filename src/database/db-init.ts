@@ -41,6 +41,10 @@ async function main() {
                 col.notNull().defaultTo(0).check(sql`balance >= 0`))
             .addColumn('activity_points', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`activity_points >= 0`))
+            .addColumn('activity_points_ema', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`activity_points_ema >= 0`))
+            .addColumn('activity_points_emsd', 'integer', col =>
+                col.notNull().defaultTo(0).check(sql`activity_points_emsd >= 0`))
             .addColumn('last_activity_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
             .addColumn('armor', 'integer', col =>
