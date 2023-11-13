@@ -1,5 +1,5 @@
 import { Users, Items, Stocks } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
+import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs, MAX_INV_SIZE } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
@@ -114,14 +114,12 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         await message.reply(`You can only purchase one or more items.`);
         return;
     }
-
-    // TODO: move to json parameter file?
-    const MAX_ITEM_COUNT: number = 5;
+    
     const itemCount: number = await Users.getItemCount(message.author.id);
-    const freeInventorySpace = MAX_ITEM_COUNT - itemCount;
+    const freeInventorySpace = MAX_INV_SIZE - itemCount;
 
     if (freeInventorySpace <= 0) {
-        await message.reply(`You can only store ${MAX_ITEM_COUNT} items at a time.`);
+        await message.reply(`You can only store ${MAX_INV_SIZE} items at a time.`);
         return;
     }
     // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);

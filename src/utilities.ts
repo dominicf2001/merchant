@@ -14,6 +14,17 @@ export const REACTION_ACTIVITY_VALUE: number = 1;
 export const MESSAGE_ACTIVITY_VALUE: number = 1;
 export const MENTIONED_ACTIVITY_VALUE: number = 1;
 
+export const MUTE_DURATION_MIN: number = 5;
+
+// these are out of 100
+export const ITEM_ROB_CHANCE: number = 20;
+export const CURRENCY_ROB_CHANCE: number = 70;
+export const CURRENCY_ROB_PERCENTAGE: number = 5;
+export const ITEM_FINE_PERCENTAGE: number = 9;
+export const CURRENCY_FINE_PERCENTAGE: number = 9;
+
+export const MAX_INV_SIZE: number = 5;
+
 export const CURRENCY_EMOJI_CODE: string = "<:tendie:1117239821337890886>";
 export const STOCKUP_EMOJI_CODE: string = "<:stockup:1117496842867982407>";
 export const STOCKDOWN_EMOJI_CODE: string = "<:stockdown:1117496855870328833>";

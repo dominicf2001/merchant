@@ -1,16 +1,15 @@
 import { Message, inlineCode, EmbedBuilder } from 'discord.js';
 import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 import { Users } from '../database/db-objects';
+import { MUTE_DURATION_MIN } from '../utilities';
 
-// TODO: should pull from the global json paramter file?
-const durationMin: number = 5;
-const durationMs: number = durationMin * 60000;
+const durationMs: number = MUTE_DURATION_MIN * 60000;
 
 const data: Item = {
     item_id: 'mute' as ItemsItemId,
     price: 2500,
     emoji_code: ":mute:",
-    description: `Mutes a user for ${durationMin} minutes`,
+    description: `Mutes a user for ${MUTE_DURATION_MIN} minutes`,
     usage: `${inlineCode("$use mute [@user]")}`
 };
 
@@ -51,7 +50,7 @@ export default {
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({
-                    name: `${inlineCode(target.user.username)} has been muted for ${durationMin} minutes`,
+                    name: `${inlineCode(target.user.username)} has been muted for ${MUTE_DURATION_MIN} minutes`,
                     value: ` `
                 });
 

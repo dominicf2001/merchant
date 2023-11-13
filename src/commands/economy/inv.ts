@@ -1,5 +1,5 @@
 import { Users, Items } from '../../database/db-objects';
-import { formatNumber } from '../../utilities';
+import { formatNumber, MAX_INV_SIZE } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
@@ -24,7 +24,7 @@ export default {
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .setTitle("Inventory")
-                .setDescription(`:school_satchel: ${formatNumber(itemCount)}/5 - - :shield: ${formatNumber(armor)}/1\n------------------------`);
+                .setDescription(`:school_satchel: ${formatNumber(itemCount)}/${MAX_INV_SIZE} - - :shield: ${formatNumber(armor)}/1\n------------------------`);
 
             const emojiCodes = await Promise.all(items.map(item => Items.get(item.item_id).then(itemInfo => itemInfo.emoji_code)));
 

@@ -1,5 +1,7 @@
 import { Users } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, formatNumber, findTextArgs, getRandomFloat, getRandomInt } from '../../utilities';
+import { CURRENCY_EMOJI_CODE, formatNumber, ITEM_ROB_CHANCE, CURRENCY_ROB_CHANCE, MAX_INV_SIZE,
+         CURRENCY_ROB_PERCENTAGE, ITEM_FINE_PERCENTAGE, CURRENCY_FINE_PERCENTAGE,
+         findTextArgs, getRandomFloat, getRandomInt } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 
@@ -42,17 +44,13 @@ export default {
                 await message.reply("Invalid rob type.");
                 return;
             }
-            // TODO: move to json
-            const TENDIES_ROB_CHANCE = 70;
-            const ITEM_ROB_CHANCE = 20;
-            const MAX_ITEM_COUNT = 5;
             let reply = "";
 
             switch (robType) {
                 case 'tendies':
-                    if (getRandomInt(1, 100) > TENDIES_ROB_CHANCE) {
+                    if (getRandomInt(1, 100) >= CURRENCY_ROB_CHANCE) {
                         const targetBalance = await Users.getBalance(target.id);
-                        const robAmount: number = Math.floor(targetBalance * getRandomFloat(.01, .10));
+                        const robAmount: number = Math.floor(targetBalance * (CURRENCY_ROB_PERCENTAGE / 100));
 
                         await Users.addBalance(message.author.id, robAmount);
                         await Users.addBalance(target.id, -robAmount);
@@ -61,7 +59,7 @@ export default {
                     }
                     else {
                         const authorBalance = await Users.getBalance(message.author.id);
-                        const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
+                        const penaltyAmount: number = Math.floor(authorBalance * (CURRENCY_FINE_PERCENTAGE / 100));
 
                         await Users.addBalance(message.author.id, -penaltyAmount);
 
@@ -69,12 +67,12 @@ export default {
                     }
                     break;
                 case 'item':
-                    if (getRandomInt(1, 100) > ITEM_ROB_CHANCE) {
+                    if (getRandomInt(1, 100) >= ITEM_ROB_CHANCE) {
                         const targetItems = await Users.getItems(target.id);
                         const authorItemCount: number = await Users.getItemCount(message.author.id);
 
 
-                        if (authorItemCount >= MAX_ITEM_COUNT) {
+                        if (authorItemCount >= MAX_INV_SIZE) {
                             await message.reply("Your inventory is full.");
                             return;
                         }
@@ -93,7 +91,7 @@ export default {
                     }
                     else {
                         const authorBalance = await Users.getBalance(message.author.id);
-                        const penaltyAmount: number = Math.floor(authorBalance * getRandomFloat(.03, .15));
+                        const penaltyAmount: number = Math.floor(authorBalance * (ITEM_FINE_PERCENTAGE / 100));
 
                         await Users.addBalance(message.author.id, -penaltyAmount);
 

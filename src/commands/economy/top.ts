@@ -1,4 +1,4 @@
-import { Message, EmbedBuilder, inlineCode, userMention } from 'discord.js';
+import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 import { Users } from '../../database/db-objects';
 import { CURRENCY_EMOJI_CODE, formatNumber, fetchDiscordUser } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
