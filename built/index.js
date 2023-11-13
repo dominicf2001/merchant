@@ -95,17 +95,17 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
     }
 });
 // CRON HANDLING
-let stockTicker = node_cron_1.default.schedule(`*/5 ${utilities_1.OPEN_HOUR}-${utilities_1.CLOSE_HOUR} * * *`, () => {
-    let randomMinute = Math.floor(Math.random() * 5);
-    setTimeout(() => {
-        // calculateAndUpdateStocks();
-        // TODO: paramaterize channel id?
-        // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
-        console.log("tick");
-    }, randomMinute * 60 * 1000);
-}, {
-    timezone: utilities_1.TIMEZONE
-});
+// let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
+//     let randomMinute: number = Math.floor(Math.random() * 5);
+//     setTimeout(() => {
+//         // calculateAndUpdateStocks();
+//         // TODO: paramaterize channel id?
+//         // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
+//         console.log("tick");
+//     }, randomMinute * 60 * 1000);
+// }, {
+//     timezone: TIMEZONE
+// });
 let dailyCleanup = node_cron_1.default.schedule('0 5 * * *', () => {
     // stockCleanUp();
     console.log("Cleanup has occurred!");

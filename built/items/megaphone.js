@@ -22,7 +22,7 @@ exports.default = {
             .setColor("Blurple")
             .setFields({
             name: `${msgToSend}`,
-            value: `${(0, discord_js_1.inlineCode)('-')} <@${message.author.id}>`
+            value: `says: <@${message.author.id}>`
         });
         await message.channel.send({ content: '@everyone', embeds: [embed], files: attachmentsArray, });
     }

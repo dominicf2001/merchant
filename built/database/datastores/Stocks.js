@@ -9,12 +9,8 @@ class Stocks extends DataStore_1.DataStore {
     // caches the 'now' stock history for each stock
     async refreshCache() {
         const latestStocks = await this.getLatestStocks();
-        console.log("Cache retrieved: ");
-        console.log(latestStocks);
         for (const latestStock of latestStocks) {
             const stockHistory = await this.getStockHistory(latestStock.stock_id, 'now');
-            console.log("Stock history: ");
-            console.log(stockHistory);
             this.cache.set(latestStock[this.tableID], stockHistory);
         }
     }

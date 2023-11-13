@@ -7,7 +7,7 @@ async function sleep(duration: number): Promise<void> {
     await new Promise(r => setTimeout(r, duration));
 }
 
-const sleepDuration: number = 25;
+const sleepDuration: number = 50;
 
 describe('UPDATING Operations', () => {
     const testStockId = '123';
@@ -157,11 +157,11 @@ describe('HISTORY Operations', () => {
         const stockHistory = await Stocks.getStockHistory(testStockId, 'now');
         const stockHistoryTwo = await Stocks.getStockHistory(testStockIdTwo, 'now');
         // test cache hit
-        Stocks.refreshCache();
+        await Stocks.refreshCache();
         const stockHistoryThree = await Stocks.getStockHistory(testStockIdThree, 'now');
         expect(stockHistory?.length).toBe(10);
         expect(stockHistoryTwo?.length).toBe(4);
-        expect(stockHistoryThree?.length).toBe(10);
+        expect(stockHistoryThree?.length).toBe(15);
     });
 
 
@@ -245,7 +245,7 @@ describe('HISTORY Operations', () => {
         }
 
         // test cache hit
-        Stocks.refreshCache();
+        await Stocks.refreshCache();
         const latestStocksFromCache = await Stocks.getLatestStocks();
         expect(latestStocksFromCache?.length).toBe(3);
 

@@ -1,16 +1,26 @@
 import { APIEmbedField, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle,
-         EmbedBuilder, RestOrArray, normalizeArray, User, MessageMentions } from 'discord.js';
-const { UsersPattern } = MessageMentions;
+         EmbedBuilder, RestOrArray, normalizeArray, User } from 'discord.js';
 import { DateTime } from 'luxon';
 import { client } from './index';
 
-const OPEN_HOUR: number = 7;
-const CLOSE_HOUR: number = 22;
-const CURRENCY_EMOJI_CODE: string = "<:tendie:1117239821337890886>";
-const STOCKUP_EMOJI_CODE: string = "<:stockup:1117496842867982407>";
-const STOCKDOWN_EMOJI_CODE: string = "<:stockdown:1117496855870328833>";
+// PARAMETERS
+export const TIMEZONE: string = 'America/New_York';
+export const OPEN_HOUR: number = 7;
+export const CLOSE_HOUR: number = 22;
 
-function secondsToHms(d: number): string {
+export const INVITE_ACTIVITY_VALUE: number = 1;
+export const VOICE_ACTIVITY_VALUE: number = 1;
+export const REACTION_ACTIVITY_VALUE: number = 1;
+export const MESSAGE_ACTIVITY_VALUE: number = 1;
+export const MENTIONED_ACTIVITY_VALUE: number = 1;
+
+export const CURRENCY_EMOJI_CODE: string = "<:tendie:1117239821337890886>";
+export const STOCKUP_EMOJI_CODE: string = "<:stockup:1117496842867982407>";
+export const STOCKDOWN_EMOJI_CODE: string = "<:stockdown:1117496855870328833>";
+
+
+// HELPER FUNCTIONS
+export function secondsToHms(d: number): string {
     var h = Math.floor(d / 3600);
     var m = Math.floor(d % 3600 / 60);
     var s = Math.floor(d % 3600 % 60);
@@ -18,32 +28,32 @@ function secondsToHms(d: number): string {
     return ((h > 0 ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (s < 10 ? "0" : "") + s);
 }
 
-function getRandomInt(min: number, max: number): number {
+export function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function getRandomFloat(min: number, max: number): number {
+export function getRandomFloat(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
-function formatNumber(num: number, decimalPlaces: number = 2): number {
+export function formatNumber(num: number, decimalPlaces: number = 2): number {
   return Math.round(num * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
 }
 
-function marketIsOpen(): boolean {
+export function marketIsOpen(): boolean {
     const currentHour = DateTime.now().setZone(TIMEZONE).hour;
     return currentHour >= OPEN_HOUR && currentHour < CLOSE_HOUR;
 }
 
-function toUpperCaseString(str: string): string {
+export function toUpperCaseString(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function isAMention(arg: string): boolean {    
+export function isAMention(arg: string): boolean {    
 	return arg.startsWith('<@') && arg.endsWith('>');
 }
 
-function stripIdFromMention(mentionArg: string): string {
+export function stripIdFromMention(mentionArg: string): string {
     mentionArg = mentionArg.slice(2, -1);
 
     if (mentionArg.startsWith('!')) {
@@ -53,23 +63,23 @@ function stripIdFromMention(mentionArg: string): string {
     return mentionArg;
 }
 
-function findTextArgs(args: string[]): string[] {
+export function findTextArgs(args: string[]): string[] {
     return args.filter(arg => isNaN(+arg) && !isAMention(arg));
 }
 
-function findNumericArgs(args: string[]): string[] {
+export function findNumericArgs(args: string[]): string[] {
     return args.filter(arg => !isNaN(+arg) && !isAMention(arg));
 }
 
-function findMentionArgs(args: string[]): string[] {
+export function findMentionArgs(args: string[]): string[] {
     return args.filter(arg => isAMention(arg));
 }
 
-async function fetchDiscordUser(id: string): Promise<User> {
+export async function fetchDiscordUser(id: string): Promise<User> {
     return await client.users.fetch(id);
 }
 
-class PaginatedMenuBuilder {
+export class PaginatedMenuBuilder {
     private pageNum: number = 1;
     private totalPages: number = 1;
     private id: string = "";
@@ -137,9 +147,3 @@ class PaginatedMenuBuilder {
         this.totalPages = totalPages;
     }
 }
-
-const TIMEZONE: string = 'America/New_York';
-
-export { secondsToHms, getRandomInt, getRandomFloat, formatNumber, marketIsOpen,isAMention,
-         toUpperCaseString, findNumericArgs, findTextArgs, findMentionArgs, PaginatedMenuBuilder, fetchDiscordUser, stripIdFromMention,
-         TIMEZONE, OPEN_HOUR, CLOSE_HOUR, CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE, STOCKUP_EMOJI_CODE };

@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.STOCKUP_EMOJI_CODE = exports.STOCKDOWN_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = exports.stripIdFromMention = exports.fetchDiscordUser = exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findTextArgs = exports.findNumericArgs = exports.toUpperCaseString = exports.isAMention = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = void 0;
 const discord_js_1 = require("discord.js");
-const { UsersPattern } = discord_js_1.MessageMentions;
 const luxon_1 = require("luxon");
 const index_1 = require("./index");
 const OPEN_HOUR = 7;

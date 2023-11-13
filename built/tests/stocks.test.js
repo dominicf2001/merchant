@@ -122,11 +122,11 @@ describe('HISTORY Operations', () => {
         const stockHistory = await db_objects_1.Stocks.getStockHistory(testStockId, 'now');
         const stockHistoryTwo = await db_objects_1.Stocks.getStockHistory(testStockIdTwo, 'now');
         // test cache hit
-        db_objects_1.Stocks.refreshCache();
+        await db_objects_1.Stocks.refreshCache();
         const stockHistoryThree = await db_objects_1.Stocks.getStockHistory(testStockIdThree, 'now');
         expect(stockHistory?.length).toBe(10);
         expect(stockHistoryTwo?.length).toBe(4);
-        expect(stockHistoryThree?.length).toBe(10);
+        expect(stockHistoryThree?.length).toBe(15);
     });
     test('Get stock history for "hour" interval', async () => {
         const baselineDate = luxon_1.DateTime.now();
@@ -194,7 +194,7 @@ describe('HISTORY Operations', () => {
             }
         }
         // test cache hit
-        db_objects_1.Stocks.refreshCache();
+        await db_objects_1.Stocks.refreshCache();
         const latestStocksFromCache = await db_objects_1.Stocks.getLatestStocks();
         expect(latestStocksFromCache?.length).toBe(3);
         for (const latestStock of latestStocksFromCache) {

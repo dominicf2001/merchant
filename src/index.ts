@@ -1,12 +1,15 @@
 import cron from 'node-cron';
 import fs from 'fs';
-import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { Users, Commands } from './database/db-objects';
-const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../config.json`, 'utf8'));
-import { secondsToHms, getRandomFloat, marketIsOpen, TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "./utilities";
+const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
+import { secondsToHms, marketIsOpen,
+         TIMEZONE, OPEN_HOUR, CLOSE_HOUR, VOICE_ACTIVITY_VALUE, REACTION_ACTIVITY_VALUE,
+         MESSAGE_ACTIVITY_VALUE, MENTIONED_ACTIVITY_VALUE, INVITE_ACTIVITY_VALUE } from "./utilities";
+
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 
-const client: Client = new Client({
+export const client: Client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
@@ -19,33 +22,34 @@ const client: Client = new Client({
     ],
 });
 
-export { client };
-
 client.once(Events.ClientReady, async () => {    
     console.log('Ready as ' + client.user.tag);
 });
 
 client.on(Events.InviteCreate, async (invite) => {
-    if (invite.inviter.bot) return;
+    if (invite.inviter.bot)
+        return;
     
     if (marketIsOpen()) {
-        await Users.addActivityPoints(invite.inviterId, 1);
+        await Users.addActivityPoints(invite.inviterId, INVITE_ACTIVITY_VALUE);
     }
 });
 
 client.on(Events.MessageReactionAdd, async (_, user) => {
-    if (user.bot) return;
+    if (user.bot)
+        return;
     
     if (marketIsOpen()) {
-        await Users.addActivityPoints(user.id, 1);
+        await Users.addActivityPoints(user.id, REACTION_ACTIVITY_VALUE);
     }
 });
 
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
-    if (!oldState.channel && newState.channel && !newState.member.user.bot) {
-        if (marketIsOpen()) {
-            await Users.addActivityPoints(newState.member.user.id, 1);
-        }
+    if (oldState.channel || !newState.channel || newState.member.user.bot)
+        return;
+    
+    if (marketIsOpen()) {
+        await Users.addActivityPoints(newState.member.user.id, VOICE_ACTIVITY_VALUE);
     }
 });
  
@@ -96,10 +100,10 @@ client.on(Events.MessageCreate, async message => {
             const mentionedUsers = message.mentions.users;
             mentionedUsers.forEach(async user => {
                 if (user.id != message.author.id && !user.bot) {
-                    await Users.addActivityPoints(user.id, 1);
+                    await Users.addActivityPoints(user.id, MENTIONED_ACTIVITY_VALUE);
                 }
             });
-            await Users.addActivityPoints(message.author.id, 1);
+            await Users.addActivityPoints(message.author.id, MESSAGE_ACTIVITY_VALUE);
         }
     }
 });
