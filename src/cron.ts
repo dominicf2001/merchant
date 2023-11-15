@@ -1,59 +1,63 @@
 import { Users, Stocks } from './database/db-objects';
+import { UserActivities as UserActivity } from './database/schemas/public/UserActivities';
 
-// New Price = Current Price + (Momentum Factor * Momentum Multiplier) + Activity Impact + Volatility Impact + External Factors − Decay Rate
-export async function updateStockPrices(): Promise<void> {
-    const BASELINE_ACTIVITY = 50;
-    const ACTIVITY_SCALE_FACTOR = 0.1;
-    
-    const BASELINE_VOLATILITY = 10;
-    const VOLATILITY_SCALE_FACTOR = 0.05;
-    
-    const MOMENTUM_MULTIPLIER = 0.1;
-    
-    const SMOOTHING_FACTOR = 0.3;
-    const DECAY_RATE = .05;
-    
+export async function updateStockPrices(): Promise<void> {    
     const allUsers = await Users.getAll();
 
     await Promise.all(allUsers.map(async user => {
-        const oldPrice = (await Stocks.getLatestStock(user.user_id)).price;
-        const activityPoints = user.activity_points;
-        const prevEMA = user.activity_points_ema;
-        const prevEMSD = user.activity_points_emsd;
-
-        // calculate new EMA and EMSD
-        const newEMA = (activityPoints * SMOOTHING_FACTOR) + (prevEMA * (1 - SMOOTHING_FACTOR));
-
-        const deviation = activityPoints - newEMA;
-        const squaredDeviation = Math.pow(deviation, 2);
-        const newEMSD = (squaredDeviation * SMOOTHING_FACTOR) + (prevEMSD * (1 - SMOOTHING_FACTOR));
-
-        // calculate momentum
-        const momentum = newEMA - prevEMA;
+        const activity = await Users.getActivity(user.user_id);
         
-        // calculate impacts
-        const momentumImpact = momentum * MOMENTUM_MULTIPLIER;
-        const activityImpact = ((newEMA - BASELINE_ACTIVITY) / BASELINE_ACTIVITY) * ACTIVITY_SCALE_FACTOR;
-        const volatilityImpact = ((newEMSD - BASELINE_VOLATILITY) / BASELINE_VOLATILITY) * VOLATILITY_SCALE_FACTOR;
-        const decayImpact = oldPrice * DECAY_RATE;
+        const EMA = calculateEMA(activity);
+        const EMSD = calculateEMSD(activity);
+        const SMA = activity.activity_points_long_sma; // calculated seperately
 
-        // calculate new price - TODO: momentum
-        const newPrice = oldPrice + momentumImpact + activityImpact + volatilityImpact - decayImpact;
-
-        // update storage
-        await Users.set(user.user_id, {
-            activity_points_ema: newEMA,
-            activity_points_emsd: newEMSD,
-            activity_points: 0
-        });
-
+        const newPrice = calculateStockPrice(EMA, EMSD, SMA);
         await Stocks.updateStockPrice(user.user_id, newPrice);
+        
+        // update storage
+        await Users.setActivity(user.user_id, {
+            activity_points_short: 0,
+            activity_points_short_ema: EMA,
+            activity_points_short_emsd: EMSD,
+            activity_points_long_sma: SMA,
+        });
     }));
 }
 
+function calculateStockPrice(EMA: number, EMSD: number, SMA: number): number {
+    const EMA_WEIGHT = 0.5;
+    const EMSD_WEIGHT = 0.3;
+    const SMA_WEIGHT = 0.2;
+    
+    const RANDOMNESS_FACTOR = 0.05;
+    const randomAdjustment = (Math.random() - 0.5) * RANDOMNESS_FACTOR;
+    
+    const newPrice = (EMA * EMA_WEIGHT) + (EMSD * EMSD_WEIGHT) + (SMA * SMA_WEIGHT) + randomAdjustment;
+
+    return newPrice;
+}
 
 
+function calculateEMA(activity: UserActivity): number {
+    const SMOOTHING_FACTOR = 0.3;
+    
+    const oldEMA = activity.activity_points_short_ema;
+    const activityPoints = activity.activity_points_short;
+    
+    return (activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR));
+}
 
+function calculateEMSD(activity: UserActivity): number {
+    const SMOOTHING_FACTOR = 0.3;
+    
+    const oldEMSD = activity.activity_points_short_emsd;
+    const newEMA = calculateEMA(activity);
+    const activityPoints = activity.activity_points_short;
+
+    const deviation = activityPoints - newEMA;
+    const squaredDeviation = Math.pow(deviation, 2);
+    return (squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR));
+}
 
 // // TODO: move to a function on Stocks
 // async function stockCleanUp() {
