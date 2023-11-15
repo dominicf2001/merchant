@@ -12,14 +12,6 @@ export default interface UsersTable {
 
   balance: ColumnType<number, number | null, number | null>;
 
-  activity_points: ColumnType<number, number | null, number | null>;
-
-  activity_points_ema: ColumnType<number, number | null, number | null>;
-
-  activity_points_emsd: ColumnType<number, number | null, number | null>;
-
-  last_activity_date: ColumnType<string, string | null, string | null>;
-
   armor: ColumnType<number, number | null, number | null>;
 }
 

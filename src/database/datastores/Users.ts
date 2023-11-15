@@ -2,6 +2,7 @@ import { DataStore, db } from './DataStore';
 import { Users as User, UsersUserId } from '../schemas/public/Users';
 import { UserItems as UserItem } from '../schemas/public/UserItems';
 import { UserStocks as UserStock } from '../schemas/public/UserStocks';
+import { UserActivities as UserActivity } from '../schemas/public/UserActivities';
 import { Stocks as Stock } from '../schemas/public/Stocks';
 import { UserCooldowns as UserCooldown } from '../schemas/public/UserCooldowns';
 import { CommandsCommandId } from '../schemas/public/Commands';
@@ -9,7 +10,7 @@ import { UserStocksPurchaseDate } from '../schemas/public/UserStocks';
 import { ItemsItemId } from '../schemas/public/Items';
 import { DateTime } from 'luxon';
 import Database from '../schemas/Database';
-import { Kysely } from 'kysely';
+import { Kysely, Insertable, Updateable } from 'kysely';
 import { Items } from './Items';
 import { Stocks } from './Stocks';
 import { Commands } from './Commands';
@@ -38,13 +39,19 @@ class Users extends DataStore<User> {
     }
 
     async addActivityPoints(user_id: string, amount: number): Promise<void> {
-        const user = await this.get(user_id);
+        await this.set(user_id);
 
-        let newActivityPoints = user ? (user.activity_points + amount) : amount;
-        if (newActivityPoints < 0) newActivityPoints = 0;
+        const activity = await this.getActivity(user_id);
 
-        await this.set(user_id, {
-            activity_points: newActivityPoints
+        let newActivityPointsShort = activity.activity_points_short + amount;
+        if (newActivityPointsShort < 0) newActivityPointsShort = 0;
+
+        let newActivityPointsLong = activity.activity_points_long + amount;
+        if (newActivityPointsLong < 0) newActivityPointsLong = 0;
+
+        await this.setActivity(user_id, {
+            activity_points_short: newActivityPointsShort,
+            activity_points_long: newActivityPointsLong
         });
     }
     
@@ -133,12 +140,34 @@ class Users extends DataStore<User> {
         });
     }
 
-    async setActivityPoints(user_id: string, amount: number): Promise<void> {
-        if (amount < 0) amount = 0;
+    async setActivity(id: string, data: Insertable<UserActivity> | Updateable<UserActivity> = {}): Promise<void> {
+        const newUserActivity: UserActivity = { 'user_id': id as UsersUserId, ...data } as UserActivity;
 
-        await this.set(user_id, {
-            activity_points: amount
-        });
+        try {
+            let result: UserActivity = await this.db
+                .selectFrom('user_activities')
+                .selectAll()
+                .where('user_id', '=', id as UsersUserId)
+                .executeTakeFirst() as UserActivity;
+
+            if (result) {
+                result = await this.db
+                    .updateTable('user_activities')
+                    .set(newUserActivity)
+                    .where('user_id', '=', id as UsersUserId)
+                    .returningAll()
+                    .executeTakeFirstOrThrow() as UserActivity;
+            } else {
+                result = await this.db
+                    .insertInto('user_activities')
+                    .values(newUserActivity)
+                    .returningAll()
+                    .executeTakeFirstOrThrow() as UserActivity;
+            }
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
     }
 
     async getBalance(user_id: string): Promise<number> {
@@ -151,9 +180,12 @@ class Users extends DataStore<User> {
         return user?.armor ?? 0;
     }
 
-    async getActivityPoints(user_id: string): Promise<number> {
-        const user = await this.get(user_id);
-        return user?.activity_points ?? 0;
+    async getActivity(user_id: string): Promise<UserActivity> {
+        const userActivity = await this.db.selectFrom('user_activities')
+            .selectAll()
+            .where('user_id', '=', user_id as UsersUserId)
+            .executeTakeFirst() as UserActivity;
+        return userActivity;
     }
 
     async getItemCount(user_id: string): Promise<number> {

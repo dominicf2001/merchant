@@ -5,6 +5,7 @@ import type UsersTable from './Users';
 import type ItemsTable from './Items';
 import type StocksTable from './Stocks';
 import type CommandsTable from './Commands';
+import type UserActivitiesTable from './UserActivities';
 import type UserItemsTable from './UserItems';
 import type UserStocksTable from './UserStocks';
 import type UserCooldownsTable from './UserCooldowns';
@@ -17,6 +18,8 @@ export default interface PublicSchema {
   stocks: StocksTable;
 
   commands: CommandsTable;
+
+  user_activities: UserActivitiesTable;
 
   user_items: UserItemsTable;
 

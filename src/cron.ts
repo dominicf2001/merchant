@@ -30,9 +30,9 @@ export async function updateStockPrices(): Promise<void> {
 
         // calculate momentum
         const momentum = newEMA - prevEMA;
-        const momentumImpact = momentum * MOMENTUM_MULTIPLIER;
         
         // calculate impacts
+        const momentumImpact = momentum * MOMENTUM_MULTIPLIER;
         const activityImpact = ((newEMA - BASELINE_ACTIVITY) / BASELINE_ACTIVITY) * ACTIVITY_SCALE_FACTOR;
         const volatilityImpact = ((newEMSD - BASELINE_VOLATILITY) / BASELINE_VOLATILITY) * VOLATILITY_SCALE_FACTOR;
         const decayImpact = oldPrice * DECAY_RATE;
