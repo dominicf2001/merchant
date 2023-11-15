@@ -2,14 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const db_objects_1 = require("../database/db-objects");
-// TODO: should pull from the global json paramter file?
-const durationMin = 5;
-const durationMs = durationMin * 60000;
+const utilities_1 = require("../utilities");
+const durationMs = utilities_1.MUTE_DURATION_MIN * 60000;
 const data = {
     item_id: 'mute',
     price: 2500,
     emoji_code: ":mute:",
-    description: `Mutes a user for ${durationMin} minutes`,
+    description: `Mutes a user for ${utilities_1.MUTE_DURATION_MIN} minutes`,
     usage: `${(0, discord_js_1.inlineCode)("$use mute [@user]")}`
 };
 exports.default = {
@@ -42,7 +41,7 @@ exports.default = {
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
                 .setFields({
-                name: `${(0, discord_js_1.inlineCode)(target.user.username)} has been muted for ${durationMin} minutes`,
+                name: `${(0, discord_js_1.inlineCode)(target.user.username)} has been muted for ${utilities_1.MUTE_DURATION_MIN} minutes`,
                 value: ` `
             });
             await message.reply({ embeds: [embed] });

@@ -4,7 +4,7 @@ const db_objects_1 = require("../database/db-objects");
 async function sleep(duration) {
     await new Promise(r => setTimeout(r, duration));
 }
-const sleepDuration = 25;
+const sleepDuration = 50;
 describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     const userId = '123';
     beforeAll(async () => {
@@ -39,12 +39,9 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     test('Add activity points to a non-existing user', async () => {
         await db_objects_1.Users.addActivityPoints(userId, 1);
         await sleep(sleepDuration);
-        const activityPoints = await db_objects_1.Users.getActivityPoints(userId);
-        expect(activityPoints).toBe(1);
-        let user = db_objects_1.Users.getFromCache(userId);
-        expect(user?.activity_points).toBe(1);
-        user = await db_objects_1.Users.getFromDB(userId);
-        expect(user?.activity_points).toBe(1);
+        const activity = await db_objects_1.Users.getActivity(userId);
+        expect(activity.activity_points_short).toBe(1);
+        expect(activity.activity_points_long).toBe(1);
     });
     // SUBTRACTING + EXISTING
     test('Subtract balance from an existing user', async () => {
@@ -72,16 +69,13 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         expect(user?.armor).toBe(70);
     });
     test('Subtract activity points from an existing user', async () => {
-        await db_objects_1.Users.set(userId, { activity_points: 2 });
+        await db_objects_1.Users.setActivity(userId, { activity_points_short: 2, activity_points_long: 2 });
         await sleep(sleepDuration);
         await db_objects_1.Users.addActivityPoints(userId, -2);
         await sleep(sleepDuration);
-        const activityPoints = await db_objects_1.Users.getActivityPoints(userId);
-        expect(activityPoints).toBe(0);
-        let user = db_objects_1.Users.getFromCache(userId);
-        expect(user?.activity_points).toBe(0);
-        user = await db_objects_1.Users.getFromDB(userId);
-        expect(user?.activity_points).toBe(0);
+        const activity = await db_objects_1.Users.getActivity(userId);
+        expect(activity.activity_points_short).toBe(0);
+        expect(activity.activity_points_long).toBe(0);
     });
     // SUBTRACTING BELOW ZERO
     test('Subtract balance from an existing user below zero', async () => {
@@ -109,16 +103,13 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         expect(user?.armor).toBe(0);
     });
     test('Subtract activity points from an existing user below zero', async () => {
-        await db_objects_1.Users.set(userId, { activity_points: 1 });
+        await db_objects_1.Users.setActivity(userId, { activity_points_short: 1, activity_points_long: 1 });
         await sleep(sleepDuration);
         await db_objects_1.Users.addActivityPoints(userId, -1000);
         await sleep(sleepDuration);
-        const activityPoints = await db_objects_1.Users.getActivityPoints(userId);
-        expect(activityPoints).toBe(0);
-        let user = db_objects_1.Users.getFromCache(userId);
-        expect(user?.activity_points).toBe(0);
-        user = await db_objects_1.Users.getFromDB(userId);
-        expect(user?.activity_points).toBe(0);
+        const activity = await db_objects_1.Users.getActivity(userId);
+        expect(activity.activity_points_short).toBe(0);
+        expect(activity.activity_points_long).toBe(0);
     });
 });
 describe('User item operations', () => {

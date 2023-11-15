@@ -96,12 +96,10 @@ async function buyItem(message, args) {
         await message.reply(`You can only purchase one or more items.`);
         return;
     }
-    // TODO: move to json parameter file?
-    const MAX_ITEM_COUNT = 5;
     const itemCount = await db_objects_1.Users.getItemCount(message.author.id);
-    const freeInventorySpace = MAX_ITEM_COUNT - itemCount;
+    const freeInventorySpace = utilities_1.MAX_INV_SIZE - itemCount;
     if (freeInventorySpace <= 0) {
-        await message.reply(`You can only store ${MAX_ITEM_COUNT} items at a time.`);
+        await message.reply(`You can only store ${utilities_1.MAX_INV_SIZE} items at a time.`);
         return;
     }
     // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);

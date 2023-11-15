@@ -106,7 +106,8 @@ export abstract class DataStore<Data> {
                     .where(this.tableID, '=', id as any)
                     .returningAll()
                     .executeTakeFirstOrThrow() as Data;
-            } else {
+            }
+            else {
                 result = await this.db
                     .insertInto(this.tableName)
                     .values(newData)

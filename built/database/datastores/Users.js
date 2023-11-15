@@ -26,12 +26,39 @@ class Users extends DataStore_1.DataStore {
         });
     }
     async addActivityPoints(user_id, amount) {
-        const user = await this.get(user_id);
-        let newActivityPoints = user ? (user.activity_points + amount) : amount;
-        if (newActivityPoints < 0)
-            newActivityPoints = 0;
-        await this.set(user_id, {
-            activity_points: newActivityPoints
+        await this.db.transaction().execute(async (trx) => {
+            await this.set(user_id);
+            const activity = await trx
+                .selectFrom('user_activities')
+                .selectAll()
+                .where('user_id', '=', user_id)
+                .executeTakeFirst();
+            if (!activity) {
+                await trx
+                    .insertInto('user_activities')
+                    .values({
+                    user_id: user_id,
+                    activity_points_short: amount,
+                    activity_points_long: amount
+                })
+                    .execute();
+            }
+            else {
+                let newActivityPointsShort = activity.activity_points_short + amount;
+                if (newActivityPointsShort < 0)
+                    newActivityPointsShort = 0;
+                let newActivityPointsLong = activity.activity_points_long + amount;
+                if (newActivityPointsLong < 0)
+                    newActivityPointsLong = 0;
+                await trx
+                    .updateTable('user_activities')
+                    .set({
+                    activity_points_short: newActivityPointsShort,
+                    activity_points_long: newActivityPointsLong
+                })
+                    .where('user_id', '=', user_id)
+                    .execute();
+            }
         });
     }
     async addItem(user_id, item_id, amount) {
@@ -111,12 +138,35 @@ class Users extends DataStore_1.DataStore {
             balance: amount
         });
     }
-    async setActivityPoints(user_id, amount) {
-        if (amount < 0)
-            amount = 0;
-        await this.set(user_id, {
-            activity_points: amount
-        });
+    async setActivity(id, data = {}) {
+        const newUserActivity = { 'user_id': id, ...data };
+        try {
+            let result = await this.db
+                .selectFrom('user_activities')
+                .selectAll()
+                .where('user_id', '=', id)
+                .executeTakeFirst();
+            if (result) {
+                result = await this.db
+                    .updateTable('user_activities')
+                    .set(newUserActivity)
+                    .where('user_id', '=', id)
+                    .returningAll()
+                    .executeTakeFirstOrThrow();
+            }
+            else {
+                await this.set(id);
+                result = await this.db
+                    .insertInto('user_activities')
+                    .values(newUserActivity)
+                    .returningAll()
+                    .executeTakeFirstOrThrow();
+            }
+        }
+        catch (error) {
+            console.error(error);
+            throw error;
+        }
     }
     async getBalance(user_id) {
         const user = await this.get(user_id);
@@ -126,9 +176,12 @@ class Users extends DataStore_1.DataStore {
         const user = await this.get(user_id);
         return user?.armor ?? 0;
     }
-    async getActivityPoints(user_id) {
-        const user = await this.get(user_id);
-        return user?.activity_points ?? 0;
+    async getActivity(user_id) {
+        const userActivity = await this.db.selectFrom('user_activities')
+            .selectAll()
+            .where('user_id', '=', user_id)
+            .executeTakeFirst();
+        return userActivity;
     }
     async getItemCount(user_id) {
         const items = await this.getItems(user_id);

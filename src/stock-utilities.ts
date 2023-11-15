@@ -59,6 +59,20 @@ function calculateEMSD(activity: UserActivity): number {
     return (squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR));
 }
 
+export function updateSMA(activity: UserActivity): number {
+    const daysCount = new Date().getDay();
+    const activityPoints = activity.activity_points_long;
+
+    if (daysCount === 1) {
+        // sma reset
+        return activityPoints;
+    }
+    else {
+        const oldSMA = activity.activity_points_long_sma
+        return ((oldSMA * (daysCount - 1)) + activityPoints) / daysCount;   
+    }
+}
+
 // // TODO: move to a function on Stocks
 // async function stockCleanUp() {
 //     const distinctDatesAndUsers = await Stocks.findAll({

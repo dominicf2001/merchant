@@ -29,6 +29,7 @@ async function main() {
             await db.schema.dropTable("items").ifExists().cascade().execute();
             await db.schema.dropTable("stocks").ifExists().cascade().execute();
             await db.schema.dropTable("commands").ifExists().cascade().execute();
+            await db.schema.dropTable("user_activity").ifExists().cascade().execute();
             await db.schema.dropTable("user_items").ifExists().cascade().execute();
             await db.schema.dropTable("user_stocks").ifExists().cascade().execute();
             await db.schema.dropTable("user_cooldowns").ifExists().cascade().execute();
@@ -36,9 +37,8 @@ async function main() {
         // USERS
         await db.schema.createTable('users')
             .addColumn('user_id', 'varchar(30)', col => col.notNull().primaryKey())
+            .addColumn('created_date', 'timestamptz', col => col.notNull().defaultTo(luxon_1.DateTime.now().toISO()))
             .addColumn('balance', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `balance >= 0`))
-            .addColumn('activity_points', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `activity_points >= 0`))
-            .addColumn('last_activity_date', 'timestamptz', col => col.notNull().defaultTo(luxon_1.DateTime.now().toISO()))
             .addColumn('armor', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `armor >= 0`))
             .execute();
         // ITEMS 
@@ -69,6 +69,17 @@ async function main() {
             .addColumn('usage', 'varchar', col => col.notNull().defaultTo(""))
             .addColumn('cooldown_time', 'integer', col => col.notNull().defaultTo(0))
             .addColumn('is_admin', 'boolean', col => col.notNull().defaultTo(false))
+            .execute();
+        // USER ACTIVITY
+        await db.schema.createTable('user_activities')
+            .addColumn('user_id', 'varchar(30)', col => col.notNull().primaryKey())
+            .addColumn('activity_points_short', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `activity_points_short >= 0`))
+            .addColumn('activity_points_long', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `activity_points_long >= 0`))
+            .addColumn('activity_points_short_ema', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `activity_points_short_ema >= 0`))
+            .addColumn('activity_points_short_emsd', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `activity_points_short_emsd >= 0`))
+            .addColumn('activity_points_long_sma', 'integer', col => col.notNull().defaultTo(0).check((0, kysely_1.sql) `activity_points_long_sma >= 0`))
+            .addColumn('last_activity_date', 'timestamptz', col => col.notNull().defaultTo(luxon_1.DateTime.now().toISO()))
+            .addForeignKeyConstraint('user_items_fk_user', ['user_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
             .execute();
         // USER ITEMS
         await db.schema.createTable('user_items')

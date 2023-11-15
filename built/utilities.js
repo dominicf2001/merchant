@@ -1,19 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.STOCKUP_EMOJI_CODE = exports.STOCKDOWN_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = exports.stripIdFromMention = exports.fetchDiscordUser = exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findTextArgs = exports.findNumericArgs = exports.toUpperCaseString = exports.isAMention = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = void 0;
+exports.PaginatedMenuBuilder = exports.findMentionArgs = exports.findNumericArgs = exports.findTextArgs = exports.stripIdFromMention = exports.isAMention = exports.toUpperCaseString = exports.marketIsOpen = exports.formatNumber = exports.getRandomFloat = exports.getRandomInt = exports.secondsToHms = exports.STOCKDOWN_EMOJI_CODE = exports.STOCKUP_EMOJI_CODE = exports.CURRENCY_EMOJI_CODE = exports.MAX_INV_SIZE = exports.CURRENCY_FINE_PERCENTAGE = exports.ITEM_FINE_PERCENTAGE = exports.CURRENCY_ROB_PERCENTAGE = exports.CURRENCY_ROB_CHANCE = exports.ITEM_ROB_CHANCE = exports.MUTE_DURATION_MIN = exports.MENTIONED_ACTIVITY_VALUE = exports.MESSAGE_ACTIVITY_VALUE = exports.REACTION_ACTIVITY_VALUE = exports.VOICE_ACTIVITY_VALUE = exports.INVITE_ACTIVITY_VALUE = exports.CLOSE_HOUR = exports.OPEN_HOUR = exports.TIMEZONE = void 0;
 const discord_js_1 = require("discord.js");
 const luxon_1 = require("luxon");
-const index_1 = require("./index");
-const OPEN_HOUR = 7;
-exports.OPEN_HOUR = OPEN_HOUR;
-const CLOSE_HOUR = 22;
-exports.CLOSE_HOUR = CLOSE_HOUR;
-const CURRENCY_EMOJI_CODE = "<:tendie:1117239821337890886>";
-exports.CURRENCY_EMOJI_CODE = CURRENCY_EMOJI_CODE;
-const STOCKUP_EMOJI_CODE = "<:stockup:1117496842867982407>";
-exports.STOCKUP_EMOJI_CODE = STOCKUP_EMOJI_CODE;
-const STOCKDOWN_EMOJI_CODE = "<:stockdown:1117496855870328833>";
-exports.STOCKDOWN_EMOJI_CODE = STOCKDOWN_EMOJI_CODE;
+// PARAMETERS
+exports.TIMEZONE = 'America/New_York';
+exports.OPEN_HOUR = 7;
+exports.CLOSE_HOUR = 22;
+exports.INVITE_ACTIVITY_VALUE = 1;
+exports.VOICE_ACTIVITY_VALUE = 1;
+exports.REACTION_ACTIVITY_VALUE = 1;
+exports.MESSAGE_ACTIVITY_VALUE = 1;
+exports.MENTIONED_ACTIVITY_VALUE = 1;
+exports.MUTE_DURATION_MIN = 5;
+// these are out of 100
+exports.ITEM_ROB_CHANCE = 20;
+exports.CURRENCY_ROB_CHANCE = 70;
+exports.CURRENCY_ROB_PERCENTAGE = 5;
+exports.ITEM_FINE_PERCENTAGE = 9;
+exports.CURRENCY_FINE_PERCENTAGE = 9;
+exports.MAX_INV_SIZE = 5;
+exports.CURRENCY_EMOJI_CODE = "<:tendie:1117239821337890886>";
+exports.STOCKUP_EMOJI_CODE = "<:stockup:1117496842867982407>";
+exports.STOCKDOWN_EMOJI_CODE = "<:stockdown:1117496855870328833>";
+// HELPER FUNCTIONS
 function secondsToHms(d) {
     var h = Math.floor(d / 3600);
     var m = Math.floor(d % 3600 / 60);
@@ -34,8 +44,8 @@ function formatNumber(num, decimalPlaces = 2) {
 }
 exports.formatNumber = formatNumber;
 function marketIsOpen() {
-    const currentHour = luxon_1.DateTime.now().setZone(TIMEZONE).hour;
-    return currentHour >= OPEN_HOUR && currentHour < CLOSE_HOUR;
+    const currentHour = luxon_1.DateTime.now().setZone(exports.TIMEZONE).hour;
+    return currentHour >= exports.OPEN_HOUR && currentHour < exports.CLOSE_HOUR;
 }
 exports.marketIsOpen = marketIsOpen;
 function toUpperCaseString(str) {
@@ -66,10 +76,6 @@ function findMentionArgs(args) {
     return args.filter(arg => isAMention(arg));
 }
 exports.findMentionArgs = findMentionArgs;
-async function fetchDiscordUser(id) {
-    return await index_1.client.users.fetch(id);
-}
-exports.fetchDiscordUser = fetchDiscordUser;
 class PaginatedMenuBuilder {
     pageNum = 1;
     totalPages = 1;
@@ -127,5 +133,3 @@ class PaginatedMenuBuilder {
     }
 }
 exports.PaginatedMenuBuilder = PaginatedMenuBuilder;
-const TIMEZONE = 'America/New_York';
-exports.TIMEZONE = TIMEZONE;

@@ -38,6 +38,8 @@ async function main() {
         await db.schema.createTable('users')
             .addColumn('user_id', 'varchar(30)', col =>
                 col.notNull().primaryKey())
+            .addColumn('created_date', 'timestamptz', col =>
+                col.notNull().defaultTo(DateTime.now().toISO()))
             .addColumn('balance', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`balance >= 0`))
             .addColumn('armor', 'integer', col =>

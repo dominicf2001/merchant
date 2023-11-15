@@ -8,10 +8,11 @@ const node_cron_1 = __importDefault(require("node-cron"));
 const fs_1 = __importDefault(require("fs"));
 const discord_js_1 = require("discord.js");
 const db_objects_1 = require("./database/db-objects");
-const { TOKEN } = JSON.parse(fs_1.default.readFileSync(`${__dirname}/../config.json`, 'utf8'));
+const stock_utilities_1 = require("./stock-utilities");
+const { TOKEN } = JSON.parse(fs_1.default.readFileSync(`${__dirname}/../token.json`, 'utf8'));
 const utilities_1 = require("./utilities");
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
-const client = new discord_js_1.Client({
+exports.client = new discord_js_1.Client({
     intents: [
         discord_js_1.GatewayIntentBits.Guilds,
         discord_js_1.GatewayIntentBits.GuildMessages,
@@ -23,33 +24,32 @@ const client = new discord_js_1.Client({
         discord_js_1.GatewayIntentBits.GuildPresences
     ],
 });
-exports.client = client;
-client.once(discord_js_1.Events.ClientReady, async () => {
-    console.log('Ready as ' + client.user.tag);
+exports.client.once(discord_js_1.Events.ClientReady, async () => {
+    console.log('Ready as ' + exports.client.user.tag);
 });
-client.on(discord_js_1.Events.InviteCreate, async (invite) => {
+exports.client.on(discord_js_1.Events.InviteCreate, async (invite) => {
     if (invite.inviter.bot)
         return;
     if ((0, utilities_1.marketIsOpen)()) {
-        await db_objects_1.Users.addActivityPoints(invite.inviterId, 1);
+        await db_objects_1.Users.addActivityPoints(invite.inviterId, utilities_1.INVITE_ACTIVITY_VALUE);
     }
 });
-client.on(discord_js_1.Events.MessageReactionAdd, async (_, user) => {
+exports.client.on(discord_js_1.Events.MessageReactionAdd, async (_, user) => {
     if (user.bot)
         return;
     if ((0, utilities_1.marketIsOpen)()) {
-        await db_objects_1.Users.addActivityPoints(user.id, 1);
+        await db_objects_1.Users.addActivityPoints(user.id, utilities_1.REACTION_ACTIVITY_VALUE);
     }
 });
-client.on(discord_js_1.Events.VoiceStateUpdate, async (oldState, newState) => {
-    if (!oldState.channel && newState.channel && !newState.member.user.bot) {
-        if ((0, utilities_1.marketIsOpen)()) {
-            await db_objects_1.Users.addActivityPoints(newState.member.user.id, 1);
-        }
+exports.client.on(discord_js_1.Events.VoiceStateUpdate, async (oldState, newState) => {
+    if (oldState.channel || !newState.channel || newState.member.user.bot)
+        return;
+    if ((0, utilities_1.marketIsOpen)()) {
+        await db_objects_1.Users.addActivityPoints(newState.member.user.id, utilities_1.VOICE_ACTIVITY_VALUE);
     }
 });
 // COMMAND HANDLING
-client.on(discord_js_1.Events.MessageCreate, async (message) => {
+exports.client.on(discord_js_1.Events.MessageCreate, async (message) => {
     if (message.author.bot)
         return;
     const userExists = !!db_objects_1.Users.get(message.author.id);
@@ -87,32 +87,35 @@ client.on(discord_js_1.Events.MessageCreate, async (message) => {
             const mentionedUsers = message.mentions.users;
             mentionedUsers.forEach(async (user) => {
                 if (user.id != message.author.id && !user.bot) {
-                    await db_objects_1.Users.addActivityPoints(user.id, 1);
+                    await db_objects_1.Users.addActivityPoints(user.id, utilities_1.MENTIONED_ACTIVITY_VALUE);
                 }
             });
-            await db_objects_1.Users.addActivityPoints(message.author.id, 1);
+            await db_objects_1.Users.addActivityPoints(message.author.id, utilities_1.MESSAGE_ACTIVITY_VALUE);
         }
     }
 });
 // CRON HANDLING
-// let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
-//     let randomMinute: number = Math.floor(Math.random() * 5);
-//     setTimeout(() => {
-//         // calculateAndUpdateStocks();
-//         // TODO: paramaterize channel id?
-//         // client.channels.fetch("1119995339349430423").then(channel => channel.send("Stocks ticked"));
-//         console.log("tick");
-//     }, randomMinute * 60 * 1000);
-// }, {
-//     timezone: TIMEZONE
-// });
+let stockTicker = node_cron_1.default.schedule(`*/5 ${utilities_1.OPEN_HOUR}-${utilities_1.CLOSE_HOUR} * * *`, () => {
+    // update prices at a random minute within the next 5 minutes
+    let randomMinute = Math.floor(Math.random() * 5);
+    setTimeout(async () => {
+        await (0, stock_utilities_1.updateStockPrices)();
+        // TODO: paramaterize channel id or turn into command
+        const channel = await exports.client.channels.fetch("1119995339349430423");
+        if (channel.isTextBased()) {
+            await channel.send('Stocks ticked');
+        }
+    }, randomMinute * 60 * 1000);
+}, {
+    timezone: utilities_1.TIMEZONE
+});
+// TODO
 let dailyCleanup = node_cron_1.default.schedule('0 5 * * *', () => {
     // stockCleanUp();
     console.log("Cleanup has occurred!");
 }, {
     timezone: utilities_1.TIMEZONE
 });
-// TODO:
-// stockTicker.start();
+stockTicker.start();
 // dailyCleanup.start();
-client.login(TOKEN);
+exports.client.login(TOKEN);

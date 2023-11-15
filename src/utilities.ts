@@ -1,7 +1,6 @@
 import { APIEmbedField, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle,
          EmbedBuilder, RestOrArray, normalizeArray, User } from 'discord.js';
 import { DateTime } from 'luxon';
-import { client } from './index';
 
 // PARAMETERS
 export const TIMEZONE: string = 'America/New_York';
@@ -84,10 +83,6 @@ export function findNumericArgs(args: string[]): string[] {
 
 export function findMentionArgs(args: string[]): string[] {
     return args.filter(arg => isAMention(arg));
-}
-
-export async function fetchDiscordUser(id: string): Promise<User> {
-    return await client.users.fetch(id);
 }
 
 export class PaginatedMenuBuilder {

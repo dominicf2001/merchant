@@ -39,19 +39,40 @@ class Users extends DataStore<User> {
     }
 
     async addActivityPoints(user_id: string, amount: number): Promise<void> {
-        await this.set(user_id);
+        await this.db.transaction().execute(async trx => {
+            await this.set(user_id);
 
-        const activity = await this.getActivity(user_id);
+            const activity = await trx
+                .selectFrom('user_activities')
+                .selectAll()
+                .where('user_id', '=', user_id as UsersUserId)
+                .executeTakeFirst();
 
-        let newActivityPointsShort = activity.activity_points_short + amount;
-        if (newActivityPointsShort < 0) newActivityPointsShort = 0;
+            if (!activity) {                
+                await trx
+                    .insertInto('user_activities')
+                    .values({
+                        user_id: user_id as UsersUserId,
+                        activity_points_short: amount,
+                        activity_points_long: amount
+                    })
+                    .execute();
+            }
+            else {
+                let newActivityPointsShort = activity.activity_points_short + amount;
+                if (newActivityPointsShort < 0) newActivityPointsShort = 0;
 
-        let newActivityPointsLong = activity.activity_points_long + amount;
-        if (newActivityPointsLong < 0) newActivityPointsLong = 0;
-
-        await this.setActivity(user_id, {
-            activity_points_short: newActivityPointsShort,
-            activity_points_long: newActivityPointsLong
+                let newActivityPointsLong = activity.activity_points_long + amount;
+                if (newActivityPointsLong < 0) newActivityPointsLong = 0;
+                await trx
+                    .updateTable('user_activities')
+                    .set({
+                        activity_points_short: newActivityPointsShort,
+                        activity_points_long: newActivityPointsLong
+                    })
+                    .where('user_id', '=', user_id as UsersUserId)
+                    .execute();
+            }
         });
     }
     
@@ -158,6 +179,8 @@ class Users extends DataStore<User> {
                     .returningAll()
                     .executeTakeFirstOrThrow() as UserActivity;
             } else {
+                await this.set(id);
+                
                 result = await this.db
                     .insertInto('user_activities')
                     .values(newUserActivity)

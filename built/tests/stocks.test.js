@@ -6,7 +6,7 @@ const luxon_1 = require("luxon");
 async function sleep(duration) {
     await new Promise(r => setTimeout(r, duration));
 }
-const sleepDuration = 25;
+const sleepDuration = 50;
 describe('UPDATING Operations', () => {
     const testStockId = '123';
     const testUserId = testStockId;

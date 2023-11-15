@@ -1,6 +1,6 @@
 import { Message, EmbedBuilder, inlineCode } from 'discord.js';
 import { Users } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, formatNumber, fetchDiscordUser } from '../../utilities';
+import { CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
 
 const data: Command = {
@@ -34,7 +34,7 @@ export default {
             let i = 1;
             for (const userAndNetworth of topUsers) {
                 const { user, netWorth } = userAndNetworth;
-                const discordUser = await fetchDiscordUser(user.user_id);
+                const discordUser = await message.client.users.fetch(user.user_id);
                 embed.addFields({ name: `${i++}. ${inlineCode(discordUser.username)}`, value: `${CURRENCY_EMOJI_CODE} ${formatNumber(netWorth)}` });
             }
 

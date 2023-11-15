@@ -51,14 +51,10 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     test('Add activity points to a non-existing user', async () => {
         await Users.addActivityPoints(userId, 1);
         await sleep(sleepDuration);
-        const activityPoints = await Users.getActivityPoints(userId);
+        const activity = await Users.getActivity(userId);
 
-        expect(activityPoints).toBe(1);
-
-        let user = Users.getFromCache(userId);
-        expect(user?.activity_points).toBe(1);
-        user = await Users.getFromDB(userId);
-        expect(user?.activity_points).toBe(1);
+        expect(activity.activity_points_short).toBe(1);
+        expect(activity.activity_points_long).toBe(1);
     });
 
     // SUBTRACTING + EXISTING
@@ -95,19 +91,15 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     });
 
     test('Subtract activity points from an existing user', async () => {
-        await Users.set(userId, { activity_points: 2 });
+        await Users.setActivity(userId, { activity_points_short: 2, activity_points_long: 2 });
         await sleep(sleepDuration);
 
         await Users.addActivityPoints(userId, -2);
         await sleep(sleepDuration);
-        const activityPoints = await Users.getActivityPoints(userId);
+        const activity = await Users.getActivity(userId);
 
-        expect(activityPoints).toBe(0);
-
-        let user = Users.getFromCache(userId);
-        expect(user?.activity_points).toBe(0);
-        user = await Users.getFromDB(userId);
-        expect(user?.activity_points).toBe(0);
+        expect(activity.activity_points_short).toBe(0);
+        expect(activity.activity_points_long).toBe(0);
     });
 
     // SUBTRACTING BELOW ZERO
@@ -145,19 +137,15 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     });
 
     test('Subtract activity points from an existing user below zero', async () => {
-        await Users.set(userId, { activity_points: 1 });
+        await Users.setActivity(userId, { activity_points_short: 1, activity_points_long: 1 });
         await sleep(sleepDuration);
 
         await Users.addActivityPoints(userId, -1000);
         await sleep(sleepDuration);
-        const activityPoints = await Users.getActivityPoints(userId);
+        const activity = await Users.getActivity(userId);
 
-        expect(activityPoints).toBe(0);
-
-        let user = Users.getFromCache(userId);
-        expect(user?.activity_points).toBe(0);
-        user = await Users.getFromDB(userId);
-        expect(user?.activity_points).toBe(0);
+        expect(activity.activity_points_short).toBe(0);
+        expect(activity.activity_points_long).toBe(0);
     });
 });
 

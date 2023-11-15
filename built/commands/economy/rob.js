@@ -37,32 +37,28 @@ exports.default = {
                 await message.reply("Invalid rob type.");
                 return;
             }
-            // TODO: move to json
-            const TENDIES_ROB_CHANCE = 70;
-            const ITEM_ROB_CHANCE = 20;
-            const MAX_ITEM_COUNT = 5;
             let reply = "";
             switch (robType) {
                 case 'tendies':
-                    if ((0, utilities_1.getRandomInt)(1, 100) > TENDIES_ROB_CHANCE) {
+                    if ((0, utilities_1.getRandomInt)(1, 100) >= utilities_1.CURRENCY_ROB_CHANCE) {
                         const targetBalance = await db_objects_1.Users.getBalance(target.id);
-                        const robAmount = Math.floor(targetBalance * (0, utilities_1.getRandomFloat)(.01, .10));
+                        const robAmount = Math.floor(targetBalance * (utilities_1.CURRENCY_ROB_PERCENTAGE / 100));
                         await db_objects_1.Users.addBalance(message.author.id, robAmount);
                         await db_objects_1.Users.addBalance(target.id, -robAmount);
                         reply = `You have robbed ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(robAmount)} from: ${(0, discord_js_1.inlineCode)(target.username)}.`;
                     }
                     else {
                         const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
-                        const penaltyAmount = Math.floor(authorBalance * (0, utilities_1.getRandomFloat)(.03, .15));
+                        const penaltyAmount = Math.floor(authorBalance * (utilities_1.CURRENCY_FINE_PERCENTAGE / 100));
                         await db_objects_1.Users.addBalance(message.author.id, -penaltyAmount);
                         reply = `You failed at robbing ${(0, discord_js_1.inlineCode)(target.username)}. You have been fined ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(penaltyAmount)} `;
                     }
                     break;
                 case 'item':
-                    if ((0, utilities_1.getRandomInt)(1, 100) > ITEM_ROB_CHANCE) {
+                    if ((0, utilities_1.getRandomInt)(1, 100) >= utilities_1.ITEM_ROB_CHANCE) {
                         const targetItems = await db_objects_1.Users.getItems(target.id);
                         const authorItemCount = await db_objects_1.Users.getItemCount(message.author.id);
-                        if (authorItemCount >= MAX_ITEM_COUNT) {
+                        if (authorItemCount >= utilities_1.MAX_INV_SIZE) {
                             await message.reply("Your inventory is full.");
                             return;
                         }
@@ -77,7 +73,7 @@ exports.default = {
                     }
                     else {
                         const authorBalance = await db_objects_1.Users.getBalance(message.author.id);
-                        const penaltyAmount = Math.floor(authorBalance * (0, utilities_1.getRandomFloat)(.03, .15));
+                        const penaltyAmount = Math.floor(authorBalance * (utilities_1.ITEM_FINE_PERCENTAGE / 100));
                         await db_objects_1.Users.addBalance(message.author.id, -penaltyAmount);
                         reply = `You failed at robbing ${(0, discord_js_1.inlineCode)(target.username)}. You have been fined ${utilities_1.CURRENCY_EMOJI_CODE} ${(0, utilities_1.formatNumber)(penaltyAmount)} `;
                     }

@@ -22,7 +22,7 @@ exports.default = {
             const embed = new discord_js_1.EmbedBuilder()
                 .setColor("Blurple")
                 .setTitle("Inventory")
-                .setDescription(`:school_satchel: ${(0, utilities_1.formatNumber)(itemCount)}/5 - - :shield: ${(0, utilities_1.formatNumber)(armor)}/1\n------------------------`);
+                .setDescription(`:school_satchel: ${(0, utilities_1.formatNumber)(itemCount)}/${utilities_1.MAX_INV_SIZE} - - :shield: ${(0, utilities_1.formatNumber)(armor)}/1\n------------------------`);
             const emojiCodes = await Promise.all(items.map(item => db_objects_1.Items.get(item.item_id).then(itemInfo => itemInfo.emoji_code)));
             items.forEach((item, index) => {
                 const itemEmojiCode = emojiCodes[index];
