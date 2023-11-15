@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { Users, Items, Stocks } from "../database/db-objects";
 
 async function sleep(duration: number): Promise<void> {
@@ -19,7 +20,16 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         await Users.delete(userId);
         await sleep(sleepDuration);
     });
+    
+    test('Creation date of new user', async () => {
+        await Users.set(userId);
+        await sleep(sleepDuration);
 
+        const user = await Users.get(userId);
+        console.log(DateTime.fromISO(user.created_date));
+        expect(DateTime.fromISO(user.created_date) < DateTime.now()).toBeTruthy;
+    });
+    
     // ADDING + NON-EXISTING
     test('Add balance to a non-existing user', async () => {
         await Users.addBalance(userId, 5);

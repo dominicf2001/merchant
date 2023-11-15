@@ -1,5 +1,7 @@
 import { Users, Stocks } from './database/db-objects';
+import { Users as User } from './database/schemas/public/Users';
 import { UserActivities as UserActivity } from './database/schemas/public/UserActivities';
+import { DateTime } from 'luxon';
 
 export async function updateStockPrices(): Promise<void> {    
     const allUsers = await Users.getAll();
@@ -59,17 +61,21 @@ function calculateEMSD(activity: UserActivity): number {
     return (squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR));
 }
 
-export function updateSMA(activity: UserActivity): number {
-    const daysCount = new Date().getDay();
+export function updateSMA(user: User, activity: UserActivity) {
+    const maxDays = 7;
+    const startDate = DateTime.fromISO(user.created_date);
+    const today = DateTime.now();
+
+    const oldSMA = activity.activity_points_long_sma;
     const activityPoints = activity.activity_points_long;
+    
+    let daysCount = today.diff(startDate, 'days').days + 1;
+    daysCount = Math.min(Math.ceil(daysCount), maxDays);
 
     if (daysCount === 1) {
-        // sma reset
         return activityPoints;
-    }
-    else {
-        const oldSMA = activity.activity_points_long_sma
-        return ((oldSMA * (daysCount - 1)) + activityPoints) / daysCount;   
+    } else {
+        return ((oldSMA * (daysCount - 1)) + activityPoints) / daysCount;
     }
 }
 

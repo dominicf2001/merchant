@@ -28,7 +28,7 @@ async function main() {
             await db.schema.dropTable("items").ifExists().cascade().execute();
             await db.schema.dropTable("stocks").ifExists().cascade().execute();
             await db.schema.dropTable("commands").ifExists().cascade().execute();
-            await db.schema.dropTable("user_activity").ifExists().cascade().execute();
+            await db.schema.dropTable("user_activities").ifExists().cascade().execute();
             await db.schema.dropTable("user_items").ifExists().cascade().execute();
             await db.schema.dropTable("user_stocks").ifExists().cascade().execute();
             await db.schema.dropTable("user_cooldowns").ifExists().cascade().execute();
