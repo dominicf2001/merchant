@@ -3,3 +3,4 @@ token.json
 notes.org
 node_modules/
 coverage/
+built/
