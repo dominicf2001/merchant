@@ -110,6 +110,15 @@ client.on(Events.MessageCreate, async message => {
 });
 
 // CRON HANDLING
+function logToFile(message: string): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = `${timestamp} - ${message}\n`;
+
+    fs.appendFile('cron.log', logMessage, (err) => {
+        if (err) console.error('Error writing to log file:', err);
+    });
+}
+
 let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
     // update prices at a random minute within the next 5 minutes
     let randomMinute: number = Math.floor(Math.random() * 5);
@@ -118,12 +127,14 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
         try {
             await updateStockPrices();
             // TODO: paramaterize channel id or turn into command
-            const channel = await client.channels.fetch("608853914535854103");
-            if (channel.isTextBased()) {
-                await channel.send('Stocks ticked');
-            }            
+            // const channel = await client.channels.fetch("608853914535854103");
+            // if (channel.isTextBased()) {
+            //     await channel.send('Stocks ticked');
+            // }
+            logToFile('Stock prices updated successfully.');
         }
         catch (error) {
+            logToFile(`Stock price update failed: ${error.message}`);
             console.error(error);
         }
     }, randomMinute * 60 * 1000);
@@ -135,9 +146,11 @@ const updateTimes = `${OPEN_HOUR + 1},${OPEN_HOUR + 7},${OPEN_HOUR + 13}`;
 let smaUpdater = cron.schedule(`0 ${updateTimes} * * *`, async () => {
     try {
         await updateSMAS();
+        logToFile('SMA updated successfully.');
     }
     catch (error) {
         console.error(error);
+        logToFile(`SMA update failed: ${error.message}`);
     }
 }, {
     timezone: TIMEZONE
@@ -145,8 +158,15 @@ let smaUpdater = cron.schedule(`0 ${updateTimes} * * *`, async () => {
 
 // TODO
 let dailyCleanup = cron.schedule('0 5 * * *', async () => {
-    await Stocks.cleanUpStocks();
-    console.log("Cleanup has occurred!");
+    try {
+        await Stocks.cleanUpStocks();
+        console.log("Cleanup has occurred!");
+        logToFile('Daily cleanup executed successfully.');        
+    }
+    catch (error) {
+        console.error(error);
+        logToFile(`Daily cleanup failed: ${error.message}`);
+    }
 }, {
     timezone: TIMEZONE
 });
