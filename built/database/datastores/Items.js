@@ -41,7 +41,7 @@ class Items extends DataStore_1.DataStore {
             const itemObj = (await Promise.resolve(`${filePath}`).then(s => __importStar(require(s)))).default;
             if ('data' in itemObj && 'use' in itemObj) {
                 this.behaviors.set(itemObj.data.item_id, itemObj.use);
-                this.set(itemObj.data.item_id, itemObj.data);
+                await this.set(itemObj.data.item_id, itemObj.data);
             }
             else {
                 console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);

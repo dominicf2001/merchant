@@ -206,5 +206,39 @@ describe('HISTORY Operations', () => {
             }
         }
     });
+    test('Clean up stocks', async () => {
+        const baselineDate = luxon_1.DateTime.now();
+        const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            stock_id: testStockId,
+            price: faker_1.faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO(),
+        }));
+        const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            stock_id: testStockIdTwo,
+            price: faker_1.faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i, days: 1 }).toISO(),
+        }));
+        const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            stock_id: testStockIdThree,
+            price: faker_1.faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i, days: 3 }).toISO(),
+        }));
+        await db_objects_1.db.transaction().execute(async (trx) => {
+            await Promise.all([
+                trx.insertInto('stocks').values(stockDataOne).execute(),
+                trx.insertInto('stocks').values(stockDataTwo).execute(),
+                trx.insertInto('stocks').values(stockDataThree).execute(),
+            ]);
+        });
+        await db_objects_1.Stocks.cleanUpStocks();
+        await sleep(sleepDuration * 2);
+        await db_objects_1.db.transaction().execute(async (trx) => {
+            const stocks = await trx
+                .selectFrom('stocks')
+                .selectAll()
+                .execute();
+            expect(stocks.length).toBe(3);
+        });
+    });
 });
 jest.setTimeout(10000);

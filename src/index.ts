@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import fs from 'fs';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
-import { Users, Commands } from './database/db-objects';
+import { Users, Commands, Stocks } from './database/db-objects';
 import { updateSMAS, updateStockPrices } from './stock-utilities';
 const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
 import { secondsToHms, marketIsOpen,
@@ -131,7 +131,7 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
     timezone: TIMEZONE
 });
 
-const updateTimes = `${OPEN_HOUR + 6}, ${OPEN_HOUR + 12}, ${OPEN_HOUR + 18}`;
+const updateTimes = `${OPEN_HOUR + 1},${OPEN_HOUR + 7},${OPEN_HOUR + 13}`;
 let smaUpdater = cron.schedule(`0 ${updateTimes} * * *`, async () => {
     try {
         await updateSMAS();
@@ -144,15 +144,15 @@ let smaUpdater = cron.schedule(`0 ${updateTimes} * * *`, async () => {
 });
 
 // TODO
-let dailyCleanup = cron.schedule('0 5 * * *', () => {
-    // stockCleanUp();
+let dailyCleanup = cron.schedule('0 5 * * *', async () => {
+    await Stocks.cleanUpStocks();
     console.log("Cleanup has occurred!");
 }, {
     timezone: TIMEZONE
 });
 
-// stockTicker.start();
-// smaUpdater.start();
-// dailyCleanup.start();
+stockTicker.start();
+smaUpdater.start();
+dailyCleanup.start();
 
 client.login(TOKEN);

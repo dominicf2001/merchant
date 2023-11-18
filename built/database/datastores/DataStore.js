@@ -16,7 +16,7 @@ const dialect = new kysely_1.PostgresDialect({
 });
 exports.db = new kysely_1.Kysely({
     dialect,
-    // log: ['query', 'error']
+    log: ['query', 'error']
 });
 class DataStore {
     cache = new discord_js_1.Collection();

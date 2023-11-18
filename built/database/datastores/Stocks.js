@@ -53,17 +53,18 @@ class Stocks extends DataStore_1.DataStore {
                 cachedStockHistory.unshift(result);
             }
             else {
-                cachedStockHistory.push(result);
+                cachedStockHistory.unshift(result);
             }
         });
     }
     async updateStockPrice(stock_id, amount) {
         if (amount < 0)
             amount = 0;
-        this.set(stock_id, { price: amount });
+        await this.set(stock_id, { price: amount });
     }
     async getLatestStocks() {
         let latestStocks = [];
+        console.log(this.cache);
         if (this.cache.size) {
             for (const stockId of this.cache.keys()) {
                 const stockCache = this.cache.get(stockId);
@@ -135,6 +136,23 @@ class Stocks extends DataStore_1.DataStore {
             .orderBy('s1.created_date', 'desc')
             .execute();
         return stockHistory;
+    }
+    async cleanUpStocks() {
+        await this.db
+            .deleteFrom('stocks as s1')
+            .using(eb => eb
+            .selectFrom('stocks')
+            .select([
+            'stock_id',
+            eb => eb.fn.max('created_date').as('max_created_date'),
+            eb => (0, kysely_1.sql) `extract(day from ${eb.ref('created_date')})`.as('created_interval')
+        ])
+            .groupBy('created_interval')
+            .groupBy('stock_id')
+            .as('s2'))
+            .whereRef('s1.stock_id', '=', 's2.stock_id')
+            .whereRef('s1.created_date', '<', 's2.max_created_date')
+            .execute();
     }
     constructor(db) {
         super(db, 'stocks', 'stock_id');
