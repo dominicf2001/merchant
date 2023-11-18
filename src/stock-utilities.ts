@@ -163,8 +163,5 @@ export async function updateSMAS(): Promise<void> {
 //         }
 //     });
 
-// }
-
-
-// module.exports = { calculateAndUpdateStocks, stockCleanUp };
+// } 
 

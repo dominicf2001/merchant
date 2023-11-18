@@ -259,6 +259,48 @@ describe('HISTORY Operations', () => {
             }
         }
     });
+
+    test('Clean up stocks', async () => {
+        const baselineDate = DateTime.now();
+
+        const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            stock_id: testStockId,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            stock_id: testStockIdTwo,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i, days: 1 }).toISO() as StocksCreatedDate,
+        }));
+
+        const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            stock_id: testStockIdThree,
+            price: faker.number.int(100),
+            created_date: baselineDate.minus({ minutes: i, days: 3 }).toISO() as StocksCreatedDate,
+        }));
+
+        await db.transaction().execute(async trx => {
+            await Promise.all([
+                trx.insertInto('stocks').values(stockDataOne).execute(),
+                trx.insertInto('stocks').values(stockDataTwo).execute(),
+                trx.insertInto('stocks').values(stockDataThree).execute(),
+            ]);
+        });
+        
+        await Stocks.cleanUpStocks();
+        await sleep(sleepDuration * 2);
+
+        await db.transaction().execute(async trx => {
+            const stocks = await trx
+                .selectFrom('stocks')
+                .selectAll()
+                .execute();
+
+            expect(stocks.length).toBe(3);
+        });
+    });
 });
 
 jest.setTimeout(10000);

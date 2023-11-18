@@ -21,7 +21,7 @@ class Commands extends DataStore<Command> {
                 const commandObj = (await import(filePath)).default;
                 if ('data' in commandObj && 'execute' in commandObj) {
                     this.behaviors.set(commandObj.data.command_id, commandObj.execute);
-                    this.set(commandObj.data.command_id, commandObj.data);
+                    await this.set(commandObj.data.command_id, commandObj.data);
                 } else {
                     console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
                 }
