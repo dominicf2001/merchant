@@ -18,7 +18,6 @@ export const client: Client = new Client({
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildModeration,
-        GatewayIntentBits.GuildIntegrations,
         GatewayIntentBits.GuildPresences
     ],
 });
@@ -63,13 +62,14 @@ client.on(Events.MessageCreate, async message => {
     const userExists: boolean = !!Users.get(message.author.id);
     if (!userExists) {
         await Users.set(message.author.id);
+        await Stocks.updateStockPrice(message.author.id, 1);
     }
 
     const prefix: string = '$';
     const isCommand: boolean = message.content.startsWith(prefix);
 
     // When a command is called
-    if (isCommand) {
+    if (isCommand && message.channelId === "1030306981052948511") {
         const args: string[] = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName: string = args.shift().toLowerCase();
 
