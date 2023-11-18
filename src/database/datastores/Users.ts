@@ -15,7 +15,42 @@ import { Items } from './Items';
 import { Stocks } from './Stocks';
 import { Commands } from './Commands';
 
-class Users extends DataStore<User> {    
+class Users extends DataStore<User> {
+    async set(id: string, data: Insertable<User> | Updateable<User> = {}): Promise<void> {
+        const newUser: User = { [this.tableID]: id as UsersUserId, ...data } as User;
+
+        try {
+            let result: User = await this.db
+                .selectFrom(this.tableName)
+                .selectAll()
+                .where(this.tableID, '=', id as UsersUserId)
+                .executeTakeFirst() as User;
+
+            if (result) {
+                result = await this.db
+                    .updateTable(this.tableName)
+                    .set(newUser)
+                    .where(this.tableID, '=', id as UsersUserId)
+                    .returningAll()
+                    .executeTakeFirstOrThrow() as User;
+            }
+            else {
+                result = await this.db
+                    .insertInto(this.tableName)
+                    .values(newUser)
+                    .returningAll()
+                    .executeTakeFirstOrThrow() as User;
+
+                this.addActivityPoints(id, 0);
+            }
+
+            this.cache.set(id, [result]);
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+    
     async addBalance(user_id: string, amount: number): Promise<void> {
         const user = await this.get(user_id);
         
@@ -54,7 +89,9 @@ class Users extends DataStore<User> {
                     .values({
                         user_id: user_id as UsersUserId,
                         activity_points_short: amount,
-                        activity_points_long: amount
+                        activity_points_long: amount,
+                        first_activity_date: DateTime.now().toISO(),
+                        last_activity_date: DateTime.now().toISO()
                     })
                     .execute();
             }
@@ -68,7 +105,8 @@ class Users extends DataStore<User> {
                     .updateTable('user_activities')
                     .set({
                         activity_points_short: newActivityPointsShort,
-                        activity_points_long: newActivityPointsLong
+                        activity_points_long: newActivityPointsLong,
+                        last_activity_date: DateTime.now().toISO()
                     })
                     .where('user_id', '=', user_id as UsersUserId)
                     .execute();
@@ -162,7 +200,9 @@ class Users extends DataStore<User> {
     }
 
     async setActivity(id: string, data: Insertable<UserActivity> | Updateable<UserActivity> = {}): Promise<void> {
-        const newUserActivity: UserActivity = { 'user_id': id as UsersUserId, ...data } as UserActivity;
+        const newUserActivity: UserActivity = { 'user_id': id as UsersUserId,
+                                                last_activity_date: DateTime.now().toISO(),
+                                                ...data } as UserActivity;
 
         try {
             let result: UserActivity = await this.db
@@ -180,6 +220,7 @@ class Users extends DataStore<User> {
                     .executeTakeFirstOrThrow() as UserActivity;
             } else {
                 await this.set(id);
+                newUserActivity.first_activity_date = DateTime.now().toISO();
                 
                 result = await this.db
                     .insertInto('user_activities')

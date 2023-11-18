@@ -10,8 +10,6 @@ export type UsersUserId = string & { __brand: 'UsersUserId' };
 export default interface UsersTable {
   user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
 
-  created_date: ColumnType<string, string | null, string | null>;
-
   balance: ColumnType<number, number | null, number | null>;
 
   armor: ColumnType<number, number | null, number | null>;

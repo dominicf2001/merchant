@@ -38,8 +38,6 @@ async function main() {
         await db.schema.createTable('users')
             .addColumn('user_id', 'varchar(30)', col =>
                 col.notNull().primaryKey())
-            .addColumn('created_date', 'timestamptz', col =>
-                col.notNull().defaultTo(DateTime.now().toISO()))
             .addColumn('balance', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`balance >= 0`))
             .addColumn('armor', 'integer', col =>
@@ -107,6 +105,8 @@ async function main() {
             .addColumn('activity_points_long_sma', 'integer', col =>
                 col.notNull().defaultTo(0).check(sql`activity_points_long_sma >= 0`))
             .addColumn('last_activity_date', 'timestamptz', col =>
+                col.notNull().defaultTo(DateTime.now().toISO()))
+            .addColumn('first_activity_date', 'timestamptz', col =>
                 col.notNull().defaultTo(DateTime.now().toISO()))
             .addForeignKeyConstraint('user_items_fk_user', ['user_id'], 'users', ['user_id'], (cb) => cb.onDelete('cascade'))
             .execute();

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const luxon_1 = require("luxon");
 const db_objects_1 = require("../database/db-objects");
 async function sleep(duration) {
     await new Promise(r => setTimeout(r, duration));
@@ -14,6 +15,13 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
     afterEach(async () => {
         await db_objects_1.Users.delete(userId);
         await sleep(sleepDuration);
+    });
+    test('Creation date of new user', async () => {
+        await db_objects_1.Users.set(userId);
+        await sleep(sleepDuration);
+        const activity = await db_objects_1.Users.getActivity(userId);
+        console.log(luxon_1.DateTime.fromISO(activity.first_activity_date));
+        expect(luxon_1.DateTime.fromISO(activity.first_activity_date) < luxon_1.DateTime.now()).toBeTruthy;
     });
     // ADDING + NON-EXISTING
     test('Add balance to a non-existing user', async () => {

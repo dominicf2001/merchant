@@ -8,7 +8,6 @@ const node_cron_1 = __importDefault(require("node-cron"));
 const fs_1 = __importDefault(require("fs"));
 const discord_js_1 = require("discord.js");
 const db_objects_1 = require("./database/db-objects");
-const stock_utilities_1 = require("./stock-utilities");
 const { TOKEN } = JSON.parse(fs_1.default.readFileSync(`${__dirname}/../token.json`, 'utf8'));
 const utilities_1 = require("./utilities");
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
@@ -94,21 +93,21 @@ exports.client.on(discord_js_1.Events.MessageCreate, async (message) => {
         }
     }
 });
-// CRON HANDLING
-let stockTicker = node_cron_1.default.schedule(`*/5 ${utilities_1.OPEN_HOUR}-${utilities_1.CLOSE_HOUR} * * *`, () => {
-    // update prices at a random minute within the next 5 minutes
-    let randomMinute = Math.floor(Math.random() * 5);
-    setTimeout(async () => {
-        await (0, stock_utilities_1.updateStockPrices)();
-        // TODO: paramaterize channel id or turn into command
-        const channel = await exports.client.channels.fetch("1119995339349430423");
-        if (channel.isTextBased()) {
-            await channel.send('Stocks ticked');
-        }
-    }, randomMinute * 60 * 1000);
-}, {
-    timezone: utilities_1.TIMEZONE
-});
+// // CRON HANDLING
+// let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
+//     // update prices at a random minute within the next 5 minutes
+//     let randomMinute: number = Math.floor(Math.random() * 5);
+//     setTimeout(async () => {
+//         await updateStockPrices();
+//         // TODO: paramaterize channel id or turn into command
+//         const channel = await client.channels.fetch("608853914535854103");
+//         if (channel.isTextBased()) {
+//             await channel.send('Stocks ticked');
+//         }
+//     }, randomMinute * 60 * 1000);
+// }, {
+//     timezone: TIMEZONE
+// });
 // TODO
 let dailyCleanup = node_cron_1.default.schedule('0 5 * * *', () => {
     // stockCleanUp();
@@ -116,6 +115,6 @@ let dailyCleanup = node_cron_1.default.schedule('0 5 * * *', () => {
 }, {
     timezone: utilities_1.TIMEZONE
 });
-stockTicker.start();
+// stockTicker.start();
 // dailyCleanup.start();
 exports.client.login(TOKEN);

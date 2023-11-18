@@ -25,9 +25,9 @@ describe('BALANCE, ACTIVITY_POINTS, ARMOR Operations', () => {
         await Users.set(userId);
         await sleep(sleepDuration);
 
-        const user = await Users.get(userId);
-        console.log(DateTime.fromISO(user.created_date));
-        expect(DateTime.fromISO(user.created_date) < DateTime.now()).toBeTruthy;
+        const activity = await Users.getActivity(userId);
+        console.log(DateTime.fromISO(activity.first_activity_date));
+        expect(DateTime.fromISO(activity.first_activity_date) < DateTime.now()).toBeTruthy;
     });
     
     // ADDING + NON-EXISTING

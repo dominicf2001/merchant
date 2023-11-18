@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateSMA = exports.updateStockPrices = void 0;
 const db_objects_1 = require("./database/db-objects");
+const luxon_1 = require("luxon");
 async function updateStockPrices() {
     const allUsers = await db_objects_1.Users.getAll();
     await Promise.all(allUsers.map(async (user) => {
@@ -22,19 +23,19 @@ async function updateStockPrices() {
 }
 exports.updateStockPrices = updateStockPrices;
 function calculateStockPrice(EMA, EMSD, SMA) {
-    const EMA_WEIGHT = 0.5;
-    const EMSD_WEIGHT = 0.3;
-    const SMA_WEIGHT = 0.2;
-    const RANDOMNESS_FACTOR = 0.05;
+    const EMA_WEIGHT = 0.4;
+    const EMSD_WEIGHT = 0.2;
+    const SMA_WEIGHT = 0.4;
+    const RANDOMNESS_FACTOR = 0.15;
     const randomAdjustment = (Math.random() - 0.5) * RANDOMNESS_FACTOR;
     const newPrice = (EMA * EMA_WEIGHT) + (EMSD * EMSD_WEIGHT) + (SMA * SMA_WEIGHT) + randomAdjustment;
-    return newPrice;
+    return Math.floor(newPrice);
 }
 function calculateEMA(activity) {
-    const SMOOTHING_FACTOR = 0.3;
+    const SMOOTHING_FACTOR = 0.2;
     const oldEMA = activity.activity_points_short_ema;
     const activityPoints = activity.activity_points_short;
-    return (activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR));
+    return Math.floor((activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR)));
 }
 function calculateEMSD(activity) {
     const SMOOTHING_FACTOR = 0.3;
@@ -43,17 +44,21 @@ function calculateEMSD(activity) {
     const activityPoints = activity.activity_points_short;
     const deviation = activityPoints - newEMA;
     const squaredDeviation = Math.pow(deviation, 2);
-    return (squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR));
+    return Math.floor((squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR)));
 }
 function updateSMA(activity) {
-    const daysCount = new Date().getDay();
+    const maxDays = 7;
+    const startDate = luxon_1.DateTime.fromISO(activity.first_activity_date);
+    const today = luxon_1.DateTime.now();
+    const oldSMA = activity.activity_points_long_sma;
     const activityPoints = activity.activity_points_long;
+    let daysCount = today.diff(startDate, 'days').days + 1;
+    daysCount = Math.min(Math.ceil(daysCount), maxDays);
+    // TODO: make this update the db
     if (daysCount === 1) {
-        // sma reset
         return activityPoints;
     }
     else {
-        const oldSMA = activity.activity_points_long_sma;
         return ((oldSMA * (daysCount - 1)) + activityPoints) / daysCount;
     }
 }

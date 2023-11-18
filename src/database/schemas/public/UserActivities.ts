@@ -19,6 +19,8 @@ export default interface UserActivitiesTable {
   activity_points_long_sma: ColumnType<number, number | null, number | null>;
 
   last_activity_date: ColumnType<string, string | null, string | null>;
+
+  first_activity_date: ColumnType<string, string | null, string | null>;
 }
 
 export type UserActivities = Selectable<UserActivitiesTable>;

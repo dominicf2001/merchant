@@ -7,6 +7,37 @@ const Items_1 = require("./Items");
 const Stocks_1 = require("./Stocks");
 const Commands_1 = require("./Commands");
 class Users extends DataStore_1.DataStore {
+    async set(id, data = {}) {
+        const newUser = { [this.tableID]: id, ...data };
+        try {
+            let result = await this.db
+                .selectFrom(this.tableName)
+                .selectAll()
+                .where(this.tableID, '=', id)
+                .executeTakeFirst();
+            if (result) {
+                result = await this.db
+                    .updateTable(this.tableName)
+                    .set(newUser)
+                    .where(this.tableID, '=', id)
+                    .returningAll()
+                    .executeTakeFirstOrThrow();
+            }
+            else {
+                result = await this.db
+                    .insertInto(this.tableName)
+                    .values(newUser)
+                    .returningAll()
+                    .executeTakeFirstOrThrow();
+                this.addActivityPoints(id, 0);
+            }
+            this.cache.set(id, [result]);
+        }
+        catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
     async addBalance(user_id, amount) {
         const user = await this.get(user_id);
         let newBalance = user ? (user.balance + amount) : amount;
@@ -39,7 +70,9 @@ class Users extends DataStore_1.DataStore {
                     .values({
                     user_id: user_id,
                     activity_points_short: amount,
-                    activity_points_long: amount
+                    activity_points_long: amount,
+                    first_activity_date: luxon_1.DateTime.now().toISO(),
+                    last_activity_date: luxon_1.DateTime.now().toISO()
                 })
                     .execute();
             }
@@ -54,7 +87,8 @@ class Users extends DataStore_1.DataStore {
                     .updateTable('user_activities')
                     .set({
                     activity_points_short: newActivityPointsShort,
-                    activity_points_long: newActivityPointsLong
+                    activity_points_long: newActivityPointsLong,
+                    last_activity_date: luxon_1.DateTime.now().toISO()
                 })
                     .where('user_id', '=', user_id)
                     .execute();
@@ -139,7 +173,9 @@ class Users extends DataStore_1.DataStore {
         });
     }
     async setActivity(id, data = {}) {
-        const newUserActivity = { 'user_id': id, ...data };
+        const newUserActivity = { 'user_id': id,
+            last_activity_date: luxon_1.DateTime.now().toISO(),
+            ...data };
         try {
             let result = await this.db
                 .selectFrom('user_activities')
@@ -156,6 +192,7 @@ class Users extends DataStore_1.DataStore {
             }
             else {
                 await this.set(id);
+                newUserActivity.first_activity_date = luxon_1.DateTime.now().toISO();
                 result = await this.db
                     .insertInto('user_activities')
                     .values(newUserActivity)

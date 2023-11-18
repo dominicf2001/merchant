@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import fs from 'fs';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { Users, Commands } from './database/db-objects';
-import { updateStockPrices } from './stock-utilities';
+import { updateSMAS, updateStockPrices } from './stock-utilities';
 const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
 import { secondsToHms, marketIsOpen,
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, VOICE_ACTIVITY_VALUE, REACTION_ACTIVITY_VALUE,
@@ -115,14 +115,30 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
     let randomMinute: number = Math.floor(Math.random() * 5);
     
     setTimeout(async () => {
-        await updateStockPrices();
-        // TODO: paramaterize channel id or turn into command
-        const channel = await client.channels.fetch("1119995339349430423");
-        if (channel.isTextBased()) {
-            await channel.send('Stocks ticked');
+        try {
+            await updateStockPrices();
+            // TODO: paramaterize channel id or turn into command
+            const channel = await client.channels.fetch("608853914535854103");
+            if (channel.isTextBased()) {
+                await channel.send('Stocks ticked');
+            }            
         }
-        
+        catch (error) {
+            console.error(error);
+        }
     }, randomMinute * 60 * 1000);
+}, {
+    timezone: TIMEZONE
+});
+
+const updateTimes = `${OPEN_HOUR + 6}, ${OPEN_HOUR + 12}, ${OPEN_HOUR + 18}`;
+let smaUpdater = cron.schedule(`0 ${updateTimes} * * *`, async () => {
+    try {
+        await updateSMAS();
+    }
+    catch (error) {
+        console.error(error);
+    }
 }, {
     timezone: TIMEZONE
 });
@@ -135,7 +151,8 @@ let dailyCleanup = cron.schedule('0 5 * * *', () => {
     timezone: TIMEZONE
 });
 
-stockTicker.start();
+// stockTicker.start();
+// smaUpdater.start();
 // dailyCleanup.start();
 
 client.login(TOKEN);

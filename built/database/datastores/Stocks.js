@@ -45,12 +45,15 @@ class Stocks extends DataStore_1.DataStore {
                 .returningAll()
                 .executeTakeFirstOrThrow();
             let cachedStockHistory = this.cache.get(id);
-            if (cachedStockHistory) {
+            if (!cachedStockHistory) {
+                this.cache.set(id, [result]);
+            }
+            else if (cachedStockHistory.length >= 12) {
                 cachedStockHistory.pop();
                 cachedStockHistory.unshift(result);
             }
             else {
-                this.cache.set(id, [result]);
+                cachedStockHistory.push(result);
             }
         });
     }

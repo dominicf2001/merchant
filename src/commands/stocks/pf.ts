@@ -18,14 +18,17 @@ export default {
         if (args[0]) {
             try {
                 await sendPurchaseHistoryList(message, args);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(error);
                 await message.reply('An error occurred when getting your portfolio. Please try again later.');
             }
-        } else {
+        }
+        else {
             try {
                 await sendStockList(message, args);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(error);
                 await message.reply('An error occurred when getting your portfolio. Please try again later.');
             }

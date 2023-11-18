@@ -1,5 +1,4 @@
 import { Users, Stocks } from './database/db-objects';
-import { Users as User } from './database/schemas/public/Users';
 import { UserActivities as UserActivity } from './database/schemas/public/UserActivities';
 import { DateTime } from 'luxon';
 
@@ -20,33 +19,32 @@ export async function updateStockPrices(): Promise<void> {
         await Users.setActivity(user.user_id, {
             activity_points_short: 0,
             activity_points_short_ema: EMA,
-            activity_points_short_emsd: EMSD,
-            activity_points_long_sma: SMA,
+            activity_points_short_emsd: EMSD
         });
     }));
 }
 
 function calculateStockPrice(EMA: number, EMSD: number, SMA: number): number {
-    const EMA_WEIGHT = 0.5;
-    const EMSD_WEIGHT = 0.3;
-    const SMA_WEIGHT = 0.2;
+    const EMA_WEIGHT = 0.4;
+    const EMSD_WEIGHT = 0.2;
+    const SMA_WEIGHT = 0.4;
     
-    const RANDOMNESS_FACTOR = 0.05;
+    const RANDOMNESS_FACTOR = 0.15;
     const randomAdjustment = (Math.random() - 0.5) * RANDOMNESS_FACTOR;
     
     const newPrice = (EMA * EMA_WEIGHT) + (EMSD * EMSD_WEIGHT) + (SMA * SMA_WEIGHT) + randomAdjustment;
 
-    return newPrice;
+    return Math.floor(newPrice);
 }
 
 
 function calculateEMA(activity: UserActivity): number {
-    const SMOOTHING_FACTOR = 0.3;
+    const SMOOTHING_FACTOR = 0.2;
     
     const oldEMA = activity.activity_points_short_ema;
     const activityPoints = activity.activity_points_short;
     
-    return (activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR));
+    return Math.floor((activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR)));
 }
 
 function calculateEMSD(activity: UserActivity): number {
@@ -58,25 +56,46 @@ function calculateEMSD(activity: UserActivity): number {
 
     const deviation = activityPoints - newEMA;
     const squaredDeviation = Math.pow(deviation, 2);
-    return (squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR));
+    return Math.floor((squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR)));
 }
 
-export function updateSMA(user: User, activity: UserActivity) {
-    const maxDays = 7;
-    const startDate = DateTime.fromISO(user.created_date);
-    const today = DateTime.now();
+export async function updateSMAS(): Promise<void> {
+    const allUsers = await Users.getAll();
 
-    const oldSMA = activity.activity_points_long_sma;
-    const activityPoints = activity.activity_points_long;
-    
-    let daysCount = today.diff(startDate, 'days').days + 1;
-    daysCount = Math.min(Math.ceil(daysCount), maxDays);
+    await Promise.all(allUsers.map(async user => {
+        const activity = await Users.getActivity(user.user_id);
+        
+        const maxIntervals = 7 * 3;
+        const startDate = DateTime.fromISO(activity.first_activity_date);
+        const today = DateTime.now();
 
-    if (daysCount === 1) {
-        return activityPoints;
-    } else {
-        return ((oldSMA * (daysCount - 1)) + activityPoints) / daysCount;
-    }
+        const oldSMA = activity.activity_points_long_sma;
+        const activityPoints = activity.activity_points_long;
+
+        let intervals = Math.floor(today.diff(startDate, 'days').days) * 3;
+        intervals += today.hasSame(startDate, 'day') ? 0 : 3;
+
+        const hourOfDay = today.hour;
+        if (hourOfDay < 8)
+            intervals += 1;
+        else if (hourOfDay < 16)
+            intervals += 2;
+        else
+            intervals += 3;
+
+        intervals = Math.min(intervals, maxIntervals);
+
+        if (intervals === 1) {
+            await Users.setActivity(user.user_id, {
+                activity_points_long_sma: activityPoints,
+            });
+
+            return activityPoints;
+        }
+        else {
+            return ((oldSMA * (intervals - 1)) + activityPoints) / intervals;
+        }
+    }));
 }
 
 // // TODO: move to a function on Stocks
