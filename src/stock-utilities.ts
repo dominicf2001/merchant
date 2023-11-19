@@ -2,21 +2,21 @@ import { Users, Stocks } from './database/db-objects';
 import { UserActivities as UserActivity } from './database/schemas/public/UserActivities';
 import { DateTime } from 'luxon';
 
-export async function updateStockPrices(): Promise<void> {    
-    const allUsers = await Users.getAll();
+export async function updateStockPrices(): Promise<void> {
+    const allStocks = await Stocks.getAll();
 
-    await Promise.all(allUsers.map(async user => {
-        const activity = await Users.getActivity(user.user_id);
+    await Promise.all(allStocks.map(async stock => {
+        const activity = await Users.getActivity(stock.stock_id);
         
         const EMA = calculateEMA(activity);
         const EMSD = calculateEMSD(activity);
         const SMA = activity.activity_points_long_sma; // calculated seperately
 
         const newPrice = calculateStockPrice(EMA, EMSD, SMA);
-        await Stocks.updateStockPrice(user.user_id, newPrice);
+        await Stocks.updateStockPrice(stock.stock_id, newPrice);
         
         // update storage
-        await Users.setActivity(user.user_id, {
+        await Users.setActivity(stock.stock_id, {
             activity_points_short: 0,
             activity_points_short_ema: EMA,
             activity_points_short_emsd: EMSD
@@ -60,10 +60,10 @@ function calculateEMSD(activity: UserActivity): number {
 }
 
 export async function updateSMAS(): Promise<void> {
-    const allUsers = await Users.getAll();
+    const allStocks = await Stocks.getAll();
 
-    await Promise.all(allUsers.map(async user => {
-        const activity = await Users.getActivity(user.user_id);
+    await Promise.all(allStocks.map(async stock => {
+        const activity = await Users.getActivity(stock.stock_id);
         
         const maxIntervals = 7 * 3;
         const startDate = DateTime.fromISO(activity.first_activity_date);
@@ -86,7 +86,7 @@ export async function updateSMAS(): Promise<void> {
         intervals = Math.min(intervals, maxIntervals);
 
         if (intervals === 1) {
-            await Users.setActivity(user.user_id, {
+            await Users.setActivity(stock.stock_id, {
                 activity_points_long_sma: activityPoints,
             });
 
