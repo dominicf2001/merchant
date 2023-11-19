@@ -59,8 +59,8 @@ client.on(Events.MessageCreate, async message => {
     if (message.author.bot)
         return;
     
-    const userExists: boolean = !!Users.get(message.author.id);
-    if (!userExists) {
+    const user = Users.get(message.author.id);
+    if (user) {
         await Users.set(message.author.id);
         await Stocks.updateStockPrice(message.author.id, 1);
     }
@@ -81,7 +81,7 @@ client.on(Events.MessageCreate, async message => {
             await message.reply("You do not have permission to use this command.");
             return;
         }
-
+ 
         // Check for remaining cooldown
         const remainingCooldownDuration: number = await Users.getRemainingCooldownDuration(message.author.id, commandName);
         if (remainingCooldownDuration > 0) {

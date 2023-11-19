@@ -41,7 +41,7 @@ class Users extends DataStore<User> {
                     .returningAll()
                     .executeTakeFirstOrThrow() as User;
 
-                this.addActivityPoints(id, 0);
+                await this.addActivityPoints(id, 0);
             }
 
             this.cache.set(id, [result]);
@@ -83,7 +83,9 @@ class Users extends DataStore<User> {
                 .where('user_id', '=', user_id as UsersUserId)
                 .executeTakeFirst();
 
-            if (!activity) {                
+            console.log(activity);
+            
+            if (!activity) {
                 await trx
                     .insertInto('user_activities')
                     .values({
@@ -200,35 +202,41 @@ class Users extends DataStore<User> {
     }
 
     async setActivity(id: string, data: Insertable<UserActivity> | Updateable<UserActivity> = {}): Promise<void> {
-        const newUserActivity: UserActivity = { 'user_id': id as UsersUserId,
-                                                last_activity_date: DateTime.now().toISO(),
-                                                ...data } as UserActivity;
-
         try {
-            let result: UserActivity = await this.db
-                .selectFrom('user_activities')
-                .selectAll()
-                .where('user_id', '=', id as UsersUserId)
-                .executeTakeFirst() as UserActivity;
+            const newUserActivity: UserActivity = {
+                'user_id': id as UsersUserId,
+                last_activity_date: DateTime.now().toISO(),
+                ...data
+            } as UserActivity;
 
-            if (result) {
-                result = await this.db
-                    .updateTable('user_activities')
-                    .set(newUserActivity)
+            await this.db.transaction().execute(async trx => {
+                let result: UserActivity = await trx
+                    .selectFrom('user_activities')
+                    .selectAll()
                     .where('user_id', '=', id as UsersUserId)
-                    .returningAll()
-                    .executeTakeFirstOrThrow() as UserActivity;
-            } else {
-                await this.set(id);
-                newUserActivity.first_activity_date = DateTime.now().toISO();
-                
-                result = await this.db
-                    .insertInto('user_activities')
-                    .values(newUserActivity)
-                    .returningAll()
-                    .executeTakeFirstOrThrow() as UserActivity;
-            }
-        } catch (error) {
+                    .executeTakeFirst() as UserActivity;
+
+                if (result) {
+                    result = await trx
+                        .updateTable('user_activities')
+                        .set(newUserActivity)
+                        .where('user_id', '=', id as UsersUserId)
+                        .returningAll()
+                        .executeTakeFirstOrThrow() as UserActivity;
+                }
+                else {
+                    await this.set(id);
+                    newUserActivity.first_activity_date = DateTime.now().toISO();
+
+                    result = await trx
+                        .insertInto('user_activities')
+                        .values(newUserActivity)
+                        .returningAll()
+                        .executeTakeFirstOrThrow() as UserActivity;
+                } 
+            });
+        }
+        catch (error) {
             console.error(error);
             throw error;
         }

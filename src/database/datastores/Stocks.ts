@@ -47,7 +47,7 @@ class Stocks extends DataStore<Stock> {
             created_date: data.created_date ?? DateTime.now().toISO() as StocksCreatedDate,
             ...data
         } as Stock;
-
+        
         await db.transaction().execute(async (trx) => {
             const result: Stock = await trx
                 .insertInto('stocks')

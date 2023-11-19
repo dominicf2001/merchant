@@ -4,3 +4,4 @@ notes.org
 node_modules/
 coverage/
 built/
+cron.log
