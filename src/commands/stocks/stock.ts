@@ -27,20 +27,11 @@ export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.first()) {
-            try {
-                await sendStockChart(message, args);
-            } catch (error) {
-                console.error(error);
-                await message.reply('An error occurred when getting this stock. Please try again later.');
-            }
-        } else {
-            try {
-                let pageNum: number = +findNumericArgs(args)[0] || 1;
-                await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
-            } catch (error) {
-                console.error(error);
-                await message.reply('An error occurred when getting the stocks. Please try again later.');
-            }
+            await sendStockChart(message, args);
+        }
+        else {        
+            let pageNum: number = +findNumericArgs(args)[0] || 1;
+            await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
         }
     },
 };

@@ -15,22 +15,10 @@ export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.size === 1) {
-            try {
-                await buyStock(message, args);
-            }
-            catch (error) {
-                console.error(error);
-                await message.reply('An error occurred when buying this stock. Please try again later.');
-            }
+            await buyStock(message, args);
         }
         else {
-            try {
-                await buyItem(message, args);
-            }
-            catch (error) {
-                console.error(error);
-                await message.reply('An error occurred when buying this item. Please try again later.');
-            }
+            await buyItem(message, args);
         }
     }
 };

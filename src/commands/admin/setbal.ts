@@ -14,34 +14,28 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        try {
-            const newBalance: number = +findNumericArgs(args)[0];
-            const target = message.mentions.users.first() ?? message.author;
+        const newBalance: number = +findNumericArgs(args)[0];
+        const target = message.mentions.users.first() ?? message.author;
 
-            if (!newBalance) {
-                await message.reply("You must specify a balance.");
-                return;
-            };
+        if (!newBalance) {
+            await message.reply("You must specify a balance.");
+            return;
+        };
 
-            if (!target) {
-                await message.reply("You must specify a target.");
-                return;
-            }
-
-            await Users.setBalance(target.id, newBalance);
-
-            const embed = new EmbedBuilder()
-                .setColor("Blurple")
-                .setFields({
-                    name: `${inlineCode(target.username)}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
-                    value: ` `
-                });
-
-            await message.reply({ embeds: [embed] });
+        if (!target) {
+            await message.reply("You must specify a target.");
+            return;
         }
-        catch (error) {
-            console.error(error);
-            await message.reply('An error occurred when setting this users balance. Please try again later.');
-        }
+
+        await Users.setBalance(target.id, newBalance);
+
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .setFields({
+                name: `${inlineCode(target.username)}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
+                value: ` `
+            });
+
+        await message.reply({ embeds: [embed] });
     }
 }

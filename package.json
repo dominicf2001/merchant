@@ -13,7 +13,7 @@
         "start": "node ./built/index.js",
         "start-t": "node ./built/index.js -t",
         "go": "npm run build && npm run start",
-        "go-t": "npm run build && npm run start-t",
+        "go-t": "npm run build && npm run start-t"
     },
     "author": "",
     "license": "ISC",

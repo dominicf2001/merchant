@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import fs from 'fs';
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, EmbedBuilder } from 'discord.js';
 import { Users, Commands, Stocks } from './database/db-objects';
 import { updateSMAS, updateStockPrices } from './stock-utilities';
 import { secondsToHms, marketIsOpen,
@@ -13,7 +13,7 @@ const args: string[] = process.argv.slice(2);
 const runTest: boolean = (args[0] === "-t");
 
 let token: string;
-if (runTest) {
+if (!runTest) {
     const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
     token = TOKEN;
 }
@@ -101,10 +101,22 @@ client.on(Events.MessageCreate, async message => {
             return;
         }
 
-        // If no cooldown, execute command and set cooldown
-        await Commands.execute(command.command_id, message, args);
-        if (command.cooldown_time > 0) {
-            await Users.createCooldown(message.author.id, command.command_id);
+        try {
+            // If no cooldown, execute command and set cooldown
+            await Commands.execute(command.command_id, message, args);
+            if (command.cooldown_time > 0) {
+                await Users.createCooldown(message.author.id, command.command_id);
+            }   
+        }
+        catch (error) {
+            console.error(error);
+            const embed = new EmbedBuilder()
+                .setColor("Yellow")
+                .setFields({
+                    name: `An error occurred when executing ${command.command_id}. Please try again later.`,
+                    value: ` `
+                });
+            await message.reply({ embeds: [embed] });
         }
     }
     else {
