@@ -17,6 +17,7 @@ export default {
         try {
             const authorBalance = await Users.getBalance(message.author.id);
 
+            throw new Error("test");
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
                 .addFields({ value: `${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)}`, name: `Balance` });
@@ -25,7 +26,15 @@ export default {
         }
         catch (error) {
             console.error('An error occurred: ', error);
-            await message.reply('An error occurred when getting your balance. Please try again later.');
+
+            const embed = new EmbedBuilder()
+                .setColor("Yellow")
+                .setFields({
+                    name: `An error occurred when getting your balance. Please try again later.`,
+                    value: ``
+                });
+
+            await message.reply({ embeds: [embed] });
         }
 	},
 };

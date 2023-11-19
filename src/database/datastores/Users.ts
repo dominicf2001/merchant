@@ -82,8 +82,6 @@ class Users extends DataStore<User> {
                 .selectAll()
                 .where('user_id', '=', user_id as UsersUserId)
                 .executeTakeFirst();
-
-            console.log(activity);
             
             if (!activity) {
                 await trx
@@ -121,9 +119,9 @@ class Users extends DataStore<User> {
 
         await this.db.transaction().execute(async trx => {
             // Check if item exists
-            const itemExists = !!(await Items.get(item_id));
+            const item = await Items.get(item_id);
             
-            if (!itemExists)
+            if (!item)
                 return;
 
             if (amount > 0) {
