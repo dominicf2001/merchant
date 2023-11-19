@@ -60,7 +60,7 @@ client.on(Events.MessageCreate, async message => {
     if (message.author.bot)
         return;
     
-    const user = Users.get(message.author.id);
+    const user = await Users.get(message.author.id);
     if (user) {
         await Users.set(message.author.id);
     }
