@@ -14,28 +14,22 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        try {
-            const stockUser = message.mentions.members.first();
-            const newPrice: number = +findNumericArgs(args);
+        const stockUser = message.mentions.members.first();
+        const newPrice: number = +findNumericArgs(args);
 
-            if (!newPrice) {
-                await message.reply("Please specify a price.");
-                return;
-            }
-
-            await Stocks.updateStockPrice(stockUser.id, newPrice);
-
-            const embed = new EmbedBuilder()
-                .setColor("Blurple")
-                .setFields({
-                    name: `${inlineCode(userMention(stockUser.id))}'s price set to: ${CURRENCY_EMOJI_CODE} ${newPrice}`,
-                    value: ` `
-                });
-            await message.reply({ embeds: [embed] });
+        if (!newPrice) {
+            await message.reply("Please specify a price.");
+            return;
         }
-        catch (error) {
-            console.error(error);
-            await message.reply('An error occurred when setting the stock price. Please try again later.');
-        }
-    },
+
+        await Stocks.updateStockPrice(stockUser.id, newPrice);
+
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .setFields({
+                name: `${inlineCode(userMention(stockUser.id))}'s price set to: ${CURRENCY_EMOJI_CODE} ${newPrice}`,
+                value: ` `
+            });
+        await message.reply({ embeds: [embed] });
+    }
 };

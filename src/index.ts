@@ -1,14 +1,26 @@
 import cron from 'node-cron';
 import fs from 'fs';
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, EmbedBuilder } from 'discord.js';
 import { Users, Commands, Stocks } from './database/db-objects';
 import { updateSMAS, updateStockPrices } from './stock-utilities';
-const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
 import { secondsToHms, marketIsOpen,
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, VOICE_ACTIVITY_VALUE, REACTION_ACTIVITY_VALUE,
          MESSAGE_ACTIVITY_VALUE, MENTIONED_ACTIVITY_VALUE, INVITE_ACTIVITY_VALUE } from "./utilities";
 
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
+
+const args: string[] = process.argv.slice(2);
+const runTest: boolean = (args[0] === "-t");
+
+let token: string;
+if (!runTest) {
+    const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
+    token = TOKEN;
+}
+else {
+    const { TEST_TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
+    token = TEST_TOKEN;
+}
 
 export const client: Client = new Client({
     intents: [
@@ -59,7 +71,7 @@ client.on(Events.MessageCreate, async message => {
     if (message.author.bot)
         return;
     
-    const user = Users.get(message.author.id);
+    const user = await Users.get(message.author.id);
     if (user) {
         await Users.set(message.author.id);
         await Stocks.updateStockPrice(message.author.id, 1);
@@ -89,10 +101,22 @@ client.on(Events.MessageCreate, async message => {
             return;
         }
 
-        // If no cooldown, execute command and set cooldown
-        await Commands.execute(command.command_id, message, args);
-        if (command.cooldown_time > 0) {
-            await Users.createCooldown(message.author.id, command.command_id);
+        try {
+            // If no cooldown, execute command and set cooldown
+            await Commands.execute(command.command_id, message, args);
+            if (command.cooldown_time > 0) {
+                await Users.createCooldown(message.author.id, command.command_id);
+            }   
+        }
+        catch (error) {
+            console.error(error);
+            const embed = new EmbedBuilder()
+                .setColor("Yellow")
+                .setFields({
+                    name: `An error occurred when executing ${command.command_id}. Please try again later.`,
+                    value: ` `
+                });
+            await message.reply({ embeds: [embed] });
         }
     }
     else {
@@ -115,7 +139,8 @@ function logToFile(message: string): void {
     const logMessage = `${timestamp} - ${message}\n`;
 
     fs.appendFile('cron.log', logMessage, (err) => {
-        if (err) console.error('Error writing to log file:', err);
+        if (err)
+            console.error('Error writing to log file:', err);
     });
 }
 
@@ -175,4 +200,4 @@ stockTicker.start();
 smaUpdater.start();
 dailyCleanup.start();
 
-client.login(TOKEN);
+client.login(token);

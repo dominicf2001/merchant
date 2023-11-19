@@ -16,22 +16,10 @@ export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         if (args[0]) {
-            try {
-                await sendPurchaseHistoryList(message, args);
-            }
-            catch (error) {
-                console.error(error);
-                await message.reply('An error occurred when getting your portfolio. Please try again later.');
-            }
+            await sendPurchaseHistoryList(message, args);
         }
         else {
-            try {
-                await sendStockList(message, args);
-            }
-            catch (error) {
-                console.error(error);
-                await message.reply('An error occurred when getting your portfolio. Please try again later.');
-            }
+            await sendStockList(message, args);
         }
     }
 };

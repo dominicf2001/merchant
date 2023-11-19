@@ -14,32 +14,20 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        try {
-            let itemName = findTextArgs(args)[0];
+        let itemName = findTextArgs(args)[0];
 
-            if (!itemName) {
-                await message.reply("Please specifiy an item.");
-                return;
-            }
-
-            const item = await Users.getItem(message.author.id, itemName);
-
-            if (!item) {
-                await message.reply("You do not have this item!");
-                return;
-            }
-
-            try {
-                await Items.use(itemName, message, args.slice(1));
-                await Users.addItem(message.author.id, itemName, -1);
-            }
-            catch (error) {
-                await message.reply(error.message);
-            }
+        if (!itemName) {
+            await message.reply("Please specifiy an item.");
+            return;
         }
-        catch (error) {
-            console.error(error);
-            await message.reply('An error occurred when using this item. Please try again later.');
+
+        const item = await Users.getItem(message.author.id, itemName);
+
+        if (!item) {
+            await message.reply("You do not have this item!");
+            return;
         }
+        await Items.use(itemName, message, args.slice(1));
+        await Users.addItem(message.author.id, itemName, -1);
     }
 }

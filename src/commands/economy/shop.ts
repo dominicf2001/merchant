@@ -1,7 +1,7 @@
 import { Items } from '../../database/db-objects';
 import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, PaginatedMenuBuilder } from '../../utilities';
 import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
-import { Message, Events, ButtonInteraction, inlineCode } from 'discord.js';
+import { Message, Events, ButtonInteraction, inlineCode, EmbedBuilder } from 'discord.js';
 import { client } from '../../index';
 
 const SHOP_ID: string = 'shop';
@@ -18,14 +18,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        try {
-            const pageNum = +findNumericArgs(args)[0] || 1;
-            await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
-        }
-        catch (error) {
-            console.error(error);
-            await message.reply('An error occurred when getting the shop. Please try again later.');
-        }
+        const pageNum = +findNumericArgs(args)[0] || 1;
+        await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     }
 };
 

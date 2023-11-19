@@ -14,18 +14,12 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        try {
-            const authorBalance = await Users.getBalance(message.author.id);
+        const authorBalance = await Users.getBalance(message.author.id);
 
-            const embed = new EmbedBuilder()
-                .setColor("Blurple")
-                .addFields({ value: `${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)}`, name: `Balance` });
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .addFields({ value: `${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)}`, name: `Balance` });
 
-            await message.reply({ embeds: [embed] });            
-        }
-        catch (error) {
-            console.error('An error occurred: ', error);
-            await message.reply('An error occurred when getting your balance. Please try again later.');
-        }
-	},
+        await message.reply({ embeds: [embed] });
+    }
 };

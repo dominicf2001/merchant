@@ -11,7 +11,9 @@
         "dbinit-f": "npx tsx ./src/database/db-init.ts -f",
         "build": "npx tsc",
         "start": "node ./built/index.js",
-        "go": "npm run build && npm run start"
+        "start-t": "node ./built/index.js -t",
+        "go": "npm run build && npm run start",
+        "go-t": "npm run build && npm run start-t"
     },
     "author": "",
     "license": "ISC",

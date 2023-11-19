@@ -14,31 +14,25 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        try {
-            const [items, armor, itemCount] = await Promise.all([
-                Users.getItems(message.author.id),
-                Users.getArmor(message.author.id),
-                Users.getItemCount(message.author.id)
-            ]);
+        const [items, armor, itemCount] = await Promise.all([
+            Users.getItems(message.author.id),
+            Users.getArmor(message.author.id),
+            Users.getItemCount(message.author.id)
+        ]);
 
-            const embed = new EmbedBuilder()
-                .setColor("Blurple")
-                .setTitle("Inventory")
-                .setDescription(`:school_satchel: ${formatNumber(itemCount)}/${MAX_INV_SIZE} - - :shield: ${formatNumber(armor)}/1\n------------------------`);
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .setTitle("Inventory")
+            .setDescription(`:school_satchel: ${formatNumber(itemCount)}/${MAX_INV_SIZE} - - :shield: ${formatNumber(armor)}/1\n------------------------`);
 
-            const emojiCodes = await Promise.all(items.map(item => Items.get(item.item_id).then(itemInfo => itemInfo.emoji_code)));
+        const emojiCodes = await Promise.all(items.map(item => Items.get(item.item_id).then(itemInfo => itemInfo.emoji_code)));
 
-            items.forEach((item, index) => {
-                const itemEmojiCode = emojiCodes[index];
-                embed.addFields({ name: `${itemEmojiCode} ${item.item_id} - Q. ${formatNumber(item.quantity)}`, value: ` ` });
-            });
+        items.forEach((item, index) => {
+            const itemEmojiCode = emojiCodes[index];
+            embed.addFields({ name: `${itemEmojiCode} ${item.item_id} - Q. ${formatNumber(item.quantity)}`, value: ` ` });
+        });
 
-            await message.reply({ embeds: [embed] });   
-        }
-        catch (error) {
-            console.error(error);
-            await message.reply('An error occurred getting your inventory. Please try again later.');
-        }
+        await message.reply({ embeds: [embed] });
     }
 }
 
