@@ -7,7 +7,7 @@ const durationMs: number = MUTE_DURATION_MIN * 60000;
 
 const data: Item = {
     item_id: 'mute' as ItemsItemId,
-    price: 2500,
+    price: 2000,
     emoji_code: ":mute:",
     description: `Mutes a user for ${MUTE_DURATION_MIN} minutes`,
     usage: `${inlineCode("$use mute [@user]")}`

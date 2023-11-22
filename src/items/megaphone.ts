@@ -4,7 +4,7 @@ import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 
 const data: Item = {
     item_id: 'megaphone' as ItemsItemId,
-    price: 20000,
+    price: 1000,
     emoji_code: ":mega:",
     description: "Sends your message and/or attachment as an @everyone",
     usage: `${inlineCode("$use megaphone [message/attachment]")}\n${inlineCode("$use megaphone [message] [attachment]")}`

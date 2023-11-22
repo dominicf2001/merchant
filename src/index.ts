@@ -3,7 +3,7 @@ import fs from 'fs';
 import { Client, Events, GatewayIntentBits, EmbedBuilder } from 'discord.js';
 import { Users, Commands, Stocks } from './database/db-objects';
 import { updateSMAS, updateStockPrices } from './stock-utilities';
-import { secondsToHms, marketIsOpen,
+import { secondsToHms, marketIsOpen, getRandomInt
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, VOICE_ACTIVITY_VALUE, REACTION_ACTIVITY_VALUE,
          MESSAGE_ACTIVITY_VALUE, MENTIONED_ACTIVITY_VALUE, INVITE_ACTIVITY_VALUE } from "./utilities";
 
@@ -43,7 +43,7 @@ client.on(Events.InviteCreate, async (invite) => {
         return;
     
     if (marketIsOpen()) {
-        await Users.addActivityPoints(invite.inviterId, INVITE_ACTIVITY_VALUE);
+        await Users.addActivityPoints(invite.inviterId, INVITE_ACTIVITY_VALUE * getRandomInt(2, 4));
     }
 });
 
@@ -52,7 +52,7 @@ client.on(Events.MessageReactionAdd, async (_, user) => {
         return;
     
     if (marketIsOpen()) {
-        await Users.addActivityPoints(user.id, REACTION_ACTIVITY_VALUE);
+        await Users.addActivityPoints(user.id, REACTION_ACTIVITY_VALUE * getRandomInt(2, 4));
     }
 });
 
@@ -61,7 +61,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
         return;
     
     if (marketIsOpen()) {
-        await Users.addActivityPoints(newState.member.user.id, VOICE_ACTIVITY_VALUE);
+        await Users.addActivityPoints(newState.member.user.id, VOICE_ACTIVITY_VALUE * getRandomInt(2, 4));
     }
 });
  
@@ -125,10 +125,10 @@ client.on(Events.MessageCreate, async message => {
             const mentionedUsers = message.mentions.users;
             mentionedUsers.forEach(async user => {
                 if (user.id != message.author.id && !user.bot) {
-                    await Users.addActivityPoints(user.id, MENTIONED_ACTIVITY_VALUE);
+                    await Users.addActivityPoints(user.id, MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4));
                 }
             });
-            await Users.addActivityPoints(message.author.id, MESSAGE_ACTIVITY_VALUE);
+            await Users.addActivityPoints(message.author.id, MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4));
         }
     }
 });

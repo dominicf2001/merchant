@@ -53,7 +53,7 @@ async function sendStockList(message: Message, args: string[]): Promise<void> {
         const gainedOrLost: string = gain < 0 ?
             "lost" :
             "gained";
-
+        
         const user = await message.client.users.fetch(stock.stock_id);
         totalValue += (purchaseValue + gain);
         totalChange += gain;

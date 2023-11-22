@@ -34,21 +34,21 @@ function calculateStockPrice(EMA: number, EMSD: number, SMA: number): number {
     
     const newPrice = (EMA * EMA_WEIGHT) + (EMSD * EMSD_WEIGHT) + (SMA * SMA_WEIGHT) + randomAdjustment;
 
-    return Math.floor(newPrice);
+    return Math.ceil(newPrice);
 }
 
 
 function calculateEMA(activity: UserActivity): number {
-    const SMOOTHING_FACTOR = 0.2;
+    const SMOOTHING_FACTOR = 0.3;
     
     const oldEMA = activity.activity_points_short_ema;
     const activityPoints = activity.activity_points_short;
     
-    return Math.floor((activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR)));
+    return Math.ceil((activityPoints * SMOOTHING_FACTOR) + (oldEMA * (1 - SMOOTHING_FACTOR)));
 }
 
 function calculateEMSD(activity: UserActivity): number {
-    const SMOOTHING_FACTOR = 0.3;
+    const SMOOTHING_FACTOR = 0.4;
     
     const oldEMSD = activity.activity_points_short_emsd;
     const newEMA = calculateEMA(activity);
@@ -56,7 +56,7 @@ function calculateEMSD(activity: UserActivity): number {
 
     const deviation = activityPoints - newEMA;
     const squaredDeviation = Math.pow(deviation, 2);
-    return Math.floor((squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR)));
+    return Math.ceil((squaredDeviation * SMOOTHING_FACTOR) + (oldEMSD * (1 - SMOOTHING_FACTOR)));
 }
 
 export async function updateSMAS(): Promise<void> {
@@ -72,7 +72,7 @@ export async function updateSMAS(): Promise<void> {
         const oldSMA = activity.activity_points_long_sma;
         const activityPoints = activity.activity_points_long;
 
-        let intervals = Math.floor(today.diff(startDate, 'days').days) * 3;
+        let intervals = Math.ceil(today.diff(startDate, 'days').days) * 3;
         intervals += today.hasSame(startDate, 'day') ? 0 : 3;
 
         const hourOfDay = today.hour;
@@ -88,12 +88,14 @@ export async function updateSMAS(): Promise<void> {
         if (intervals === 1) {
             await Users.setActivity(stock.stock_id, {
                 activity_points_long_sma: activityPoints,
+                activity_points_long: 0
             });
-
-            return activityPoints;
         }
         else {
-            return ((oldSMA * (intervals - 1)) + activityPoints) / intervals;
+            await Users.setActivity(stock.stock_id, {
+                activity_points_long_sma: Math.ceil(((oldSMA * (intervals - 1)) + activityPoints) / intervals),
+                activity_points_long: 0
+            });
         }
     }));
 }

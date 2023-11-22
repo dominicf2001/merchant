@@ -14,7 +14,7 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
-        const tendiesMade = getRandomInt(100, 500);
+        const tendiesMade = getRandomInt(10, 50);
         await Users.addBalance(message.author.id, tendiesMade);
 
         const embed = new EmbedBuilder()
