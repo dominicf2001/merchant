@@ -1,26 +1,15 @@
 import cron from 'node-cron';
 import fs from 'fs';
-import { Client, Events, GatewayIntentBits, EmbedBuilder } from 'discord.js';
+import { Client, Events, GatewayIntentBits, EmbedBuilder } from 'discord.js'
 import { Users, Commands, Stocks } from './database/db-objects';
 import { updateSMAS, updateStockPrices } from './stock-utilities';
-import { secondsToHms, marketIsOpen, getRandomInt
+import { secondsToHms, marketIsOpen, getRandomInt,
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, VOICE_ACTIVITY_VALUE, REACTION_ACTIVITY_VALUE,
          MESSAGE_ACTIVITY_VALUE, MENTIONED_ACTIVITY_VALUE, INVITE_ACTIVITY_VALUE } from "./utilities";
 
+const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
+
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
-
-const args: string[] = process.argv.slice(2);
-const runTest: boolean = (args[0] === "-t");
-
-let token: string;
-if (!runTest) {
-    const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
-    token = TOKEN;
-}
-else {
-    const { TEST_TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
-    token = TEST_TOKEN;
-}
 
 export const client: Client = new Client({
     intents: [
@@ -81,7 +70,7 @@ client.on(Events.MessageCreate, async message => {
     const isCommand: boolean = message.content.startsWith(prefix);
 
     // When a command is called
-    if (isCommand && message.channelId === "1030306981052948511") {
+    if (isCommand) {
         const args: string[] = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName: string = args.shift().toLowerCase();
 
