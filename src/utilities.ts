@@ -25,7 +25,7 @@ export const CURRENCY_FINE_PERCENTAGE: number = 9;
 export const MAX_INV_SIZE: number = 5;
 
 export const CURRENCY_EMOJI_CODE: string = "<:tendie:1117239821337890886>";
-export const STOCKUP_EMOJI_CODE: string = "<:stockup:1117496842867982407>";
+export const STOCKUP_EMOJI_CODE: string = "<:stockup:1119370943240863745>";
 export const STOCKDOWN_EMOJI_CODE: string = "<:stockdown:1117496855870328833>";
 
 

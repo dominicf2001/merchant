@@ -157,6 +157,10 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
             //     await channel.send('Stocks ticked');
             // }
             logToFile('Stock prices updated successfully.');
+            const tickChannel = await client.channels.fetch("1176949203390439446");
+            if (tickChannel.isTextBased()) {
+                await tickChannel.send("Stocks ticked");
+            }
         }
         catch (error) {
             logToFile(`Stock price update failed: ${error.message}`);
