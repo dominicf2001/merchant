@@ -77,7 +77,6 @@ class Stocks extends DataStore<Stock> {
     
     async getLatestStocks(): Promise<Stock[]> {
         let latestStocks: Stock[] = [];
-        console.log(this.cache);
         if (this.cache.size) {
             for (const stockId of this.cache.keys()) {
                 const stockCache = this.cache.get(stockId);
@@ -101,7 +100,8 @@ class Stocks extends DataStore<Stock> {
                     )
                     .orderBy('s1.created_date', 'desc')
                     .execute();
-            } catch (error) {
+            } 
+            catch (error) {
                 console.error("Error getting latest stocks: ", error);
             }
         }
@@ -115,7 +115,6 @@ class Stocks extends DataStore<Stock> {
     async getStockHistory(stock_id: string, interval: StockInterval): Promise<Stock[]> {
         // only 'now' is stored in the cache currently
         if (interval === 'now' && this.getFromCache(stock_id)) {
-            console.log("History cache");
             // cache hit on 'now'
             return this.cache.get(stock_id);
         }

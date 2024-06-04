@@ -9,9 +9,9 @@ types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) => v === null ? null : new D
 const dialect = new PostgresDialect({
     pool: new Pool({
         database: 'merchant',
-        host: 'localhost',
-        user: 'dominic',
-        port: 5432,
+        host: '/run/user/1000/devenv-5c7814d/postgres',
+        user: 'dominicf',
+        port: null,
         max: 10
     })
 });

@@ -1,5 +1,5 @@
 import { DataStore, db, BehaviorFunction } from './DataStore';
-import { Items as Item, ItemsItemId } from '../schemas/public/Items';
+import { Items as Item } from '../schemas/public/Items';
 import { Kysely } from 'kysely';
 import { Collection, Message } from 'discord.js';
 import Database from '../schemas/Database';

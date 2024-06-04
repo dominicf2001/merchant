@@ -1,6 +1,6 @@
 import { DataStore, db, BehaviorFunction } from './DataStore';
 import { Kysely } from 'kysely';
-import { Commands as Command, CommandsCommandId } from '../schemas/public/Commands';
+import { Commands as Command } from '../schemas/public/Commands';
 import { Collection, Message } from 'discord.js';
 import Database from '../schemas/Database';
 import path from 'path';

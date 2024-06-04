@@ -5,9 +5,7 @@ import { Users, Commands, Stocks } from './database/db-objects';
 import { updateSMAS, updateStockPrices } from './stock-utilities';
 import { secondsToHms, marketIsOpen, getRandomInt,
          TIMEZONE, OPEN_HOUR, CLOSE_HOUR, VOICE_ACTIVITY_VALUE, REACTION_ACTIVITY_VALUE,
-         MESSAGE_ACTIVITY_VALUE, MENTIONED_ACTIVITY_VALUE, INVITE_ACTIVITY_VALUE } from "./utilities";
-
-const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
+         MESSAGE_ACTIVITY_VALUE, MENTIONED_ACTIVITY_VALUE, INVITE_ACTIVITY_VALUE, TOKEN, TICK_CHANNEL_ID } from "./utilities";
 
 // import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
 
@@ -140,13 +138,8 @@ let stockTicker = cron.schedule(`*/5 ${OPEN_HOUR}-${CLOSE_HOUR} * * *`, () => {
     setTimeout(async () => {
         try {
             await updateStockPrices();
-            // TODO: paramaterize channel id or turn into command
-            // const channel = await client.channels.fetch("608853914535854103");
-            // if (channel.isTextBased()) {
-            //     await channel.send('Stocks ticked');
-            // }
             logToFile('Stock prices updated successfully.');
-            const tickChannel = await client.channels.fetch("1176949203390439446");
+            const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
             if (tickChannel.isTextBased()) {
                 await tickChannel.send("Stocks ticked");
             }
@@ -193,4 +186,4 @@ stockTicker.start();
 smaUpdater.start();
 dailyCleanup.start();
 
-client.login(token);
+client.login(TOKEN);
