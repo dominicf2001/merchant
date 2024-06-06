@@ -2,13 +2,14 @@ import { Pool } from "pg";
 import { Kysely, PostgresDialect, sql } from "kysely";
 import { processDatabase } from "kanel";
 import config from "./kanelrc.js";
+import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../utilities.js";
 
 const dialect = new PostgresDialect({
     pool: new Pool({
-        database: "merchant",
-        host: "/run/user/1000/devenv-5c7814d/postgres",
-        user: "dominicf",
-        port: null,
+        database: DB_NAME,
+        host: DB_HOST,
+        user: DB_USER,
+        port: DB_PORT,
         max: 10,
     }),
 });

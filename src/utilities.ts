@@ -49,6 +49,11 @@ export const CURRENCY_EMOJI_CODE: string = config.CURRENCY_EMOJI_CODE;
 export const STOCKUP_EMOJI_CODE: string = config.STOCKUP_EMOJI_CODE;
 export const STOCKDOWN_EMOJI_CODE: string = config.STOCKDOWN_EMOJI_CODE;
 
+export const DB_NAME: string = config.DB_NAME;
+export const DB_HOST: string = config.DB_HOST;
+export const DB_USER: string = config.DB_USER;
+export const DB_PORT: number = config.DB_PORT;
+
 export const client: Client = new Client({
     intents: [
         GatewayIntentBits.Guilds,

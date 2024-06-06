@@ -46,33 +46,33 @@ class Stocks extends DataStore<Stock> {
         data: Insertable<Stock> | Updateable<Stock> = {},
     ): Promise<void> {
         // create the user associated with this stock if they dont exist
-        await Users.set(id);
+        if (!Users.getFromCache(id)) {
+            await Users.set(id);
+        }
 
         const newData: Stock = {
             stock_id: id as UsersUserId,
-            created_date:
-                data.created_date ??
-                (DateTime.now().toISO() as StocksCreatedDate),
             ...data,
         } as Stock;
 
-        await db.transaction().execute(async (trx) => {
-            const result: Stock = (await trx
-                .insertInto("stocks")
-                .values(newData)
-                .returningAll()
-                .executeTakeFirstOrThrow()) as Stock;
+        const result: Stock = (await db
+            .insertInto("stocks")
+            .values(newData)
+            .returningAll()
+            .onConflict((oc) =>
+                oc.columns(["stock_id", "created_date"]).doUpdateSet(newData),
+            )
+            .executeTakeFirstOrThrow()) as Stock;
 
-            let cachedStockHistory = this.cache.get(id);
-            if (!cachedStockHistory) {
-                this.cache.set(id, [result]);
-            } else if (cachedStockHistory.length >= 12) {
-                cachedStockHistory.pop();
-                cachedStockHistory.unshift(result);
-            } else {
-                cachedStockHistory.unshift(result);
-            }
-        });
+        let cachedStockHistory = this.cache.get(id);
+        if (!cachedStockHistory) {
+            this.cache.set(id, [result]);
+        } else if (cachedStockHistory.length >= 12) {
+            cachedStockHistory.pop();
+            cachedStockHistory.unshift(result);
+        } else {
+            cachedStockHistory.unshift(result);
+        }
     }
 
     async updateStockPrice(stock_id: string, amount: number): Promise<void> {

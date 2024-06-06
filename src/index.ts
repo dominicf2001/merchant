@@ -20,8 +20,6 @@ import {
     client,
 } from "./utilities";
 
-// import { calculateAndUpdateStocks, stockCleanUp } from "./cron";
-
 client.once(Events.ClientReady, async () => {
     console.log("Ready as " + client.user.tag);
 });

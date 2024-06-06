@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run build && jest --runInBand ./tests",
-    "test-stocks": "npm run build && jest --runInBand ./built/tests/stocks.test.js",
-    "test-users": "npm run build && jest --runInBand ./built/tests/users.test.js",
+    "test-stocks": "npm run build && jest ./built/tests/stocks.test.js",
+    "test-users": "npm run build && jest ./built/tests/users.test.js",
     "dbinit": "npx tsx ./src/database/db-init.ts",
     "dbinit-f": "npx tsx ./src/database/db-init.ts -f",
     "build": "npx tsc",
