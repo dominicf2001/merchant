@@ -73,8 +73,8 @@ class Users extends DataStore<User> {
             .insertInto("user_activities")
             .values({
                 user_id: user_id as UsersUserId,
-                activity_points_short: amount,
-                activity_points_long: amount,
+                activity_points_short: amount < 0 ? 0 : amount,
+                activity_points_long: amount < 0 ? 0 : amount,
                 first_activity_date: now,
                 last_activity_date: now,
             })
@@ -255,6 +255,9 @@ class Users extends DataStore<User> {
             if (!this.getFromCache(user_id)) {
                 await this.set(user_id);
             }
+
+            if (data.activity_points_short < 0) data.activity_points_short = 0;
+            if (data.activity_points_long < 0) data.activity_points_long = 0;
 
             const newUserActivity: UserActivity = {
                 user_id: user_id as UsersUserId,

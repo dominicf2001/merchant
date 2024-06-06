@@ -1,13 +1,12 @@
 import { Config } from "kanel";
 import { makeKyselyHook } from "kanel-kysely";
-import { types } from "pg";
 
 const config: Config = {
     connection: {
-        host: "localhost",
-        user: "dominic",
-        password: "9257",
         database: "merchant",
+        host: "/run/user/1000/devenv-5c7814d/postgres",
+        port: null,
+        user: "dominicf",
     },
     preDeleteOutputFolder: true,
     outputPath: "./src/database/schemas",
