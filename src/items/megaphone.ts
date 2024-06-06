@@ -1,13 +1,13 @@
-import { Message, inlineCode, EmbedBuilder } from 'discord.js';
-import { findTextArgs } from '../utilities';
-import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
+import { Message, inlineCode, EmbedBuilder } from "discord.js";
+import { findTextArgs } from "../utilities";
+import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
 const data: Item = {
-    item_id: 'megaphone' as ItemsItemId,
+    item_id: "megaphone" as ItemsItemId,
     price: 1000,
     emoji_code: ":mega:",
     description: "Sends your message and/or attachment as an @everyone",
-    usage: `${inlineCode("$use megaphone [message/attachment]")}\n${inlineCode("$use megaphone [message] [attachment]")}`
+    usage: `${inlineCode("$use megaphone [message/attachment]")}\n${inlineCode("$use megaphone [message] [attachment]")}`,
 };
 
 export default {
@@ -23,13 +23,15 @@ export default {
 
         await message.delete();
 
-        const embed = new EmbedBuilder()
-            .setColor("Blurple")
-            .setFields({
-                name: `${msgToSend}`,
-                value: `says: <@${message.author.id}>`
-            });
+        const embed = new EmbedBuilder().setColor("Blurple").setFields({
+            name: `${msgToSend}`,
+            value: `says: <@${message.author.id}>`,
+        });
 
-        await message.channel.send({ content: '@everyone', embeds: [embed], files: attachmentsArray, });
-    }
-}
+        await message.channel.send({
+            content: "@everyone",
+            embeds: [embed],
+            files: attachmentsArray,
+        });
+    },
+};

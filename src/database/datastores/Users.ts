@@ -1,48 +1,37 @@
-import { DataStore, db } from './DataStore';
-import { Users as User, UsersUserId } from '../schemas/public/Users';
-import { UserItems as UserItem } from '../schemas/public/UserItems';
-import { UserStocks as UserStock } from '../schemas/public/UserStocks';
-import { UserActivities as UserActivity } from '../schemas/public/UserActivities';
-import { Stocks as Stock } from '../schemas/public/Stocks';
-import { UserCooldowns as UserCooldown } from '../schemas/public/UserCooldowns';
-import { CommandsCommandId } from '../schemas/public/Commands';
-import { UserStocksPurchaseDate } from '../schemas/public/UserStocks';
-import { ItemsItemId } from '../schemas/public/Items';
-import { DateTime } from 'luxon';
-import Database from '../schemas/Database';
-import { Kysely, Insertable, Updateable } from 'kysely';
-import { Items } from './Items';
-import { Stocks } from './Stocks';
-import { Commands } from './Commands';
+import { DataStore, db } from "./DataStore";
+import { Users as User, UsersUserId } from "../schemas/public/Users";
+import { UserItems as UserItem } from "../schemas/public/UserItems";
+import { UserStocks as UserStock } from "../schemas/public/UserStocks";
+import { UserActivities as UserActivity } from "../schemas/public/UserActivities";
+import { Stocks as Stock } from "../schemas/public/Stocks";
+import { UserCooldowns as UserCooldown } from "../schemas/public/UserCooldowns";
+import { CommandsCommandId } from "../schemas/public/Commands";
+import { UserStocksPurchaseDate } from "../schemas/public/UserStocks";
+import { ItemsItemId } from "../schemas/public/Items";
+import { DateTime } from "luxon";
+import Database from "../schemas/Database";
+import { Kysely, Insertable, Updateable, sql } from "kysely";
+import { Items } from "./Items";
+import { Stocks } from "./Stocks";
+import { Commands } from "./Commands";
 
 class Users extends DataStore<User> {
-    async set(id: string, data: Insertable<User> | Updateable<User> = {}): Promise<void> {
-        const newUser: User = { [this.tableID]: id as UsersUserId, ...data } as User;
+    async set(
+        id: string,
+        data: Insertable<User> | Updateable<User> = {},
+    ): Promise<void> {
+        const newUser: User = {
+            [this.tableID]: id as UsersUserId,
+            ...data,
+        } as User;
 
         try {
-            let result: User = await this.db
-                .selectFrom(this.tableName)
-                .selectAll()
-                .where(this.tableID, '=', id as UsersUserId)
-                .executeTakeFirst() as User;
-
-            if (result) {
-                result = await this.db
-                    .updateTable(this.tableName)
-                    .set(newUser)
-                    .where(this.tableID, '=', id as UsersUserId)
-                    .returningAll()
-                    .executeTakeFirstOrThrow() as User;
-            }
-            else {
-                result = await this.db
-                    .insertInto(this.tableName)
-                    .values(newUser)
-                    .returningAll()
-                    .executeTakeFirstOrThrow() as User;
-
-                await this.addActivityPoints(id, 0);
-            }
+            const result = (await this.db
+                .insertInto(this.tableName)
+                .values(newUser)
+                .onConflict((oc) => oc.column("user_id").doUpdateSet(newUser))
+                .returningAll()
+                .executeTakeFirstOrThrow()) as User;
 
             this.cache.set(id, [result]);
         } catch (error) {
@@ -50,191 +39,241 @@ class Users extends DataStore<User> {
             throw error;
         }
     }
-    
+
     async addBalance(user_id: string, amount: number): Promise<void> {
         const user = await this.get(user_id);
-        
-        let newBalance = user ? (user.balance + amount) : amount;
+
+        let newBalance = user ? user.balance + amount : amount;
         if (newBalance < 0) newBalance = 0;
 
         await this.set(user_id, {
-            balance: newBalance
+            balance: newBalance,
         });
     }
 
     async addArmor(user_id: string, amount: number): Promise<void> {
         const user = await this.get(user_id);
 
-        let newArmor = user ? (user.armor + amount) : amount;
+        let newArmor = user ? user.armor + amount : amount;
         if (newArmor < 0) newArmor = 0;
 
         await this.set(user_id, {
-            armor: newArmor
+            armor: newArmor,
         });
     }
 
-    async addActivityPoints(user_id: string, amount: number): Promise<void> {
-        await this.db.transaction().execute(async trx => {
+    async addActivity(user_id: string, amount: number): Promise<void> {
+        if (!this.getFromCache(user_id)) {
             await this.set(user_id);
+        }
 
-            const activity = await trx
-                .selectFrom('user_activities')
-                .selectAll()
-                .where('user_id', '=', user_id as UsersUserId)
-                .executeTakeFirst();
-            
-            if (!activity) {
-                await trx
-                    .insertInto('user_activities')
-                    .values({
-                        user_id: user_id as UsersUserId,
-                        activity_points_short: amount,
-                        activity_points_long: amount,
-                        first_activity_date: DateTime.now().toISO(),
-                        last_activity_date: DateTime.now().toISO()
-                    })
-                    .execute();
-            }
-            else {
-                let newActivityPointsShort = activity.activity_points_short + amount;
-                if (newActivityPointsShort < 0) newActivityPointsShort = 0;
+        const now = DateTime.now().toISO();
 
-                let newActivityPointsLong = activity.activity_points_long + amount;
-                if (newActivityPointsLong < 0) newActivityPointsLong = 0;
-                await trx
-                    .updateTable('user_activities')
-                    .set({
-                        activity_points_short: newActivityPointsShort,
-                        activity_points_long: newActivityPointsLong,
-                        last_activity_date: DateTime.now().toISO()
-                    })
-                    .where('user_id', '=', user_id as UsersUserId)
-                    .execute();
-            }
-        });
+        await db
+            .insertInto("user_activities")
+            .values({
+                user_id: user_id as UsersUserId,
+                activity_points_short: amount,
+                activity_points_long: amount,
+                first_activity_date: now,
+                last_activity_date: now,
+            })
+            .onConflict((oc) =>
+                oc.column("user_id").doUpdateSet({
+                    activity_points_short: sql`GREATEST(user_activities.activity_points_short + ${amount}, 0)`,
+                    activity_points_long: sql`GREATEST(user_activities.activity_points_long + ${amount}, 0)`,
+                    last_activity_date: now,
+                }),
+            )
+            .execute();
     }
-    
-    async addItem(user_id: string, item_id: string, amount: number): Promise<number> {
+
+    async addStock(
+        user_id: string,
+        stock_id: string,
+        amount: number,
+    ): Promise<number> {
+        if (!this.getFromCache(user_id)) {
+            await this.set(user_id);
+        }
+
         let amountAdded = 0;
 
-        await this.db.transaction().execute(async trx => {
-            // Check if item exists
-            const item = await Items.get(item_id);
-            
-            if (!item)
-                return;
+        const currentStockPrice: number = (
+            await Stocks.getLatestStock(stock_id)
+        )?.price;
 
-            if (amount > 0) {
-                // If amount is positive, increment the existing record or insert a new one.
-                const userItem = await trx
-                    .selectFrom('user_items')
-                    .selectAll()
-                    .where('user_id', '=', user_id as any)
-                    .where('item_id', '=', item_id as any)
-                    .executeTakeFirst();
+        // prevents a user from being created and from inserting a non-existent stock
+        if (currentStockPrice == undefined) return;
 
-                if (!userItem) {
-                    await this.set(user_id);
+        if (amount > 0) {
+            // If amount is positive, insert a new record.
+            await db
+                .insertInto("user_stocks")
+                .values({
+                    user_id: user_id as UsersUserId,
+                    stock_id: stock_id as UsersUserId,
+                    purchase_date:
+                        DateTime.now().toISO() as UserStocksPurchaseDate,
+                    quantity: amount,
+                    purchase_price: currentStockPrice,
+                })
+                .execute();
 
-                    await trx
-                        .insertInto('user_items')
-                        .values({
-                            user_id: user_id as UsersUserId,
-                            item_id: item_id as ItemsItemId,
-                            quantity: amount
-                        })
+            amountAdded = amount;
+        } else if (amount < 0) {
+            // If amount is negative, decrement the existing records.
+            const userStocks = await db
+                .selectFrom("user_stocks")
+                .selectAll()
+                .where("user_id", "=", user_id as UsersUserId)
+                .where("stock_id", "=", stock_id as UsersUserId)
+                .orderBy("purchase_date desc")
+                .execute();
+
+            // prevents a user from being created
+            if (!userStocks.length) return 0;
+
+            // amount is negative, make it positive
+            let remainingAmountToDecrement = -amount;
+
+            for (const userStock of userStocks) {
+                if (remainingAmountToDecrement <= 0) {
+                    break;
+                }
+
+                const decrementedQuantity =
+                    userStock.quantity - remainingAmountToDecrement;
+
+                if (decrementedQuantity <= 0) {
+                    // If decremented quantity is zero or negative, delete the record.
+                    await db
+                        .deleteFrom("user_stocks")
+                        .where("user_id", "=", user_id as UsersUserId)
+                        .where("stock_id", "=", stock_id as UsersUserId)
+                        .where("purchase_date", "=", userStock.purchase_date)
                         .execute();
+
+                    remainingAmountToDecrement -= userStock.quantity; // Deduct the full quantity of this record
                 } else {
-                    const newQuantity = userItem.quantity + amount;
-                    await trx
-                        .updateTable('user_items')
-                        .set({ quantity: newQuantity })
-                        .where('user_id', '=', user_id as any)
-                        .where('item_id', '=', item_id as any)
+                    // If decremented quantity is positive, update the record.
+                    await db
+                        .updateTable("user_stocks")
+                        .set({ quantity: decrementedQuantity })
+                        .where("user_id", "=", user_id as UsersUserId)
+                        .where("stock_id", "=", stock_id as UsersUserId)
+                        .where("purchase_date", "=", userStock.purchase_date)
                         .execute();
-                }
 
-                amountAdded = amount;
-            } else if (amount < 0) {
-                // If amount is negative, decrement the existing record.
-                const userItem = await trx
-                    .selectFrom('user_items')
-                    .selectAll()
-                    .where('user_id', '=', user_id as any)
-                    .where('item_id', '=', item_id as any)
-                    .executeTakeFirst();
-
-                if (userItem) {
-                    const oldQuantity = userItem.quantity;
-                    const newQuantity = oldQuantity + amount;  // amount is negative
-                    if (newQuantity <= 0) {
-                        await trx
-                            .deleteFrom('user_items')
-                            .where('user_id', '=', user_id as any)
-                            .where('item_id', '=', item_id as any)
-                            .execute();
-                        amountAdded = -oldQuantity;  // All items were removed
-                    } else {
-                        await trx
-                            .updateTable('user_items')
-                            .set({ quantity: newQuantity })
-                            .where('user_id', '=', user_id as any)
-                            .where('item_id', '=', item_id as any)
-                            .execute();
-                        amountAdded = amount;
-                    }
+                    remainingAmountToDecrement = 0; // Stop, as all amount has been decremented
                 }
+                amountAdded = amount + remainingAmountToDecrement;
             }
-        });
-
+        }
         return amountAdded;
     }
 
+    async addItem(
+        user_id: string,
+        item_id: string,
+        amount: number,
+    ): Promise<number> {
+        if (!this.getFromCache(user_id)) {
+            await this.set(user_id);
+        }
+
+        let amountAdded = 0;
+
+        // Check if item exists
+        const item = await Items.get(item_id);
+        if (!item) return;
+
+        if (amount > 0) {
+            // If amount is positive, increment the existing record or insert a new one.
+            await db
+                .insertInto("user_items")
+                .values({
+                    user_id: user_id as UsersUserId,
+                    item_id: item_id as ItemsItemId,
+                    quantity: amount,
+                })
+                .onConflict((oc) =>
+                    oc.columns(["user_id", "item_id"]).doUpdateSet({
+                        quantity: sql`user_items.quantity + ${amount}`,
+                    }),
+                )
+                .execute();
+
+            amountAdded = amount;
+        } else if (amount < 0) {
+            // If amount is negative, decrement the existing record.
+            const userItem = await db
+                .selectFrom("user_items")
+                .selectAll()
+                .where("user_id", "=", user_id as any)
+                .where("item_id", "=", item_id as any)
+                .executeTakeFirst();
+
+            if (userItem) {
+                const oldQuantity = userItem.quantity;
+                const newQuantity = oldQuantity + amount; // amount is negative
+                if (newQuantity <= 0) {
+                    await db
+                        .deleteFrom("user_items")
+                        .where("user_id", "=", user_id as any)
+                        .where("item_id", "=", item_id as any)
+                        .execute();
+                    amountAdded = -oldQuantity; // All items were removed
+                } else {
+                    await db
+                        .updateTable("user_items")
+                        .set({ quantity: newQuantity })
+                        .where("user_id", "=", user_id as any)
+                        .where("item_id", "=", item_id as any)
+                        .execute();
+                    amountAdded = amount;
+                }
+            }
+        }
+
+        return amountAdded;
+    }
 
     async setBalance(user_id: string, amount: number): Promise<void> {
         if (amount < 0) amount = 0;
 
         await this.set(user_id, {
-            balance: amount
+            balance: amount,
         });
     }
 
-    async setActivity(id: string, data: Insertable<UserActivity> | Updateable<UserActivity> = {}): Promise<void> {
+    async setActivity(
+        user_id: string,
+        data: Insertable<UserActivity> | Updateable<UserActivity> = {},
+    ): Promise<void> {
         try {
+            if (!this.getFromCache(user_id)) {
+                await this.set(user_id);
+            }
+
             const newUserActivity: UserActivity = {
-                'user_id': id as UsersUserId,
+                user_id: user_id as UsersUserId,
                 last_activity_date: DateTime.now().toISO(),
-                ...data
+                ...data,
             } as UserActivity;
 
-            await this.db.transaction().execute(async trx => {
-                let result: UserActivity = await trx
-                    .selectFrom('user_activities')
-                    .selectAll()
-                    .where('user_id', '=', id as UsersUserId)
-                    .executeTakeFirst() as UserActivity;
-
-                if (result) {
-                    result = await trx
-                        .updateTable('user_activities')
-                        .set(newUserActivity)
-                        .where('user_id', '=', id as UsersUserId)
-                        .returningAll()
-                        .executeTakeFirstOrThrow() as UserActivity;
-                }
-                else {
-                    await this.set(id);
-                    newUserActivity.first_activity_date = DateTime.now().toISO();
-
-                    result = await trx
-                        .insertInto('user_activities')
-                        .values(newUserActivity)
-                        .returningAll()
-                        .executeTakeFirstOrThrow() as UserActivity;
-                } 
-            });
-        }
-        catch (error) {
+            (await db
+                .insertInto("user_activities")
+                .values({
+                    first_activity_date: DateTime.now().toISO(),
+                    ...newUserActivity,
+                })
+                .onConflict((oc) =>
+                    oc.column("user_id").doUpdateSet(newUserActivity),
+                )
+                .returningAll()
+                .executeTakeFirstOrThrow()) as UserActivity;
+        } catch (error) {
             console.error(error);
             throw error;
         }
@@ -251,10 +290,13 @@ class Users extends DataStore<User> {
     }
 
     async getActivity(user_id: string): Promise<UserActivity> {
-        const userActivity = await this.db.selectFrom('user_activities')
+        await this.setActivity(user_id);
+
+        let userActivity = await this.db
+            .selectFrom("user_activities")
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .executeTakeFirst() as UserActivity;
+            .where("user_id", "=", user_id as UsersUserId)
+            .executeTakeFirst();
         return userActivity;
     }
 
@@ -268,23 +310,26 @@ class Users extends DataStore<User> {
         return itemCount ?? 0;
     }
 
-    async getItem(user_id: string, item_id: string): Promise<UserItem | undefined> {
-        const userItem: UserItem = await this.db
-            .selectFrom('user_items')
+    async getItem(
+        user_id: string,
+        item_id: string,
+    ): Promise<UserItem | undefined> {
+        const userItem: UserItem = (await this.db
+            .selectFrom("user_items")
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .where('item_id', '=', item_id as ItemsItemId)
-            .executeTakeFirst() as UserItem;
-        
+            .where("user_id", "=", user_id as UsersUserId)
+            .where("item_id", "=", item_id as ItemsItemId)
+            .executeTakeFirst()) as UserItem;
+
         return userItem;
     }
 
     async getItems(user_id: string): Promise<UserItem[]> {
-        const userItems: UserItem[] = await this.db
-            .selectFrom('user_items')
+        const userItems: UserItem[] = (await this.db
+            .selectFrom("user_items")
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
-            .execute() as UserItem[];
+            .where("user_id", "=", user_id as UsersUserId)
+            .execute()) as UserItem[];
         return userItems;
     }
 
@@ -293,11 +338,13 @@ class Users extends DataStore<User> {
 
         let portfolioValue = 0;
         for (const userStock of userStocks) {
-            const latestPrice = (await Stocks.getLatestStock(userStock.stock_id)).price;
+            const latestPrice = (
+                await Stocks.getLatestStock(userStock.stock_id)
+            ).price;
             portfolioValue += latestPrice * userStock.quantity;
         }
-        
-        return portfolioValue
+
+        return portfolioValue;
     }
 
     async getNetWorth(user_id: string): Promise<number> {
@@ -307,145 +354,72 @@ class Users extends DataStore<User> {
     }
 
     async getPortfolio(user_id: string): Promise<Stock[]> {
-        const userStock: UserStock[] = await this.db
-            .selectFrom('user_stocks')
-            .select('stock_id')
-            .where('user_id', '=', user_id as UsersUserId)
+        const userStock: UserStock[] = (await this.db
+            .selectFrom("user_stocks")
+            .select("stock_id")
+            .where("user_id", "=", user_id as UsersUserId)
             .distinct()
-            .execute() as UserStock[];
+            .execute()) as UserStock[];
 
         // Populate with the latest stock information
-         let stockPromises: Promise<Stock>[] = [];
+        let stockPromises: Promise<Stock>[] = [];
         for (const stock of userStock) {
             stockPromises.push(Stocks.getLatestStock(stock.stock_id));
         }
-        
-        return await Promise.all(stockPromises) as Stock[];
+
+        return (await Promise.all(stockPromises)) as Stock[];
     }
-    
-    async getUserStocks(user_id: string, stock_id?: string): Promise<UserStock[]> {
+
+    async getUserStocks(
+        user_id: string,
+        stock_id?: string,
+    ): Promise<UserStock[]> {
         let query = this.db
-            .selectFrom('user_stocks')
+            .selectFrom("user_stocks")
             .selectAll()
-            .where('user_id', '=', user_id as UsersUserId)
+            .where("user_id", "=", user_id as UsersUserId);
 
-        query = stock_id ?
-            query.where('stock_id', '=', stock_id as UsersUserId) :
-            query;
-        
-        return (
-            await query
-                .orderBy('purchase_date desc')
-                .execute() as UserStock[]
-        );
+        query = stock_id
+            ? query.where("stock_id", "=", stock_id as UsersUserId)
+            : query;
+
+        return (await query
+            .orderBy("purchase_date desc")
+            .execute()) as UserStock[];
     }
-    
-    async addStock(user_id: string, stock_id: string, amount: number): Promise<number> {
-        let amountAdded = 0;
-        
-        await this.db.transaction().execute(async trx => {
-            const currentStockPrice: number = (await Stocks.getLatestStock(stock_id))?.price;
 
-            // prevents a user from being created and from inserting a non-existent stock
-            if (currentStockPrice == undefined)
-                return;
-            
-            if (amount > 0) {
-                await this.set(user_id);
-                
-                // If amount is positive, insert a new record.
-                await trx
-                    .insertInto('user_stocks')
-                    .values({
-                        user_id: user_id as UsersUserId,
-                        stock_id: stock_id as UsersUserId,
-                        purchase_date: DateTime.now().toISO() as UserStocksPurchaseDate,
-                        quantity: amount,
-                        purchase_price: currentStockPrice,
-                    })
-                    .execute();
-                
-                amountAdded = amount;
-            }
-            else if (amount < 0) {
-                // If amount is negative, decrement the existing records.
-                const userStocks = await trx
-                    .selectFrom('user_stocks')
-                    .selectAll()
-                    .where('user_id', '=', user_id as UsersUserId)
-                    .where('stock_id', '=', stock_id as UsersUserId)
-                    .orderBy('purchase_date desc')
-                    .execute();
-
-                // prevents a user from being created
-                if (!userStocks.length)
-                    return 0; 
-
-                // amount is negative, make it positive
-                let remainingAmountToDecrement = -amount;
-
-                for (const userStock of userStocks) {
-                    if (remainingAmountToDecrement <= 0) {
-                        break;
-                    }
-
-                    const decrementedQuantity = userStock.quantity - remainingAmountToDecrement;
-
-                    if (decrementedQuantity <= 0) {
-                        // If decremented quantity is zero or negative, delete the record.
-                        await trx
-                            .deleteFrom('user_stocks')
-                            .where('user_id', '=', user_id as UsersUserId)
-                            .where('stock_id', '=', stock_id as UsersUserId)
-                            .where('purchase_date', '=', userStock.purchase_date)
-                            .execute();
-
-                        remainingAmountToDecrement -= userStock.quantity;  // Deduct the full quantity of this record
-                    } else {
-                        // If decremented quantity is positive, update the record.
-                        await trx
-                            .updateTable('user_stocks')
-                            .set({ quantity: decrementedQuantity })
-                            .where('user_id', '=', user_id as UsersUserId)
-                            .where('stock_id', '=', stock_id as UsersUserId)
-                            .where('purchase_date', '=', userStock.purchase_date)
-                            .execute();
-
-                        remainingAmountToDecrement = 0;  // Stop, as all amount has been decremented
-                    }
-                    amountAdded = amount + remainingAmountToDecrement;
-                }
-            }
-        });
-        return amountAdded;
-    }
-    
-    async getRemainingCooldownDuration(user_id: string, command_id: string): Promise<number> {
+    async getRemainingCooldownDuration(
+        user_id: string,
+        command_id: string,
+    ): Promise<number> {
         const command = await Commands.get(command_id);
         const cooldownAmount: number = command.cooldown_time;
 
-        const userCooldown: UserCooldown = await this.db
-            .selectFrom('user_cooldowns')
-            .select(['start_date'])
-            .where('user_id', '=', user_id as UsersUserId)
-            .where('command_id', '=', command_id as CommandsCommandId)
-            .executeTakeFirst() as UserCooldown;
+        const userCooldown: UserCooldown = (await this.db
+            .selectFrom("user_cooldowns")
+            .select(["start_date"])
+            .where("user_id", "=", user_id as UsersUserId)
+            .where("command_id", "=", command_id as CommandsCommandId)
+            .executeTakeFirst()) as UserCooldown;
 
         if (userCooldown) {
             const startDateTime = DateTime.fromISO(userCooldown.start_date);
             if (!startDateTime.isValid) {
-                console.error('Invalid start date:', userCooldown.start_date);
+                console.error("Invalid start date:", userCooldown.start_date);
                 return 0;
             }
 
-            const expirationDateTime = startDateTime.plus({ milliseconds: cooldownAmount });
-            const remainingDuration = expirationDateTime.diffNow('millisecond').milliseconds;
-            
+            const expirationDateTime = startDateTime.plus({
+                milliseconds: cooldownAmount,
+            });
+            const remainingDuration =
+                expirationDateTime.diffNow("millisecond").milliseconds;
+
             if (remainingDuration <= 0) {
                 await this.db
-                    .deleteFrom('user_cooldowns')
-                    .where('user_id', '=', user_id as UsersUserId)
-                    .where('command_id', '=', command_id as CommandsCommandId)
+                    .deleteFrom("user_cooldowns")
+                    .where("user_id", "=", user_id as UsersUserId)
+                    .where("command_id", "=", command_id as CommandsCommandId)
                     .execute();
                 return 0;
             }
@@ -456,20 +430,21 @@ class Users extends DataStore<User> {
         return 0; // No cooldown found
     }
 
-
     async createCooldown(user_id: string, command_id: string): Promise<void> {
+        await this.set(user_id);
+
         await this.db
-            .insertInto('user_cooldowns')
+            .insertInto("user_cooldowns")
             .values({
                 user_id: user_id as UsersUserId,
                 command_id: command_id as CommandsCommandId,
-                start_date: DateTime.now().toISO()
+                start_date: DateTime.now().toISO(),
             })
             .execute();
     }
-    
+
     constructor(db: Kysely<Database>) {
-        super(db, 'users', 'user_id');
+        super(db, "users", "user_id");
     }
 }
 

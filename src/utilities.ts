@@ -1,15 +1,27 @@
-import { APIEmbedField, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle,
-         EmbedBuilder, RestOrArray, normalizeArray } from 'discord.js';
-import { DateTime } from 'luxon';
-import fs from 'fs';
-import path from 'path';
+import {
+    APIEmbedField,
+    ColorResolvable,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder,
+    RestOrArray,
+    normalizeArray,
+    Client,
+    GatewayIntentBits,
+} from "discord.js";
+import { DateTime } from "luxon";
+import fs from "fs";
+import path from "path";
 
-export const { TOKEN } = JSON.parse(fs.readFileSync(`${__dirname}/../token.json`, 'utf8'));
+export const { TOKEN } = JSON.parse(
+    fs.readFileSync(`${__dirname}/../token.json`, "utf8"),
+);
 
 // PARAMETERS
 const configPath = path.resolve(__dirname, `${__dirname}/../config.json`);
 // TODO: refactor to use this var
-export const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+export const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 export const TICK_CHANNEL_ID: string = config.TICK_CHANNEL_ID;
 
@@ -37,26 +49,46 @@ export const CURRENCY_EMOJI_CODE: string = config.CURRENCY_EMOJI_CODE;
 export const STOCKUP_EMOJI_CODE: string = config.STOCKUP_EMOJI_CODE;
 export const STOCKDOWN_EMOJI_CODE: string = config.STOCKDOWN_EMOJI_CODE;
 
+export const client: Client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildPresences,
+    ],
+});
 
 // HELPER FUNCTIONS
 export function secondsToHms(d: number): string {
-    var h = Math.floor(d / 3600);
-    var m = Math.floor(d % 3600 / 60);
-    var s = Math.floor(d % 3600 % 60);
+    const h = Math.floor(d / 3600);
+    const m = Math.floor((d % 3600) / 60);
+    const s = Math.floor((d % 3600) % 60);
 
-    return ((h > 0 ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (s < 10 ? "0" : "") + s);
+    return (
+        (h > 0 ? h + ":" + (m < 10 ? "0" : "") : "") +
+        m +
+        ":" +
+        (s < 10 ? "0" : "") +
+        s
+    );
 }
 
 export function getRandomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min)) + min;
+    return Math.floor(Math.random() * (max - min)) + min;
 }
 
 export function getRandomFloat(min: number, max: number): number {
-  return Math.random() * (max - min) + min;
+    return Math.random() * (max - min) + min;
 }
 
 export function formatNumber(num: number, decimalPlaces: number = 2): number {
-  return Math.round(num * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+    return (
+        Math.round(num * Math.pow(10, decimalPlaces)) /
+        Math.pow(10, decimalPlaces)
+    );
 }
 
 export function marketIsOpen(): boolean {
@@ -68,14 +100,18 @@ export function toUpperCaseString(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function isAMention(arg: string): boolean {    
-	return arg.startsWith('<@') && arg.endsWith('>');
+export function isAMention(arg: string): boolean {
+    return arg.startsWith("<@") && arg.endsWith(">");
+}
+
+export async function sleep(duration: number): Promise<void> {
+    await new Promise((r) => setTimeout(r, duration));
 }
 
 export function stripIdFromMention(mentionArg: string): string {
     mentionArg = mentionArg.slice(2, -1);
 
-    if (mentionArg.startsWith('!')) {
+    if (mentionArg.startsWith("!")) {
         mentionArg = mentionArg.slice(1);
     }
 
@@ -83,15 +119,15 @@ export function stripIdFromMention(mentionArg: string): string {
 }
 
 export function findTextArgs(args: string[]): string[] {
-    return args.filter(arg => isNaN(+arg) && !isAMention(arg));
+    return args.filter((arg) => isNaN(+arg) && !isAMention(arg));
 }
 
 export function findNumericArgs(args: string[]): string[] {
-    return args.filter(arg => !isNaN(+arg) && !isAMention(arg));
+    return args.filter((arg) => !isNaN(+arg) && !isAMention(arg));
 }
 
 export function findMentionArgs(args: string[]): string[] {
-    return args.filter(arg => isAMention(arg));
+    return args.filter((arg) => isAMention(arg));
 }
 
 export class PaginatedMenuBuilder {
@@ -103,12 +139,12 @@ export class PaginatedMenuBuilder {
     private title: string = "";
     private description: string = "";
     private fields: APIEmbedField[] = [];
-    
+
     setColor(color: ColorResolvable): PaginatedMenuBuilder {
         this.color = color;
         return this;
     }
-    
+
     setTitle(title: string): PaginatedMenuBuilder {
         this.title = title;
         return this;
@@ -124,14 +160,15 @@ export class PaginatedMenuBuilder {
         return this;
     }
 
-
     createEmbed(): EmbedBuilder {
         const embed = new EmbedBuilder()
             .setColor(this.color)
             .setTitle(this.title)
-            .setDescription(`Page ${this.pageNum}/${this.totalPages}\n----\n${this.description}\n----\n`)
+            .setDescription(
+                `Page ${this.pageNum}/${this.totalPages}\n----\n${this.description}\n----\n`,
+            )
             .setFields(this.fields);
-        
+
         return embed;
     }
 
@@ -139,23 +176,30 @@ export class PaginatedMenuBuilder {
     createButtons(): ActionRowBuilder<ButtonBuilder> {
         const previousBtn = new ButtonBuilder()
             .setCustomId(`${this.id}Previous`)
-            .setLabel('Previous')
+            .setLabel("Previous")
             .setStyle(ButtonStyle.Primary)
             .setDisabled(this.pageNum === 1);
 
         const nextBtn = new ButtonBuilder()
             .setCustomId(`${this.id}Next`)
-            .setLabel('Next')
+            .setLabel("Next")
             .setStyle(ButtonStyle.Primary)
             .setDisabled(this.pageNum === this.totalPages);
 
-        const buttonsRow = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(previousBtn, nextBtn);
+        const buttonsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            previousBtn,
+            nextBtn,
+        );
 
         return buttonsRow;
     }
-    
-    constructor(id: string, pageSize: number, pageNum: number, totalPages: number) {
+
+    constructor(
+        id: string,
+        pageSize: number,
+        pageNum: number,
+        totalPages: number,
+    ) {
         this.id = id;
         this.pageSize = pageSize;
         this.pageNum = pageNum;

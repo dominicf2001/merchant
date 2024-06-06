@@ -1,14 +1,32 @@
-import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import { Stocks } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, STOCKDOWN_EMOJI_CODE, STOCKUP_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs, PaginatedMenuBuilder } from '../../utilities';
-import { Message, EmbedBuilder, AttachmentBuilder, inlineCode, Events, ButtonInteraction } from 'discord.js';
-import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
-import { DateTime } from 'luxon';
-import { ChartConfiguration } from 'chart.js';
-import { client } from '../../index';
-import { StockInterval } from '../../database/datastores/Stocks';
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import { Stocks } from "../../database/db-objects";
+import {
+    CURRENCY_EMOJI_CODE,
+    STOCKDOWN_EMOJI_CODE,
+    STOCKUP_EMOJI_CODE,
+    formatNumber,
+    findNumericArgs,
+    findTextArgs,
+    PaginatedMenuBuilder,
+    client,
+} from "../../utilities";
+import {
+    Message,
+    EmbedBuilder,
+    AttachmentBuilder,
+    inlineCode,
+    Events,
+    ButtonInteraction,
+} from "discord.js";
+import {
+    Commands as Command,
+    CommandsCommandId,
+} from "../../database/schemas/public/Commands";
+import { DateTime } from "luxon";
+import { ChartConfiguration } from "chart.js";
+import { StockInterval } from "../../database/datastores/Stocks";
 
-const STOCK_LIST_ID: string = 'stock';
+const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;
 
 const width = 3000;
@@ -16,11 +34,11 @@ const height = 1400;
 const backgroundColour = "white";
 
 const data: Command = {
-    command_id: 'stock' as CommandsCommandId,
+    command_id: "stock" as CommandsCommandId,
     description: `View the stock list or a stock chart`,
     usage: `${inlineCode("$stock")}\n${inlineCode("$stock [@user]")}\n${inlineCode("$stock [@user] [now/hour/day/month]")}`,
     cooldown_time: 0,
-    is_admin: false
+    is_admin: false,
 };
 
 export default {
@@ -28,19 +46,25 @@ export default {
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.first()) {
             await sendStockChart(message, args);
-        }
-        else {        
+        } else {
             let pageNum: number = +findNumericArgs(args)[0] || 1;
-            await sendStockList(message, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
+            await sendStockList(
+                message,
+                STOCK_LIST_ID,
+                STOCK_LIST_PAGE_SIZE,
+                pageNum,
+            );
         }
     },
 };
 
 async function sendStockChart(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
-    const validIntervals: StockInterval[] = ['now', 'hour', 'day', 'month'];
-    const intervalArg = findTextArgs(args)[0] ?? 'now';
-    const interval: StockInterval | undefined = validIntervals.find(vi => vi === intervalArg);
+    const validIntervals: StockInterval[] = ["now", "hour", "day", "month"];
+    const intervalArg = findTextArgs(args)[0] ?? "now";
+    const interval: StockInterval | undefined = validIntervals.find(
+        (vi) => vi === intervalArg,
+    );
 
     if (!interval) {
         await message.reply("Invalid interval.");
@@ -55,93 +79,101 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
 
     const stockHistory = await Stocks.getStockHistory(stockUser.id, interval);
     const initialPrice = stockHistory.length > 0 ? stockHistory[0].price : 0;
-    const priceBounds = stockHistory.reduce(({ highest, lowest }, h) => {
-        return {
-            highest: Math.max(highest, h.price),
-            lowest: Math.min(lowest, h.price)
-        };
-    }, { highest: initialPrice, lowest: initialPrice });
+    const priceBounds = stockHistory.reduce(
+        ({ highest, lowest }, h) => {
+            return {
+                highest: Math.max(highest, h.price),
+                lowest: Math.min(lowest, h.price),
+            };
+        },
+        { highest: initialPrice, lowest: initialPrice },
+    );
 
     const highestPrice: number = Math.round(priceBounds.highest);
     const lowestPrice: number = Math.round(priceBounds.lowest);
 
-    const previousPrice: number = stockHistory[stockHistory.length - 2]?.price ?? 0;
-    const currentPrice: number = stockHistory[stockHistory.length - 1]?.price ?? 0;
+    const previousPrice: number =
+        stockHistory[stockHistory.length - 2]?.price ?? 0;
+    const currentPrice: number =
+        stockHistory[stockHistory.length - 1]?.price ?? 0;
     const difference: number = currentPrice - previousPrice;
 
-    const arrow = difference < 0 ?
-        STOCKDOWN_EMOJI_CODE :
-        STOCKUP_EMOJI_CODE;
+    const arrow = difference < 0 ? STOCKDOWN_EMOJI_CODE : STOCKUP_EMOJI_CODE;
 
     const stockDownColor: string = "rgb(255, 0, 0)";
     const stockUpColor: string = "rgb(0, 195, 76)";
-    const lineColor: string = difference < 0 ?
-        stockDownColor :
-        stockUpColor;
-
+    const lineColor: string = difference < 0 ? stockDownColor : stockUpColor;
 
     const volume = await Stocks.getTotalSharesPurchased(stockUser.id);
 
     let dateFormat: string;
     switch (interval) {
-        case 'now':
-            dateFormat = 'h:mm:ss';
+        case "now":
+            dateFormat = "h:mm:ss";
             break;
-        case 'hour':
-            dateFormat = 'MMM dd, h:mm a';
+        case "hour":
+            dateFormat = "MMM dd, h:mm a";
             break;
-        case 'day':
-            dateFormat = 'MMM dd';
+        case "day":
+            dateFormat = "MMM dd";
             break;
-        case 'month':
-            dateFormat = 'MMM';
+        case "month":
+            dateFormat = "MMM";
             break;
         default:
-            dateFormat = 'yyyy-MM-dd';
+            dateFormat = "yyyy-MM-dd";
             break;
     }
 
-    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour });
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({
+        width,
+        height,
+        backgroundColour,
+    });
     const configuration: ChartConfiguration = {
-        type: 'line',
+        type: "line",
         data: {
-            labels: stockHistory.map(h => DateTime.fromISO(h.created_date).toFormat(dateFormat)),
-            datasets: [{
-                label: `Stock price (${interval})`,
-                data: stockHistory.map(h => h.price),
-                fill: false,
-                borderColor: lineColor
-            }]
+            labels: stockHistory.map((h) =>
+                DateTime.fromISO(h.created_date).toFormat(dateFormat),
+            ),
+            datasets: [
+                {
+                    label: `Stock price (${interval})`,
+                    data: stockHistory.map((h) => h.price),
+                    fill: false,
+                    borderColor: lineColor,
+                },
+            ],
         },
         options: {
             scales: {
                 x: {
                     ticks: {
                         font: {
-                            size: 33
-                        }
-                    }
+                            size: 33,
+                        },
+                    },
                 },
                 y: {
-                    min: lowestPrice * .97,
+                    min: lowestPrice * 0.97,
                     max: highestPrice * 1.03,
                     ticks: {
                         font: {
-                            size: 36
-                        }
-                    }
-                }
+                            size: 36,
+                        },
+                    },
+                },
             },
             plugins: {
                 legend: {
                     labels: {
                         font: {
-                            size: 60
-                        }
-                    }
-                }
-            }
-        }
+                            size: 60,
+                        },
+                    },
+                },
+            },
+        },
     };
 
     const image = await chartJSNodeCanvas.renderToBuffer(configuration);
@@ -149,14 +181,23 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
 
     const embed = new EmbedBuilder()
         .setColor("Blurple")
-        .setTitle(`${arrow} ${inlineCode(stockUser.username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(currentPrice)}`)
-        .setDescription(`High: ${CURRENCY_EMOJI_CODE} ${formatNumber(highestPrice)}\nLow: ${CURRENCY_EMOJI_CODE} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`)
-        .setImage('attachment://chart.png');
+        .setTitle(
+            `${arrow} ${inlineCode(stockUser.username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(currentPrice)}`,
+        )
+        .setDescription(
+            `High: ${CURRENCY_EMOJI_CODE} ${formatNumber(highestPrice)}\nLow: ${CURRENCY_EMOJI_CODE} ${formatNumber(lowestPrice)}\nVolume: :bar_chart: ${formatNumber(volume)}`,
+        )
+        .setImage("attachment://chart.png");
 
     await message.reply({ embeds: [embed], files: [attachment] });
 }
 
-async function sendStockList(message: Message | ButtonInteraction, id: string, pageSize: number = 5, pageNum: number = 1): Promise<void> {
+async function sendStockList(
+    message: Message | ButtonInteraction,
+    id: string,
+    pageSize: number = 5,
+    pageNum: number = 1,
+): Promise<void> {
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
 
@@ -164,40 +205,51 @@ async function sendStockList(message: Message | ButtonInteraction, id: string, p
     const slicedStocks = stocks.slice(startIndex, endIndex);
 
     // getting the 'now' stock history pulls from a cache
-    const histories = await Promise.all(stocks.map(s => Stocks.getStockHistory(s.stock_id, 'now')));
+    const histories = await Promise.all(
+        stocks.map((s) => Stocks.getStockHistory(s.stock_id, "now")),
+    );
 
     const totalPages = Math.ceil(stocks.length / pageSize);
-    const paginatedMenu = new PaginatedMenuBuilder(id, pageSize, pageNum, totalPages)
-        .setColor('Blurple')
-        .setTitle('Stocks :chart_with_upwards_trend:')
-        .setDescription(`To view additional info: ${inlineCode("$stock @user")}.`);
+    const paginatedMenu = new PaginatedMenuBuilder(
+        id,
+        pageSize,
+        pageNum,
+        totalPages,
+    )
+        .setColor("Blurple")
+        .setTitle("Stocks :chart_with_upwards_trend:")
+        .setDescription(
+            `To view additional info: ${inlineCode("$stock @user")}.`,
+        );
 
     let i = 0;
     for (const stock of slicedStocks) {
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
-        const username = (await message.client.users.fetch(stock.stock_id)).username;
+        const username = (await message.client.users.fetch(stock.stock_id))
+            .username;
 
-        const arrow = (currentPrice - previousPrice) < 0 ?
-            STOCKDOWN_EMOJI_CODE :
-            STOCKUP_EMOJI_CODE;
+        const arrow =
+            currentPrice - previousPrice < 0
+                ? STOCKDOWN_EMOJI_CODE
+                : STOCKUP_EMOJI_CODE;
 
         paginatedMenu.addFields({
             name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
-            value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`
+            value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`,
         });
         ++i;
-    };
+    }
 
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
 
-    message instanceof ButtonInteraction ?
-        await message.update({ embeds: [embed], components: [buttons] }) :
-        await message.reply({ embeds: [embed], components: [buttons] });
+    message instanceof ButtonInteraction
+        ? await message.update({ embeds: [embed], components: [buttons] })
+        : await message.reply({ embeds: [embed], components: [buttons] });
 }
 
-client.on(Events.InteractionCreate, async interaction => {
+client.on(Events.InteractionCreate, async (interaction) => {
     try {
         if (!interaction.isButton()) {
             return;
@@ -205,21 +257,31 @@ client.on(Events.InteractionCreate, async interaction => {
 
         const { customId } = interaction;
 
-        if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
+        if (
+            ![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(
+                customId,
+            )
+        )
             return;
 
         const authorId = interaction.message.mentions.users.first().id;
-        if (interaction.user.id !== authorId)
-            return;
+        if (interaction.user.id !== authorId) return;
 
-        let pageNum = parseInt(interaction.message.embeds[0].description.match(/Page (\d+)/)[1]);
-        pageNum = (customId === `${STOCK_LIST_ID}Previous`) ?
-            pageNum = Math.max(pageNum - 1, 1) :
-            pageNum + 1;
+        let pageNum = parseInt(
+            interaction.message.embeds[0].description.match(/Page (\d+)/)[1],
+        );
+        pageNum =
+            customId === `${STOCK_LIST_ID}Previous`
+                ? (pageNum = Math.max(pageNum - 1, 1))
+                : pageNum + 1;
 
-        await sendStockList(interaction, STOCK_LIST_ID, STOCK_LIST_PAGE_SIZE, pageNum);
-    }
-    catch (error) {
+        await sendStockList(
+            interaction,
+            STOCK_LIST_ID,
+            STOCK_LIST_PAGE_SIZE,
+            pageNum,
+        );
+    } catch (error) {
         console.error(error);
     }
 });

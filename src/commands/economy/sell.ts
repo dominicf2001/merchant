@@ -1,14 +1,22 @@
-import { Users, Items, Stocks } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, formatNumber, findNumericArgs, findTextArgs } from '../../utilities';
-import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
-import { Message, EmbedBuilder, inlineCode } from 'discord.js';
+import { Users, Items, Stocks } from "../../database/db-objects";
+import {
+    CURRENCY_EMOJI_CODE,
+    formatNumber,
+    findNumericArgs,
+    findTextArgs,
+} from "../../utilities";
+import {
+    Commands as Command,
+    CommandsCommandId,
+} from "../../database/schemas/public/Commands";
+import { Message, EmbedBuilder, inlineCode } from "discord.js";
 
 const data: Command = {
-    command_id: 'sell' as CommandsCommandId,
+    command_id: "sell" as CommandsCommandId,
     description: `sell an item or a stock`,
     usage: `${inlineCode("$sell [item/@user]")}\n${inlineCode("$sell [item/@user] [#amount/all]")}`,
     cooldown_time: 0,
-    is_admin: false
+    is_admin: false,
 };
 
 export default {
@@ -16,18 +24,17 @@ export default {
     async execute(message: Message, args: string[]): Promise<void> {
         if (message.mentions.users.size == 1) {
             await sellStock(message, args);
-        }
-        else {
+        } else {
             await sellItem(message, args);
         }
-    }
+    },
 };
 
 async function sellStock(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
-    const quantity: number = args.includes("all") ?
-        99999 :
-        (+findNumericArgs(args)[0] || 1);
+    const quantity: number = args.includes("all")
+        ? 99999
+        : +findNumericArgs(args)[0] || 1;
 
     const latestStock = await Stocks.getLatestStock(stockUser.id);
 
@@ -57,32 +64,33 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         await message.reply(`You do not own any shares of this stock.`);
         return;
     }
-    const totalSold: number = -(await Users.addStock(message.author.id, stockUser.id, -quantity));
+    const totalSold: number = -(await Users.addStock(
+        message.author.id,
+        stockUser.id,
+        -quantity,
+    ));
     const totalReturn: number = latestStock.price * totalSold;
 
     await Users.addBalance(message.author.id, totalReturn);
 
-    const pluralS: string = totalSold > 1 ?
-        "s" :
-        "";
-    const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .addFields({
-            name: `${formatNumber(totalSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
-            value: ' '
-        });
+    const pluralS: string = totalSold > 1 ? "s" : "";
+    const embed = new EmbedBuilder().setColor("Blurple").addFields({
+        name: `${formatNumber(totalSold)} share${pluralS} of ${inlineCode(stockUser.tag)} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
+        value: " ",
+    });
 
     await message.reply({ embeds: [embed] });
 }
 
 async function sellItem(message: Message, args: string[]): Promise<void> {
-    const itemName: string = findTextArgs(args)[0]?.toLowerCase() === 'all' ?
-        findTextArgs(args)[1]?.toLowerCase() :
-        findTextArgs(args)[0]?.toLowerCase();
+    const itemName: string =
+        findTextArgs(args)[0]?.toLowerCase() === "all"
+            ? findTextArgs(args)[1]?.toLowerCase()
+            : findTextArgs(args)[0]?.toLowerCase();
 
-    const quantity: number = args.includes("all") ?
-        99999 :
-        (+findNumericArgs(args)[0] || 1);
+    const quantity: number = args.includes("all")
+        ? 99999
+        : +findNumericArgs(args)[0] || 1;
 
     if (!itemName) {
         await message.reply(`Please specify an item or stock.`);
@@ -113,18 +121,19 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
         return;
     }
 
-
-    const totalSold: number = -(await Users.addItem(message.author.id, itemName, -quantity));
+    const totalSold: number = -(await Users.addItem(
+        message.author.id,
+        itemName,
+        -quantity,
+    ));
     const totalReturn: number = item.price * totalSold;
 
     await Users.addBalance(message.author.id, totalReturn);
 
     const pluralS: string = totalSold > 1 ? "s" : "";
-    const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .addFields({
-            name: `${formatNumber(totalSold)} ${item.emoji_code} ${itemName}${pluralS} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
-            value: ' '
-        });
+    const embed = new EmbedBuilder().setColor("Blurple").addFields({
+        name: `${formatNumber(totalSold)} ${item.emoji_code} ${itemName}${pluralS} sold for ${CURRENCY_EMOJI_CODE} ${formatNumber(totalReturn)}`,
+        value: " ",
+    });
     await message.reply({ embeds: [embed] });
 }

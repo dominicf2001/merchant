@@ -1,14 +1,17 @@
-import { Message, EmbedBuilder, inlineCode } from 'discord.js';
-import { Users } from '../../database/db-objects';
-import { CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
-import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
+import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Users } from "../../database/db-objects";
+import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
+import {
+    Commands as Command,
+    CommandsCommandId,
+} from "../../database/schemas/public/Commands";
 
 const data: Command = {
-    command_id: 'top' as CommandsCommandId,
+    command_id: "top" as CommandsCommandId,
     description: `See who are the goodest boys`,
     usage: `${inlineCode("$top")}`,
     cooldown_time: 0,
-    is_admin: false
+    is_admin: false,
 };
 
 export default {
@@ -16,7 +19,9 @@ export default {
     async execute(message: Message, args: string[]): Promise<void> {
         const allUsers = await Users.getAll();
 
-        const netWorths = await Promise.all(allUsers.map(user => Users.getNetWorth(user.user_id)));
+        const netWorths = await Promise.all(
+            allUsers.map((user) => Users.getNetWorth(user.user_id)),
+        );
 
         const usersAndNetWorths = allUsers.map((user, index) => ({
             user,
@@ -34,9 +39,12 @@ export default {
         for (const userAndNetworth of topUsers) {
             const { user, netWorth } = userAndNetworth;
             const discordUser = await message.client.users.fetch(user.user_id);
-            embed.addFields({ name: `${i++}. ${inlineCode(discordUser.username)}`, value: `${CURRENCY_EMOJI_CODE} ${formatNumber(netWorth)}` });
+            embed.addFields({
+                name: `${i++}. ${inlineCode(discordUser.username)}`,
+                value: `${CURRENCY_EMOJI_CODE} ${formatNumber(netWorth)}`,
+            });
         }
 
         await message.reply({ embeds: [embed] });
-    }
+    },
 };

@@ -1,14 +1,21 @@
-import { Users } from '../../database/db-objects';
-import { findNumericArgs, CURRENCY_EMOJI_CODE, formatNumber } from '../../utilities';
-import { Commands as Command, CommandsCommandId } from '../../database/schemas/public/Commands';
-import { Message, EmbedBuilder, inlineCode } from 'discord.js';
+import { Users } from "../../database/db-objects";
+import {
+    findNumericArgs,
+    CURRENCY_EMOJI_CODE,
+    formatNumber,
+} from "../../utilities";
+import {
+    Commands as Command,
+    CommandsCommandId,
+} from "../../database/schemas/public/Commands";
+import { Message, EmbedBuilder, inlineCode } from "discord.js";
 
 const data: Command = {
-    command_id: 'give' as CommandsCommandId,
+    command_id: "give" as CommandsCommandId,
     description: `Share your tendies`,
     usage: `${inlineCode("$give [@user] [#amount]")}`,
     cooldown_time: 0,
-    is_admin: false
+    is_admin: false,
 };
 
 export default {
@@ -35,7 +42,9 @@ export default {
         }
 
         if (transferAmount > authorBalance) {
-            await message.reply(`You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`);
+            await message.reply(
+                `You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`,
+            );
             return;
         }
 
@@ -43,14 +52,11 @@ export default {
         authorBalance -= transferAmount;
         await Users.addBalance(target.id, +transferAmount);
 
-
-        const embed = new EmbedBuilder()
-            .setColor("Blurple")
-            .setFields({
-                name: `${CURRENCY_EMOJI_CODE} ${formatNumber(transferAmount)} transferred to: ${inlineCode(target.username)}`,
-                value: `You have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} remaining`
-            });
+        const embed = new EmbedBuilder().setColor("Blurple").setFields({
+            name: `${CURRENCY_EMOJI_CODE} ${formatNumber(transferAmount)} transferred to: ${inlineCode(target.username)}`,
+            value: `You have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} remaining`,
+        });
 
         await message.reply({ embeds: [embed] });
-    }
-}
+    },
+};
