@@ -4,7 +4,7 @@ import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";
 
-const sleepDuration: number = 50;
+const sleepDuration: number = 80;
 
 describe("UPDATING Operations", () => {
     const testStockId = "123";

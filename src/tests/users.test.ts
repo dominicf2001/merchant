@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { Users, Items, Stocks } from "../database/db-objects";
 import { sleep } from "../utilities";
 
-const sleepDuration: number = 50;
+const sleepDuration: number = 80;
 
 describe("BALANCE, ACTIVITY_POINTS, ARMOR Operations", () => {
     const userId = "123";
