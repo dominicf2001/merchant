@@ -12,9 +12,4 @@
   };
 
   languages.typescript.enable = true;
-
-  # container
-  # containers.merchant.name = "prod";
-  # containers.merchant.copyToRoot = ./dist;
-  # containers.merchant.startupCommand = "devenv up";
 }
