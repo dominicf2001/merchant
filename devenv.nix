@@ -11,5 +11,9 @@
     initialDatabases = [{ name = "merchant"; }];
   };
 
+  enterShell = ''
+    devenv up -d
+  '';
+
   languages.typescript.enable = true;
 }
