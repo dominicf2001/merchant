@@ -3,6 +3,7 @@ import Database from "../schemas/Database";
 import { Collection } from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
+import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities.js";
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
     v === null ? null : new Date(v).toISOString(),
@@ -10,10 +11,10 @@ types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
 
 const dialect = new PostgresDialect({
     pool: new Pool({
-        database: "merchant",
-        host: "/run/user/1000/devenv-5c7814d/postgres",
-        user: "dominicf",
-        port: null,
+        database: DB_NAME,
+        host: DB_HOST,
+        user: DB_USER,
+        port: DB_PORT,
         max: 10,
     }),
 });
