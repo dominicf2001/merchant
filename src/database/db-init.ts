@@ -3,6 +3,10 @@ import { Kysely, PostgresDialect, sql } from "kysely";
 import { processDatabase } from "kanel";
 import config from "./kanelrc.js";
 import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../utilities.js";
+import Database from "./schemas/Database.js";
+
+const args: string[] = process.argv.slice(2);
+const shouldOverwrite: boolean = args[0] === "-f";
 
 const dialect = new PostgresDialect({
     pool: new Pool({
@@ -14,13 +18,10 @@ const dialect = new PostgresDialect({
     }),
 });
 
-const db = new Kysely({
+const db = new Kysely<Database>({
     dialect,
     // log: ["query", "error"],
 });
-
-const args: string[] = process.argv.slice(2);
-const shouldOverwrite: boolean = args[0] === "-f";
 
 async function main() {
     try {
@@ -48,6 +49,7 @@ async function main() {
                 .ifExists()
                 .cascade()
                 .execute();
+            await db.schema.dropTable("runs").ifExists().cascade().execute();
             await db.schema
                 .dropTable("user_cooldowns")
                 .ifExists()
@@ -55,11 +57,30 @@ async function main() {
                 .execute();
         }
 
+        // RUNS
+        await db.schema
+            .createTable("runs")
+            .addColumn("run_id", "serial", (col) => col.notNull().primaryKey())
+            .addColumn("name", "varchar", (col) => col.defaultTo(""))
+            .addColumn("description", "varchar", (col) => col.defaultTo(""))
+            .addColumn("run_date", "timestamptz", (col) =>
+                col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
+            )
+            .execute();
+
+        await db
+            .insertInto("runs")
+            .values({
+                name: "Main",
+            })
+            .execute();
+
         // USERS
         await db.schema
             .createTable("users")
+            .addColumn("run_id", "serial", (col) => col.notNull().unique())
             .addColumn("user_id", "varchar(30)", (col) =>
-                col.notNull().primaryKey(),
+                col.notNull().unique(),
             )
             .addColumn("balance", "integer", (col) =>
                 col
@@ -72,6 +93,14 @@ async function main() {
                     .notNull()
                     .defaultTo(0)
                     .check(sql`armor >= 0`),
+            )
+            .addPrimaryKeyConstraint("users_pk", ["user_id", "run_id"])
+            .addForeignKeyConstraint(
+                "users_fk_run",
+                ["run_id"],
+                "runs",
+                ["run_id"],
+                (cb) => cb.onDelete("cascade"),
             )
             .execute();
 
@@ -99,7 +128,10 @@ async function main() {
         // STOCKS
         await db.schema
             .createTable("stocks")
-            .addColumn("stock_id", "varchar(30)", (col) => col.notNull())
+            .addColumn("run_id", "serial", (col) => col.notNull().unique())
+            .addColumn("stock_id", "varchar(30)", (col) =>
+                col.notNull().unique(),
+            )
             .addColumn("created_date", "timestamptz", (col) =>
                 col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
             )
@@ -109,20 +141,31 @@ async function main() {
                     .defaultTo(0)
                     .check(sql`price >= 0`),
             )
+            .addPrimaryKeyConstraint("stocks_pk", [
+                "run_id",
+                "stock_id",
+                "created_date",
+            ])
             .addForeignKeyConstraint(
-                "stock_fk_user",
+                "stocks_fk_user",
                 ["stock_id"],
                 "users",
                 ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
-            .addPrimaryKeyConstraint("stock_pk", ["stock_id", "created_date"])
+            .addForeignKeyConstraint(
+                "stocks_fk_run",
+                ["run_id"],
+                "runs",
+                ["run_id"],
+                (cb) => cb.onDelete("cascade"),
+            )
             .execute();
 
         await db.schema
             .createIndex("stock_history")
             .on("stocks")
-            .columns(["stock_id"])
+            .columns(["run_id", "stock_id"])
             .execute();
 
         // COMMANDS
@@ -146,8 +189,9 @@ async function main() {
         // USER ACTIVITY
         await db.schema
             .createTable("user_activities")
+            .addColumn("run_id", "serial", (col) => col.notNull().unique())
             .addColumn("user_id", "varchar(30)", (col) =>
-                col.notNull().primaryKey(),
+                col.notNull().unique(),
             )
             .addColumn("activity_points_short", "integer", (col) =>
                 col
@@ -185,11 +229,22 @@ async function main() {
             .addColumn("first_activity_date", "timestamptz", (col) =>
                 col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
             )
+            .addPrimaryKeyConstraint("user_activities_pk", [
+                "user_id",
+                "run_id",
+            ])
             .addForeignKeyConstraint(
-                "user_items_fk_user",
+                "user_activities_fk_user",
                 ["user_id"],
                 "users",
                 ["user_id"],
+                (cb) => cb.onDelete("cascade"),
+            )
+            .addForeignKeyConstraint(
+                "user_activities_fk_run",
+                ["run_id"],
+                "runs",
+                ["run_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .execute();
@@ -271,19 +326,19 @@ async function main() {
             .addColumn("start_date", "timestamptz", (col) =>
                 col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
             )
-            .addPrimaryKeyConstraint("user_cooldown_pk", [
+            .addPrimaryKeyConstraint("user_cooldowns_pk", [
                 "user_id",
                 "command_id",
             ])
             .addForeignKeyConstraint(
-                "user_cooldown_fk_user",
+                "user_cooldowns_fk_user",
                 ["user_id"],
                 "users",
                 ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .addForeignKeyConstraint(
-                "user_cooldown_fk_command",
+                "user_cooldowns_fk_command",
                 ["command_id"],
                 "commands",
                 ["command_id"],
