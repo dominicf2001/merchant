@@ -16,7 +16,7 @@ const dialect = new PostgresDialect({
 
 const db = new Kysely({
     dialect,
-    log: ["query", "error"],
+    // log: ["query", "error"],
 });
 
 const args: string[] = process.argv.slice(2);
@@ -53,8 +53,6 @@ async function main() {
                 .ifExists()
                 .cascade()
                 .execute();
-
-            sql`DROP TRIGGER IF EXISTS`;
         }
 
         // USERS

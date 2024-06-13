@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import fs from "fs";
+import { api } from "./api";
 import { Events, EmbedBuilder } from "discord.js";
 import { Users, Commands, Stocks } from "./database/db-objects";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
@@ -21,7 +22,10 @@ import {
 } from "./utilities";
 
 client.once(Events.ClientReady, async () => {
-    console.log("Ready as " + client.user.tag);
+    console.log("Bot ready as " + client.user.tag);
+    api.listen("3000", () => {
+        console.log("API listening on port 3000");
+    });
 });
 
 client.on(Events.InviteCreate, async (invite) => {

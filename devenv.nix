@@ -1,9 +1,12 @@
 { pkgs, ... }:
 
 {
-  packages = [ pkgs.nodejs pkgs.libuuid ];
+  packages = [ pkgs.nodejs pkgs.libuuid pkgs.discordchatexporter-cli ];
 
-  env = { LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.libuuid ]; };
+  env = {
+    LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.libuuid ];
+    DISCORD_TOKEN = "";
+  };
 
   services.postgres = {
     enable = true;

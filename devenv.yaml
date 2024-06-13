@@ -7,4 +7,5 @@ inputs:
       nixpkgs:
         follows: nixpkgs
   nixpkgs:
-    url: github:cachix/devenv-nixpkgs/rolling
+    url: github:NixOS/nixpkgs
+    # url: github:cachix/devenv-nixpkgs/rolling
