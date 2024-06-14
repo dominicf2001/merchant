@@ -126,6 +126,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 10 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -134,6 +135,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 4 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -142,6 +144,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 15 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -177,6 +180,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -185,6 +189,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -193,6 +198,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -226,6 +232,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -234,6 +241,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -242,6 +250,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -296,6 +305,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -304,6 +314,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -312,6 +323,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            run_id: 1,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate

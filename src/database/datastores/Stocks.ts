@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { Kysely, Updateable, Insertable, sql } from "kysely";
 import Database from "../schemas/Database";
 import { Users } from "./Users";
+import { RunsRunId } from "../schemas/public/Runs";
 
 export type StockInterval = "now" | "hour" | "day" | "month";
 
@@ -32,26 +33,32 @@ class Stocks extends DataStore<Stock> {
         return Number(result.total_shares_purchased) ?? 0;
     }
 
-    async getFromDB(id: string): Promise<Stock | undefined> {
+    async getFromDB(
+        stock_id: string,
+        run_id: number = 1,
+    ): Promise<Stock | undefined> {
         return (await this.db
             .selectFrom("stocks")
             .selectAll()
-            .where("stock_id", "=", id as UsersUserId)
+            .where("stock_id", "=", stock_id as UsersUserId)
+            .where("run_id", "=", run_id as RunsRunId)
             .orderBy("created_date desc")
             .executeTakeFirst()) as Stock;
     }
 
     async set(
-        id: string,
+        stock_id: string,
         data: Insertable<Stock> | Updateable<Stock> = {},
+        run_id: number = 1,
     ): Promise<void> {
         // create the user associated with this stock if they dont exist
-        if (!Users.getFromCache(id)) {
-            await Users.set(id);
+        if (!Users.getFromCache(stock_id)) {
+            await Users.set(stock_id);
         }
 
         const newData: Stock = {
-            stock_id: id as UsersUserId,
+            run_id: run_id as RunsRunId,
+            stock_id: stock_id as UsersUserId,
             ...data,
         } as Stock;
 
@@ -60,13 +67,15 @@ class Stocks extends DataStore<Stock> {
             .values(newData)
             .returningAll()
             .onConflict((oc) =>
-                oc.columns(["stock_id", "created_date"]).doUpdateSet(newData),
+                oc
+                    .columns(["run_id", "stock_id", "created_date"])
+                    .doUpdateSet(newData),
             )
             .executeTakeFirstOrThrow()) as Stock;
 
-        let cachedStockHistory = this.cache.get(id);
+        let cachedStockHistory = this.cache.get(stock_id);
         if (!cachedStockHistory) {
-            this.cache.set(id, [result]);
+            this.cache.set(stock_id, [result]);
         } else if (cachedStockHistory.length >= 12) {
             cachedStockHistory.pop();
             cachedStockHistory.unshift(result);
@@ -75,13 +84,26 @@ class Stocks extends DataStore<Stock> {
         }
     }
 
-    async updateStockPrice(stock_id: string, amount: number): Promise<void> {
-        if (amount < 0) amount = 0;
-
-        await this.set(stock_id, { price: amount });
+    async delete(stock_id: string, run_id: number = 1): Promise<void> {
+        this.cache.delete(stock_id);
+        await this.db
+            .deleteFrom("stocks")
+            .where("stock_id", "=", stock_id as UsersUserId)
+            .where("run_id", "=", run_id as RunsRunId)
+            .execute();
     }
 
-    async getLatestStocks(): Promise<Stock[]> {
+    async updateStockPrice(
+        stock_id: string,
+        amount: number,
+        run_id: number = 1,
+    ): Promise<void> {
+        if (amount < 0) amount = 0;
+
+        await this.set(stock_id, { price: amount }, run_id);
+    }
+
+    async getLatestStocks(run_id: number = 1): Promise<Stock[]> {
         let latestStocks: Stock[] = [];
         if (this.cache.size) {
             for (const stockId of this.cache.keys()) {
@@ -99,6 +121,7 @@ class Stocks extends DataStore<Stock> {
                         (eb) =>
                             eb
                                 .selectFrom("stocks")
+                                .where("run_id", "=", run_id as RunsRunId)
                                 .select([
                                     "stock_id",
                                     (eb) =>
@@ -133,6 +156,7 @@ class Stocks extends DataStore<Stock> {
     async getStockHistory(
         stock_id: string,
         interval: StockInterval,
+        run_id: number = 1,
     ): Promise<Stock[]> {
         // only 'now' is stored in the cache currently
         if (interval === "now" && this.getFromCache(stock_id)) {
@@ -162,10 +186,12 @@ class Stocks extends DataStore<Stock> {
 
         const stockHistory: Stock[] = await this.db
             .selectFrom("stocks as s1")
+            .where("run_id", "=", run_id as RunsRunId)
             .innerJoin(
                 (eb) =>
                     eb
                         .selectFrom("stocks")
+                        .where("run_id", "=", run_id as RunsRunId)
                         .select([
                             "stock_id",
                             (eb) =>
@@ -198,9 +224,10 @@ class Stocks extends DataStore<Stock> {
         return stockHistory;
     }
 
-    async cleanUpStocks() {
+    async cleanUpStocks(run_id: number = 1) {
         await this.db
             .deleteFrom("stocks as s1")
+            .where("run_id", "=", run_id as RunsRunId)
             .using((eb) =>
                 eb
                     .selectFrom("stocks")

@@ -20,7 +20,7 @@ const dialect = new PostgresDialect({
 
 const db = new Kysely<Database>({
     dialect,
-    // log: ["query", "error"],
+    log: ["query", "error"],
 });
 
 async function main() {
@@ -78,10 +78,7 @@ async function main() {
         // USERS
         await db.schema
             .createTable("users")
-            .addColumn("run_id", "serial", (col) => col.notNull().unique())
-            .addColumn("user_id", "varchar(30)", (col) =>
-                col.notNull().unique(),
-            )
+            .addColumn("user_id", "varchar(30)", (col) => col.notNull())
             .addColumn("balance", "integer", (col) =>
                 col
                     .notNull()
@@ -94,14 +91,7 @@ async function main() {
                     .defaultTo(0)
                     .check(sql`armor >= 0`),
             )
-            .addPrimaryKeyConstraint("users_pk", ["user_id", "run_id"])
-            .addForeignKeyConstraint(
-                "users_fk_run",
-                ["run_id"],
-                "runs",
-                ["run_id"],
-                (cb) => cb.onDelete("cascade"),
-            )
+            .addPrimaryKeyConstraint("users_pk", ["user_id"])
             .execute();
 
         // ITEMS
@@ -128,10 +118,8 @@ async function main() {
         // STOCKS
         await db.schema
             .createTable("stocks")
-            .addColumn("run_id", "serial", (col) => col.notNull().unique())
-            .addColumn("stock_id", "varchar(30)", (col) =>
-                col.notNull().unique(),
-            )
+            .addColumn("run_id", "serial", (col) => col.notNull())
+            .addColumn("stock_id", "varchar(30)", (col) => col.notNull())
             .addColumn("created_date", "timestamptz", (col) =>
                 col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
             )
@@ -189,10 +177,8 @@ async function main() {
         // USER ACTIVITY
         await db.schema
             .createTable("user_activities")
-            .addColumn("run_id", "serial", (col) => col.notNull().unique())
-            .addColumn("user_id", "varchar(30)", (col) =>
-                col.notNull().unique(),
-            )
+            .addColumn("run_id", "serial", (col) => col.notNull())
+            .addColumn("user_id", "varchar(30)", (col) => col.notNull())
             .addColumn("activity_points_short", "integer", (col) =>
                 col
                     .notNull()

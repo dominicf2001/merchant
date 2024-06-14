@@ -14,14 +14,15 @@ import { Kysely, Insertable, Updateable, sql } from "kysely";
 import { Items } from "./Items";
 import { Stocks } from "./Stocks";
 import { Commands } from "./Commands";
+import { RunsRunId } from "../schemas/public/Runs";
 
 class Users extends DataStore<User> {
     async set(
-        id: string,
+        user_id: string,
         data: Insertable<User> | Updateable<User> = {},
     ): Promise<void> {
         const newUser: User = {
-            [this.tableID]: id as UsersUserId,
+            [this.tableID]: user_id as UsersUserId,
             ...data,
         } as User;
 
@@ -33,7 +34,7 @@ class Users extends DataStore<User> {
                 .returningAll()
                 .executeTakeFirstOrThrow()) as User;
 
-            this.cache.set(id, [result]);
+            this.cache.set(user_id, [result]);
         } catch (error) {
             console.error(error);
             throw error;
@@ -62,7 +63,11 @@ class Users extends DataStore<User> {
         });
     }
 
-    async addActivity(user_id: string, amount: number): Promise<void> {
+    async addActivity(
+        user_id: string,
+        amount: number,
+        run_id: number = 1,
+    ): Promise<void> {
         if (!this.getFromCache(user_id)) {
             await this.set(user_id);
         }
@@ -72,6 +77,7 @@ class Users extends DataStore<User> {
         await db
             .insertInto("user_activities")
             .values({
+                run_id: run_id as RunsRunId,
                 user_id: user_id as UsersUserId,
                 activity_points_short: amount < 0 ? 0 : amount,
                 activity_points_long: amount < 0 ? 0 : amount,
@@ -79,7 +85,7 @@ class Users extends DataStore<User> {
                 last_activity_date: now,
             })
             .onConflict((oc) =>
-                oc.column("user_id").doUpdateSet({
+                oc.columns(["user_id", "run_id"]).doUpdateSet({
                     activity_points_short: sql`GREATEST(user_activities.activity_points_short + ${amount}, 0)`,
                     activity_points_long: sql`GREATEST(user_activities.activity_points_long + ${amount}, 0)`,
                     last_activity_date: now,
@@ -250,6 +256,7 @@ class Users extends DataStore<User> {
     async setActivity(
         user_id: string,
         data: Insertable<UserActivity> | Updateable<UserActivity> = {},
+        run_id: number = 1,
     ): Promise<void> {
         try {
             if (!this.getFromCache(user_id)) {
@@ -260,6 +267,7 @@ class Users extends DataStore<User> {
             if (data.activity_points_long < 0) data.activity_points_long = 0;
 
             const newUserActivity: UserActivity = {
+                run_id: run_id as RunsRunId,
                 user_id: user_id as UsersUserId,
                 last_activity_date: DateTime.now().toISO(),
                 ...data,
@@ -272,7 +280,9 @@ class Users extends DataStore<User> {
                     ...newUserActivity,
                 })
                 .onConflict((oc) =>
-                    oc.column("user_id").doUpdateSet(newUserActivity),
+                    oc
+                        .columns(["user_id", "run_id"])
+                        .doUpdateSet(newUserActivity),
                 )
                 .returningAll()
                 .executeTakeFirstOrThrow()) as UserActivity;
@@ -292,13 +302,17 @@ class Users extends DataStore<User> {
         return user?.armor ?? 0;
     }
 
-    async getActivity(user_id: string): Promise<UserActivity> {
+    async getActivity(
+        user_id: string,
+        run_id: number = 1,
+    ): Promise<UserActivity> {
         await this.setActivity(user_id);
 
         let userActivity = await this.db
             .selectFrom("user_activities")
             .selectAll()
             .where("user_id", "=", user_id as UsersUserId)
+            .where("run_id", "=", run_id as RunsRunId)
             .executeTakeFirst();
         return userActivity;
     }
