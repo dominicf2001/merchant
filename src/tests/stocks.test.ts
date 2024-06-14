@@ -3,6 +3,7 @@ import { Stocks, Users, db } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";
+import { Runs } from "../database/datastores/Runs";
 
 const sleepDuration: number = 80;
 
@@ -83,6 +84,28 @@ describe("UPDATING Operations", () => {
 
         latestStock = await Stocks.getFromDB(testStockId);
         expect(latestStock?.price).toBe(250);
+    });
+
+    test("Update non-existing stock with multiple runs", async () => {
+        await Runs.set(2);
+
+        await Stocks.updateStockPrice(testStockId, 20);
+        await sleep(sleepDuration);
+
+        let latestStock = await Stocks.getLatestStock(testStockId);
+        expect(latestStock?.price).toBe(20);
+
+        await Stocks.updateStockPrice(testStockId, 40, 2);
+        await sleep(sleepDuration);
+
+        latestStock = await Stocks.getLatestStock(testStockId);
+        expect(latestStock?.price).toBe(20);
+
+        latestStock = await Stocks.getLatestStock(testStockId, 2);
+        expect(latestStock?.price).toBe(40);
+
+        await Runs.delete(2);
+        await sleep(sleepDuration);
     });
 });
 

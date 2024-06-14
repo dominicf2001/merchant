@@ -6,6 +6,7 @@ import { Kysely, Updateable, Insertable, sql } from "kysely";
 import Database from "../schemas/Database";
 import { Users } from "./Users";
 import { RunsRunId } from "../schemas/public/Runs";
+import { MAIN_RUN_ID } from "./Runs";
 
 export type StockInterval = "now" | "hour" | "day" | "month";
 
@@ -33,9 +34,22 @@ class Stocks extends DataStore<Stock> {
         return Number(result.total_shares_purchased) ?? 0;
     }
 
+    async get(
+        stock_id: string,
+        run_id: number = MAIN_RUN_ID,
+    ): Promise<Stock | undefined> {
+        if (run_id !== MAIN_RUN_ID && this.cache.has(stock_id)) {
+            // cache hit
+            return this.getFromCache(stock_id);
+        } else {
+            // cache miss
+            return await this.getFromDB(stock_id, run_id);
+        }
+    }
+
     async getFromDB(
         stock_id: string,
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<Stock | undefined> {
         return (await this.db
             .selectFrom("stocks")
@@ -49,7 +63,7 @@ class Stocks extends DataStore<Stock> {
     async set(
         stock_id: string,
         data: Insertable<Stock> | Updateable<Stock> = {},
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<void> {
         // create the user associated with this stock if they dont exist
         if (!Users.getFromCache(stock_id)) {
@@ -84,7 +98,10 @@ class Stocks extends DataStore<Stock> {
         }
     }
 
-    async delete(stock_id: string, run_id: number = 1): Promise<void> {
+    async delete(
+        stock_id: string,
+        run_id: number = MAIN_RUN_ID,
+    ): Promise<void> {
         this.cache.delete(stock_id);
         await this.db
             .deleteFrom("stocks")
@@ -96,14 +113,14 @@ class Stocks extends DataStore<Stock> {
     async updateStockPrice(
         stock_id: string,
         amount: number,
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<void> {
         if (amount < 0) amount = 0;
 
         await this.set(stock_id, { price: amount }, run_id);
     }
 
-    async getLatestStocks(run_id: number = 1): Promise<Stock[]> {
+    async getLatestStocks(run_id: number = MAIN_RUN_ID): Promise<Stock[]> {
         let latestStocks: Stock[] = [];
         if (this.cache.size) {
             for (const stockId of this.cache.keys()) {
@@ -149,14 +166,17 @@ class Stocks extends DataStore<Stock> {
         return latestStocks;
     }
 
-    async getLatestStock(stock_id: string): Promise<Stock | undefined> {
-        return await this.get(stock_id);
+    async getLatestStock(
+        stock_id: string,
+        run_id: number = MAIN_RUN_ID,
+    ): Promise<Stock | undefined> {
+        return await this.get(stock_id, run_id);
     }
 
     async getStockHistory(
         stock_id: string,
         interval: StockInterval,
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<Stock[]> {
         // only 'now' is stored in the cache currently
         if (interval === "now" && this.getFromCache(stock_id)) {
@@ -224,7 +244,7 @@ class Stocks extends DataStore<Stock> {
         return stockHistory;
     }
 
-    async cleanUpStocks(run_id: number = 1) {
+    async cleanUpStocks(run_id: number = MAIN_RUN_ID) {
         await this.db
             .deleteFrom("stocks as s1")
             .where("run_id", "=", run_id as RunsRunId)

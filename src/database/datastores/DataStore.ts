@@ -21,21 +21,23 @@ const dialect = new PostgresDialect({
 
 export const db = new Kysely<Database>({
     dialect,
-    // log: ["query", "error"],
+    log: ["query", "error"],
 });
 
 export type TableName = keyof Database;
-export type TableID = "user_id" | "item_id" | "stock_id" | "command_id";
+export type TableID =
+    | "user_id"
+    | "item_id"
+    | "stock_id"
+    | "command_id"
+    | "run_id";
 export type BehaviorFunction = (
     message: Message,
     args: string[],
 ) => Promise<void>;
 
-export abstract class DataStore<Data> {
-    protected cache: Collection<string, Data[]> = new Collection<
-        string,
-        Data[]
-    >();
+export abstract class DataStore<Data, K = string> {
+    protected cache: Collection<K, Data[]> = new Collection<K, Data[]>();
     protected db: Kysely<Database>;
     protected tableName: TableName;
     protected tableID: TableID;
@@ -51,7 +53,7 @@ export abstract class DataStore<Data> {
         });
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: K): Promise<void> {
         this.cache.delete(id);
         await this.db
             .deleteFrom(this.tableName as any)
@@ -59,11 +61,11 @@ export abstract class DataStore<Data> {
             .execute();
     }
 
-    getFromCache(id: string): Data | undefined {
+    getFromCache(id: K): Data | undefined {
         return this.cache.get(id)?.[0];
     }
 
-    async getFromDB(id: string): Promise<Data | undefined> {
+    async getFromDB(id: K): Promise<Data | undefined> {
         return (await this.db
             .selectFrom(this.tableName)
             .selectAll()
@@ -71,7 +73,7 @@ export abstract class DataStore<Data> {
             .executeTakeFirst()) as Data;
     }
 
-    async get(id: string): Promise<Data | undefined> {
+    async get(id: K): Promise<Data | undefined> {
         if (this.cache.has(id)) {
             // cache hit
             return this.getFromCache(id);
@@ -102,32 +104,20 @@ export abstract class DataStore<Data> {
     }
 
     async set(
-        id: string,
+        id: K,
         data: Insertable<Data> | Updateable<Data> = {},
     ): Promise<void> {
         const newData: Data = { [this.tableID]: id as any, ...data } as Data;
 
         try {
-            let result: Data = (await this.db
-                .selectFrom(this.tableName)
-                .selectAll()
-                .where(this.tableID, "=", id as any)
-                .executeTakeFirst()) as Data;
-
-            if (result) {
-                result = (await this.db
-                    .updateTable(this.tableName)
-                    .set(newData)
-                    .where(this.tableID, "=", id as any)
-                    .returningAll()
-                    .executeTakeFirstOrThrow()) as Data;
-            } else {
-                result = (await this.db
-                    .insertInto(this.tableName)
-                    .values(newData)
-                    .returningAll()
-                    .executeTakeFirstOrThrow()) as Data;
-            }
+            const result = (await this.db
+                .insertInto(this.tableName)
+                .values(newData)
+                .onConflict((oc) =>
+                    oc.column(this.tableID).doUpdateSet(newData),
+                )
+                .returningAll()
+                .executeTakeFirstOrThrow()) as Data;
 
             this.cache.set(id, [result]);
         } catch (error) {
@@ -137,7 +127,7 @@ export abstract class DataStore<Data> {
     }
 
     constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
-        this.cache = new Collection<TableID, Data[]>();
+        this.cache = new Collection<K, Data[]>();
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;

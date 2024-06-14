@@ -15,6 +15,7 @@ import { Items } from "./Items";
 import { Stocks } from "./Stocks";
 import { Commands } from "./Commands";
 import { RunsRunId } from "../schemas/public/Runs";
+import { MAIN_RUN_ID } from "./Runs";
 
 class Users extends DataStore<User> {
     async set(
@@ -66,7 +67,7 @@ class Users extends DataStore<User> {
     async addActivity(
         user_id: string,
         amount: number,
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<void> {
         if (!this.getFromCache(user_id)) {
             await this.set(user_id);
@@ -256,7 +257,7 @@ class Users extends DataStore<User> {
     async setActivity(
         user_id: string,
         data: Insertable<UserActivity> | Updateable<UserActivity> = {},
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<void> {
         try {
             if (!this.getFromCache(user_id)) {
@@ -304,7 +305,7 @@ class Users extends DataStore<User> {
 
     async getActivity(
         user_id: string,
-        run_id: number = 1,
+        run_id: number = MAIN_RUN_ID,
     ): Promise<UserActivity> {
         await this.setActivity(user_id);
 
