@@ -4,31 +4,41 @@ import bodyParser from "koa-bodyparser";
 import { Stocks } from "./database/db-objects";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { readFileSync, unlinkSync } from "fs";
+import { existsSync } from "fs";
+import { readdir, readFile } from "fs/promises";
 
 const execAsync = promisify(exec);
 
-const SIM_OUT_PATH = "./simout.json";
-
-async function discordExportChannel(channelId: string) {
-    const cmd = `discordchatexporter-cli export -c ${channelId} -f Json -o ${SIM_OUT_PATH}`;
-    const { stdout } = await execAsync(cmd);
-    console.log(stdout);
-
-    const data = JSON.parse(readFileSync(SIM_OUT_PATH, "utf8"));
-    unlinkSync(SIM_OUT_PATH);
-    return data;
+export interface Message {
+    id: string;
+    type: string;
+    timestamp: Date;
+    timestampEdited: null;
+    callEndedTimestamp: null;
+    isPinned: boolean;
+    content: string;
+    author: Author;
 }
 
-async function discordExportGuild(guildId: string) {
-    const cmd = `discordchatexporter-cli exportguild -g ${guildId} -f Json -o ${SIM_OUT_PATH}`;
-    const { stdout } = await execAsync(cmd);
-    console.log(stdout);
-
-    const data = JSON.parse(readFileSync(SIM_OUT_PATH, "utf8"));
-    unlinkSync(SIM_OUT_PATH);
-    return data;
+export interface Author {
+    id: string;
+    name: string;
+    discriminator: string;
+    nickname: string;
+    color: string;
+    isBot: boolean;
+    roles: Role[];
+    avatarUrl: string;
 }
+
+export interface Role {
+    id: string;
+    name: string;
+    color: string;
+    position: number;
+}
+
+const SIM_OUT_DIR = "./cache/";
 
 export const api = new Koa();
 const router = new Router();
@@ -42,15 +52,29 @@ router.get("/stock", async (ctx) => {
 });
 
 router.get("/sim/guild/:id", async (ctx) => {
+    // fetch all guild messages
+    // ---------------------
     const guildId = ctx.params.id;
-    const data = await discordExportGuild(guildId);
+    const outPath = `${SIM_OUT_DIR}/${guildId}/`;
+    const isCached = existsSync(outPath);
 
-    ctx.body = data;
-});
+    if (!isCached) {
+        console.log("Exporting...");
+        const cmd = `discordchatexporter-cli exportguild -g ${guildId} -f Json -o ${outPath} --after 06/10/2024 --parallel 8`;
+        const { stdout } = await execAsync(cmd);
+        console.log(stdout);
+    } else {
+        console.log("In cache.");
+    }
 
-router.get("/sim/channel/:id", async (ctx) => {
-    const channelId = ctx.params.id;
-    const data = await discordExportChannel(channelId);
+    const channelFileNames = await readdir(outPath);
+    const promises = channelFileNames.map((channelFileName) =>
+        readFile(`${outPath}/${channelFileName}`, "utf8").then(JSON.parse),
+    );
 
-    ctx.body = data;
+    const channels = await Promise.all(promises);
+    const messages: Message[] = channels.flatMap((channel) => channel.messages);
+    // ---------------------
+
+    // ctx.body = data;
 });
