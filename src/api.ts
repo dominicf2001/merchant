@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import {
     MENTIONED_ACTIVITY_VALUE,
     MESSAGE_ACTIVITY_VALUE,
+    client,
     getRandomInt,
 } from "./utilities";
 import { updateStockPrices } from "./stock-utilities";
@@ -54,9 +55,42 @@ const router = new Router();
 api.use(router.routes()).use(router.allowedMethods()).use(bodyParser());
 
 router.get("/stock", async (ctx) => {
-    const stocks = await Stocks.getAll();
+    // const date = DateTime.fromISO(ctx.params.date) ?? DateTime.now();
+    const date = DateTime.now();
+    console.log(date);
 
-    ctx.body = stocks;
+    interface IStockEntry {
+        price: number;
+        date: string;
+    }
+
+    interface IStockResponse {
+        name: string;
+        history: IStockEntry[];
+    }
+
+    const stocks = await Stocks.getAll();
+    const stockResponses = await Promise.all(
+        stocks.map(async (s) => {
+            const history = (
+                await Stocks.getStockHistory(s.stock_id, "hour", date)
+            ).map((entry) => {
+                return {
+                    price: entry.price,
+                    date: entry.created_date,
+                } as IStockEntry;
+            });
+
+            const username = (await client.users.fetch(s.stock_id)).username;
+
+            return {
+                name: username,
+                history: history,
+            } as IStockResponse;
+        }),
+    );
+
+    ctx.body = stockResponses;
 });
 
 router.post("/sim/guild/:id", async (ctx) => {
