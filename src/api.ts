@@ -14,6 +14,7 @@ import {
     getRandomInt,
 } from "./utilities";
 import { updateStockPrices } from "./stock-utilities";
+import { StockInterval, isStockInterval } from "./database/datastores/Stocks";
 
 const execAsync = promisify(exec);
 
@@ -54,14 +55,18 @@ const router = new Router();
 
 api.use(router.routes()).use(router.allowedMethods()).use(bodyParser());
 
-router.get("/stock", async (ctx) => {
+router.get("/stock/:range", async (ctx) => {
     // const date = DateTime.fromISO(ctx.params.date) ?? DateTime.now();
     const date = DateTime.now();
-    console.log(date);
+    const range = ctx.params.range;
+    if (!isStockInterval(range)) {
+        ctx.throw("Invalid range", 400);
+        return;
+    }
 
     interface IStockEntry {
         price: number;
-        date: string;
+        date: number;
     }
 
     interface IStockResponse {
@@ -73,11 +78,11 @@ router.get("/stock", async (ctx) => {
     const stockResponses = await Promise.all(
         stocks.map(async (s) => {
             const history = (
-                await Stocks.getStockHistory(s.stock_id, "hour", date)
+                await Stocks.getStockHistory(s.stock_id, range, date)
             ).map((entry) => {
                 return {
                     price: entry.price,
-                    date: entry.created_date,
+                    date: new Date(entry.created_date).getTime(),
                 } as IStockEntry;
             });
 

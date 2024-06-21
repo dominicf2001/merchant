@@ -8,6 +8,10 @@ import { Users } from "./Users";
 import { RunsRunId } from "../schemas/public/Runs";
 import { MAIN_RUN_ID } from "./Runs";
 
+export function isStockInterval(a: any): a is StockInterval {
+    const stockIntervals = ["now", "hour", "day", "month"] as const;
+    return stockIntervals.includes(a);
+}
 export type StockInterval = "now" | "hour" | "day" | "month";
 
 class Stocks extends DataStore<Stock> {
