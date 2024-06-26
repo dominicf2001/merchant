@@ -6,11 +6,28 @@ import Database from "../schemas/Database";
 import path from "path";
 import fs from "fs";
 
-class Items extends DataStore<Item> {
-    private behaviors: Collection<string, BehaviorFunction> = new Collection<
-        string,
-        BehaviorFunction
-    >();
+class Items extends DataStore<string, Item> {
+    constructor(db: Kysely<Database>) {
+        super(db, "items", "item_id");
+        this.refreshCache();
+    }
+
+    async use(
+        item_id: string,
+        message: Message,
+        args: string[],
+    ): Promise<void> {
+        const use: BehaviorFunction = this.behaviors.get(item_id);
+        await use(message, args);
+    }
+
+    getFromCache(id: string): Item | undefined {
+        return this.cache.get(id);
+    }
+
+    setInCache(id: string, item: Item): void {
+        this.cache.set(id, item);
+    }
 
     async refreshCache(): Promise<void> {
         const itemsPath = path.join(process.cwd(), "built/items");
@@ -29,18 +46,11 @@ class Items extends DataStore<Item> {
         }
     }
 
-    async use(
-        item_id: string,
-        message: Message,
-        args: string[],
-    ): Promise<void> {
-        const use: BehaviorFunction = this.behaviors.get(item_id);
-        await use(message, args);
-    }
-
-    constructor(db: Kysely<Database>) {
-        super(db, "items", "item_id");
-    }
+    private behaviors: Collection<string, BehaviorFunction> = new Collection<
+        string,
+        BehaviorFunction
+    >();
+    protected cache = new Collection<string, Item>;
 }
 
 const items = new Items(db);

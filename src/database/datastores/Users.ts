@@ -14,16 +14,20 @@ import { Kysely, Insertable, Updateable, sql } from "kysely";
 import { Items } from "./Items";
 import { Stocks } from "./Stocks";
 import { Commands } from "./Commands";
-import { RunsRunId } from "../schemas/public/Runs";
-import { MAIN_RUN_ID } from "./Runs";
+import { Collection } from "discord.js";
 
-class Users extends DataStore<User> {
+class Users extends DataStore<string, User> {
+    constructor(db: Kysely<Database>) {
+        super(db, "users", "user_id");
+        this.refreshCache();
+    }
+
     async set(
         user_id: string,
         data: Insertable<User> | Updateable<User> = {},
     ): Promise<void> {
         const newUser: User = {
-            [this.tableID]: user_id as UsersUserId,
+            "user_id": user_id as UsersUserId,
             ...data,
         } as User;
 
@@ -35,7 +39,52 @@ class Users extends DataStore<User> {
                 .returningAll()
                 .executeTakeFirstOrThrow()) as User;
 
-            this.cache.set(user_id, [result]);
+            this.cache.set(user_id, result);
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+    async setBalance(user_id: string, amount: number): Promise<void> {
+        if (amount < 0) amount = 0;
+
+        await this.set(user_id, {
+            balance: amount,
+        });
+    }
+
+    async setActivity(
+        user_id: string,
+        data: Insertable<UserActivity> | Updateable<UserActivity> = {},
+    ): Promise<void> {
+        try {
+            if (!this.getFromCache(user_id)) {
+                await this.set(user_id);
+            }
+
+            if (data.activity_points_short < 0) data.activity_points_short = 0;
+            if (data.activity_points_long < 0) data.activity_points_long = 0;
+
+            const newUserActivity: UserActivity = {
+                user_id: user_id as UsersUserId,
+                last_activity_date: data.last_activity_date ?? DateTime.now().toISO(),
+                ...data,
+            } as UserActivity;
+
+            (await db
+                .insertInto("user_activities")
+                .values({
+                    first_activity_date: data.first_activity_date ?? DateTime.now().toISO(),
+                    ...newUserActivity,
+                })
+                .onConflict((oc) =>
+                    oc
+                        .columns(["user_id"])
+                        .doUpdateSet(newUserActivity),
+                )
+                .returningAll()
+                .executeTakeFirstOrThrow()) as UserActivity;
         } catch (error) {
             console.error(error);
             throw error;
@@ -67,18 +116,17 @@ class Users extends DataStore<User> {
     async addActivity(
         user_id: string,
         amount: number,
-        run_id: number = MAIN_RUN_ID,
+        date: DateTime = DateTime.now(),
     ): Promise<void> {
         if (!this.getFromCache(user_id)) {
             await this.set(user_id);
         }
 
-        const now = DateTime.now().toISO();
+        const now = date.toISO();
 
         await db
             .insertInto("user_activities")
             .values({
-                run_id: run_id as RunsRunId,
                 user_id: user_id as UsersUserId,
                 activity_points_short: amount < 0 ? 0 : amount,
                 activity_points_long: amount < 0 ? 0 : amount,
@@ -86,7 +134,7 @@ class Users extends DataStore<User> {
                 last_activity_date: now,
             })
             .onConflict((oc) =>
-                oc.columns(["user_id", "run_id"]).doUpdateSet({
+                oc.columns(["user_id"]).doUpdateSet({
                     activity_points_short: sql`GREATEST(user_activities.activity_points_short + ${amount}, 0)`,
                     activity_points_long: sql`GREATEST(user_activities.activity_points_long + ${amount}, 0)`,
                     last_activity_date: now,
@@ -246,51 +294,17 @@ class Users extends DataStore<User> {
         return amountAdded;
     }
 
-    async setBalance(user_id: string, amount: number): Promise<void> {
-        if (amount < 0) amount = 0;
+    async createCooldown(user_id: string, command_id: string): Promise<void> {
+        await this.set(user_id);
 
-        await this.set(user_id, {
-            balance: amount,
-        });
-    }
-
-    async setActivity(
-        user_id: string,
-        data: Insertable<UserActivity> | Updateable<UserActivity> = {},
-        run_id: number = MAIN_RUN_ID,
-    ): Promise<void> {
-        try {
-            if (!this.getFromCache(user_id)) {
-                await this.set(user_id);
-            }
-
-            if (data.activity_points_short < 0) data.activity_points_short = 0;
-            if (data.activity_points_long < 0) data.activity_points_long = 0;
-
-            const newUserActivity: UserActivity = {
-                run_id: run_id as RunsRunId,
+        await this.db
+            .insertInto("user_cooldowns")
+            .values({
                 user_id: user_id as UsersUserId,
-                last_activity_date: DateTime.now().toISO(),
-                ...data,
-            } as UserActivity;
-
-            (await db
-                .insertInto("user_activities")
-                .values({
-                    first_activity_date: DateTime.now().toISO(),
-                    ...newUserActivity,
-                })
-                .onConflict((oc) =>
-                    oc
-                        .columns(["user_id", "run_id"])
-                        .doUpdateSet(newUserActivity),
-                )
-                .returningAll()
-                .executeTakeFirstOrThrow()) as UserActivity;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
+                command_id: command_id as CommandsCommandId,
+                start_date: DateTime.now().toISO(),
+            })
+            .execute();
     }
 
     async getBalance(user_id: string): Promise<number> {
@@ -305,7 +319,6 @@ class Users extends DataStore<User> {
 
     async getActivity(
         user_id: string,
-        run_id: number = MAIN_RUN_ID,
     ): Promise<UserActivity> {
         await this.setActivity(user_id);
 
@@ -313,19 +326,8 @@ class Users extends DataStore<User> {
             .selectFrom("user_activities")
             .selectAll()
             .where("user_id", "=", user_id as UsersUserId)
-            .where("run_id", "=", run_id as RunsRunId)
             .executeTakeFirst();
         return userActivity;
-    }
-
-    async getItemCount(user_id: string): Promise<number> {
-        const items = await this.getItems(user_id);
-
-        const itemCount = items?.reduce((previous, current) => {
-            return previous + current.quantity;
-        }, 0);
-
-        return itemCount ?? 0;
     }
 
     async getItem(
@@ -349,6 +351,16 @@ class Users extends DataStore<User> {
             .where("user_id", "=", user_id as UsersUserId)
             .execute()) as UserItem[];
         return userItems;
+    }
+
+    async getItemCount(user_id: string): Promise<number> {
+        const items = await this.getItems(user_id);
+
+        const itemCount = items?.reduce((previous, current) => {
+            return previous + current.quantity;
+        }, 0);
+
+        return itemCount ?? 0;
     }
 
     async getPortfolioValue(user_id: string): Promise<number> {
@@ -448,22 +460,26 @@ class Users extends DataStore<User> {
         return 0; // No cooldown found
     }
 
-    async createCooldown(user_id: string, command_id: string): Promise<void> {
-        await this.set(user_id);
-
-        await this.db
-            .insertInto("user_cooldowns")
-            .values({
-                user_id: user_id as UsersUserId,
-                command_id: command_id as CommandsCommandId,
-                start_date: DateTime.now().toISO(),
-            })
-            .execute();
+    setInCache(id: string, user: User): void {
+        this.cache.set(id, user);
     }
 
-    constructor(db: Kysely<Database>) {
-        super(db, "users", "user_id");
+    getFromCache(id: string): User | undefined {
+        return this.cache.get(id);
     }
+
+    async refreshCache(): Promise<void> {
+        const results: User[] = (await db
+            .selectFrom("users")
+            .selectAll()
+            .execute()) as User[];
+
+        results.forEach((result) => {
+            this.cache.set("user_id", result);
+        });
+    }
+
+    protected cache = new Collection<string, User>;
 }
 
 const users = new Users(db);

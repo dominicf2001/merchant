@@ -1,9 +1,11 @@
 import { Users, Stocks } from "./database/db-objects";
+import { StocksCreatedDate } from "./database/schemas/public/Stocks";
 import { UserActivities as UserActivity } from "./database/schemas/public/UserActivities";
 import { DateTime } from "luxon";
 
-export async function updateStockPrices(): Promise<void> {
+export async function updateStockPrices(date: DateTime = DateTime.now()): Promise<void> {
     const allStocks = await Stocks.getAll();
+    console.log("UPDATING STOCKS AT: ", date.toString());
 
     await Promise.all(
         allStocks.map(async (stock) => {
@@ -14,10 +16,11 @@ export async function updateStockPrices(): Promise<void> {
             const SMA = activity.activity_points_long_sma; // calculated seperately
 
             const newPrice = calculateStockPrice(EMA, EMSD, SMA);
-            await Stocks.updateStockPrice(stock.stock_id, newPrice);
+            await Stocks.updateStockPrice(stock.stock_id, newPrice, date);
 
             // update storage
             await Users.setActivity(stock.stock_id, {
+                last_activity_date: date.toISO(),
                 activity_points_short: 0,
                 activity_points_short_ema: EMA,
                 activity_points_short_emsd: EMSD,

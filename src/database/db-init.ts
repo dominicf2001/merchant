@@ -49,31 +49,12 @@ async function main() {
                 .ifExists()
                 .cascade()
                 .execute();
-            await db.schema.dropTable("runs").ifExists().cascade().execute();
             await db.schema
                 .dropTable("user_cooldowns")
                 .ifExists()
                 .cascade()
                 .execute();
         }
-
-        // RUNS
-        await db.schema
-            .createTable("runs")
-            .addColumn("run_id", "serial", (col) => col.notNull().primaryKey())
-            .addColumn("name", "varchar", (col) => col.defaultTo(""))
-            .addColumn("description", "varchar", (col) => col.defaultTo(""))
-            .addColumn("run_date", "timestamptz", (col) =>
-                col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
-            )
-            .execute();
-
-        await db
-            .insertInto("runs")
-            .values({
-                name: "Main",
-            })
-            .execute();
 
         // USERS
         await db.schema
@@ -118,7 +99,6 @@ async function main() {
         // STOCKS
         await db.schema
             .createTable("stocks")
-            .addColumn("run_id", "serial", (col) => col.notNull())
             .addColumn("stock_id", "varchar(30)", (col) => col.notNull())
             .addColumn("created_date", "timestamptz", (col) =>
                 col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
@@ -130,7 +110,6 @@ async function main() {
                     .check(sql`price >= 0`),
             )
             .addPrimaryKeyConstraint("stocks_pk", [
-                "run_id",
                 "stock_id",
                 "created_date",
             ])
@@ -141,19 +120,12 @@ async function main() {
                 ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
-            .addForeignKeyConstraint(
-                "stocks_fk_run",
-                ["run_id"],
-                "runs",
-                ["run_id"],
-                (cb) => cb.onDelete("cascade"),
-            )
             .execute();
 
         await db.schema
             .createIndex("stock_history")
             .on("stocks")
-            .columns(["run_id", "stock_id"])
+            .columns(["stock_id"])
             .execute();
 
         // COMMANDS
@@ -177,7 +149,6 @@ async function main() {
         // USER ACTIVITY
         await db.schema
             .createTable("user_activities")
-            .addColumn("run_id", "serial", (col) => col.notNull())
             .addColumn("user_id", "varchar(30)", (col) => col.notNull())
             .addColumn("activity_points_short", "integer", (col) =>
                 col
@@ -217,20 +188,12 @@ async function main() {
             )
             .addPrimaryKeyConstraint("user_activities_pk", [
                 "user_id",
-                "run_id",
             ])
             .addForeignKeyConstraint(
                 "user_activities_fk_user",
                 ["user_id"],
                 "users",
                 ["user_id"],
-                (cb) => cb.onDelete("cascade"),
-            )
-            .addForeignKeyConstraint(
-                "user_activities_fk_run",
-                ["run_id"],
-                "runs",
-                ["run_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .execute();

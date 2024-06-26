@@ -2,25 +2,22 @@
   "name": "@dominicf2001/merchant",
   "version": "2.0.2",
   "description": "",
-  "types": "./src/index.d.ts",
-  "files": [
-    "./src/index.d.ts",
-    "./src/database/schemas/public"
-  ],
   "scripts": {
-    "test": "npm run build && jest --runInBand ./tests",
-    "test-stocks": "npm run build && jest ./built/tests/stocks.test.js",
-    "test-users": "npm run build && jest ./built/tests/users.test.js",
-    "dbinit": "npx tsx ./src/database/db-init.ts",
-    "dbinit-f": "npx tsx ./src/database/db-init.ts -f",
-    "build": "npx tsc",
+    "test": "jest --runInBand ./tests",
+    "test:stocks": "jest ./tests/stocks.test.ts",
+    "test:users": "jest ./tests/users.test.ts",
+    "db:init": "tsx ./src/database/db-init.ts",
+    "db:init:force": "tsx ./src/database/db-init.ts -f",
+    "build": "tsc",
     "start": "node ./built/index.js",
-    "go": "npm run build && npm run start",
-    "lint": "prettier --tab-width 4 -use-tabs=false --write \"src/**/*.{js,ts,jsx,tsx}\""
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "lint": "prettier --write \"src/**/*.{js,ts,jsx,tsx}\"",
+    "lint:check": "prettier --check \"src/**/*.{js,ts,jsx,tsx}\""
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^5.0.0",
     "chart.js": "^3.9.1",
     "chartjs-node-canvas": "^4.1.6",
     "discord.js": "^14.9.0",
@@ -33,23 +30,25 @@
     "lodash": "^4.17.21",
     "luxon": "^3.4.3",
     "node-cron": "^3.0.2",
+    "nodemon": "^3.1.4",
     "pg": "^8.11.3"
   },
   "devDependencies": {
-    "tsx": "^3.14.0",
-    "eslint": "^8.51.0",
-    "kanel-kysely": "^0.2.1",
-    "ts-jest": "^29.1.1",
-    "typescript-eslint-language-service": "^5.0.5",
     "@datastructures-js/deque": "^1.0.4",
     "@faker-js/faker": "^8.2.0",
+    "@types/jest": "^29.5.6",
     "@types/koa": "^2.15.0",
+    "@types/koa__cors": "^5.0.0",
     "@types/koa-bodyparser": "^4.3.12",
     "@types/koa-router": "^7.4.8",
     "@types/luxon": "^3.3.3",
-    "@types/pg": "^8.10.7",
-    "@types/jest": "^29.5.6",
     "@types/node": "^20.8.7",
-    "typescript": "^5.2.2"
+    "@types/pg": "^8.10.7",
+    "eslint": "^8.51.0",
+    "kanel-kysely": "^0.2.1",
+    "ts-jest": "^29.1.1",
+    "tsx": "^3.14.0",
+    "typescript": "^5.2.2",
+    "typescript-eslint-language-service": "^5.0.5"
   }
 }
