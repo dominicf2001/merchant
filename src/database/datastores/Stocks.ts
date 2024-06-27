@@ -158,14 +158,11 @@ class Stocks extends DataStore<string, Stock> {
         interval: StockInterval,
         date: DateTime = DateTime.now(),
     ): Promise<Stock[]> {
-        console.log({ interval });
         // only 'now' is stored in the cache currently
         if (interval === "now" && this.getFromCache(stock_id)) {
-            console.log("cache hit ");
             // cache hit on 'now'
             return this.cache.get(stock_id);
         }
-        console.log("cache miss");
 
         let intervalOffset: Object;
         switch (interval) {
@@ -183,11 +180,7 @@ class Stocks extends DataStore<string, Stock> {
                 break;
         }
 
-        console.log({ intervalOffset });
-
         const oldestStockDate: string = date.minus(intervalOffset).toISO();
-        console.log({ date: date.toString() });
-        console.log({ oldestStockDate });
 
         const stockHistory: Stock[] = await this.db
             .selectFrom("stocks as s1")

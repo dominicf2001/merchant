@@ -4,7 +4,6 @@ import { Collection } from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
 import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
-import { DateTime } from "luxon";
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
     v === null ? null : new Date(v).toISOString(),
@@ -41,7 +40,6 @@ export abstract class DataStore<K, Data> {
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;
-        this.refreshCache();
     }
 
     async set(
@@ -111,7 +109,7 @@ export abstract class DataStore<K, Data> {
             .execute();
     }
 
-    abstract refreshCache(...args: any): void;
+    abstract refreshCache(...args: any): Promise<void>;
     abstract getFromCache(id: K): Data;
     abstract setInCache(id: K, data: Partial<Data>): void;
 

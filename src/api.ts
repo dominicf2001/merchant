@@ -83,25 +83,34 @@ router.get("/stock/:range", async (ctx) => {
         }
 
         const stocks = await Stocks.getAll();
-        const stockResponses = await Promise.all(
+        const stockResponses = (await Promise.all(
             stocks.map(async (s) => {
-                const history = (
-                    await Stocks.getStockHistory(s.stock_id, range, date)
-                ).map((entry) => {
+                try {
+                    const username = (await client.users.fetch(s.stock_id)).username;
+
+                    const history = (
+                        await Stocks.getStockHistory(s.stock_id, range, date)
+                    ).map((entry) => {
+                        return {
+                            price: entry.price,
+                            date: new Date(entry.created_date).getTime(),
+                        } as IStockEntry;
+                    });
+
                     return {
-                        price: entry.price,
-                        date: new Date(entry.created_date).getTime(),
-                    } as IStockEntry;
-                });
-
-                const username = (await client.users.fetch(s.stock_id)).username;
-
-                return {
-                    name: username,
-                    history: history,
-                } as IStockResponse;
+                        name: username,
+                        history: history,
+                    } as IStockResponse;
+                }
+                catch (error) {
+                    console.error(error);
+                    return {
+                        name: "",
+                        history: [],
+                    } as IStockResponse;
+                }
             }),
-        );
+        )).filter(s => s.history.length);
 
         ctx.body = stockResponses;
     } catch (error) {
@@ -154,7 +163,6 @@ router.post("/sim/guild/:id", async (ctx) => {
             const authorId = currMessage.author.id;
             const user = await Users.get(authorId);
             if (!user) {
-                console.log("Adding user: ", authorId);
                 await Users.set(authorId);
                 await Stocks.updateStockPrice(authorId, 1, currDate);
             }
