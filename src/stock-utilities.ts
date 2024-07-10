@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 
 export async function updateStockPrices(date: DateTime = DateTime.now()): Promise<void> {
     const allStocks = await Stocks.getAll();
-    console.log("UPDATING STOCKS AT: ", date.toString());
 
     await Promise.all(
         allStocks.map(async (stock) => {

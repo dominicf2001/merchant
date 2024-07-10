@@ -5,7 +5,7 @@ import bodyParser from "koa-bodyparser";
 import { Stocks, Users } from "./database/db-objects";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, rmSync } from "fs";
 import { readdir, readFile } from "fs/promises";
 import { DateTime } from "luxon";
 import {
@@ -15,12 +15,12 @@ import {
     getRandomInt,
 } from "./utilities";
 import { updateStockPrices } from "./stock-utilities";
-import { StockInterval, isStockInterval } from "./database/datastores/Stocks";
+import { isStockInterval } from "./database/datastores/Stocks";
 import path from "path";
 
 const execAsync = promisify(exec);
 
-export interface Message {
+interface Message {
     id: string;
     type: string;
     timestamp: string;
@@ -32,7 +32,7 @@ export interface Message {
     mentions: Author[];
 }
 
-export interface Author {
+interface Author {
     id: string;
     name: string;
     discriminator: string;
@@ -43,11 +43,23 @@ export interface Author {
     avatarUrl: string;
 }
 
-export interface Role {
+interface Role {
     id: string;
     name: string;
     color: string;
     position: number;
+}
+
+interface Guild {
+    id: string;
+    name: string;
+}
+
+interface SimParams {
+    guildID: string;
+    start: string;
+    end: string;
+    clearCache: boolean;
 }
 
 const SIM_OUT_DIR = "./cache/";
@@ -55,26 +67,44 @@ const SIM_OUT_DIR = "./cache/";
 export const api = new Koa();
 const router = new Router();
 
-api.use(cors({
-    origin: 'http://localhost:5173'
-}));
+api.use(bodyParser());
 
-api.use(router.routes()).use(router.allowedMethods()).use(bodyParser());
+let guilds: Guild[] = [];
+router.get("/guilds", async (ctx) => {
+    if (!guilds.length) {
+        const { stdout } = await execAsync("discordchatexporter-cli guilds");
+        const guildStrs = stdout.split("\n").slice(1, -1);
 
-router.get("/stock/:range", async (ctx) => {
+        for (const guildStr of guildStrs) {
+            const splitStr = guildStr.split("|");
+            guilds.push({
+                id: splitStr[0].trim(),
+                name: splitStr[1].trim()
+            })
+        }
+    }
+
+    ctx.body = guilds;
+});
+
+router.get("/stock/:startDate/:range", async (ctx) => {
     try {
-        // TODO: accept date param
-        // const date = DateTime.fromISO(ctx.params.date) ?? DateTime.now();
-        const date = DateTime.now().minus({ days: 2 });
-        const range = ctx.params.range;
-        if (!isStockInterval(range)) {
-            ctx.throw("Invalid range", 400);
+        if (!ctx.params.startDate) {
+            ctx.throw("Missing start date", 400);
             return;
         }
 
+        if (!isStockInterval(ctx.params.range)) {
+            ctx.throw("Invalid or missing range", 400);
+            return;
+        }
+
+        const startDate = DateTime.fromISO(ctx.params.startDate);
+        const range = ctx.params.range;
+
         interface IStockEntry {
-            price: number;
-            date: number;
+            value: number;
+            time: number;
         }
 
         interface IStockResponse {
@@ -82,18 +112,20 @@ router.get("/stock/:range", async (ctx) => {
             history: IStockEntry[];
         }
 
-        const stocks = await Stocks.getAll();
+        let stocks = await Stocks.getAll();
+        // TODO: implement paging
+        stocks = stocks.slice(0, 3);
         const stockResponses = (await Promise.all(
             stocks.map(async (s) => {
                 try {
                     const username = (await client.users.fetch(s.stock_id)).username;
 
                     const history = (
-                        await Stocks.getStockHistory(s.stock_id, range, date)
+                        await Stocks.getStockHistory(s.stock_id, range, startDate)
                     ).map((entry) => {
                         return {
-                            price: entry.price,
-                            date: new Date(entry.created_date).getTime(),
+                            value: entry.price,
+                            time: new Date(entry.created_date).getTime(),
                         } as IStockEntry;
                     });
 
@@ -120,14 +152,23 @@ router.get("/stock/:range", async (ctx) => {
     }
 });
 
-router.post("/sim/guild/:id", async (ctx) => {
+router.post("/sim", async (ctx) => {
     try {
-        const guildId = ctx.params.id;
-        const outPath = path.join(SIM_OUT_DIR, guildId);
+        const reqBody: SimParams = ctx.request.body as SimParams;
+
+        const start = reqBody.start ?? "2000-01-01";
+        const end = reqBody.end ?? DateTime.fromJSDate(new Date()).toSQLDate();
+        const guildID = reqBody.guildID;
+
+        const outPath = path.join(SIM_OUT_DIR, guildID);
+
+        if (reqBody.clearCache) {
+            rmSync(outPath, { recursive: true, force: true });
+        }
 
         if (!existsSync(outPath)) {
             console.log("Exporting...");
-            const cmd = `discordchatexporter-cli exportguild -g ${guildId} -f Json -o ${outPath}/ --after 2024-06-23 --parallel 8`;
+            const cmd = `discordchatexporter-cli exportguild -g ${guildID} -f Json -o ${outPath}/ --after "${start}" --before "${end}" --parallel 8`;
             const { stdout } = await execAsync(cmd);
             console.log(stdout);
         }
@@ -186,6 +227,7 @@ router.post("/sim/guild/:id", async (ctx) => {
             if (currDate > endDate) break;
         }
 
+        ctx.status = 200;
         console.log("Complete...");
     } catch (error) {
         console.error("Error during simulation:", error);
@@ -193,3 +235,5 @@ router.post("/sim/guild/:id", async (ctx) => {
         ctx.body = error.message;
     }
 });
+
+api.use(router.routes()).use(router.allowedMethods());
