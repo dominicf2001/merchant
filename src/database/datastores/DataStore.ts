@@ -25,6 +25,9 @@ export const db = new Kysely<Database>({
 });
 
 export type TableName = keyof Database;
+
+export const getTableNames = async (db: Kysely<Database>) => (await db.introspection.getTables()).map(table => table.name as TableName);
+
 export type TableID =
     | "user_id"
     | "item_id"
@@ -34,6 +37,24 @@ export type BehaviorFunction = (
     message: Message,
     args: string[],
 ) => Promise<void>;
+
+export async function dbWipe(db: Kysely<Database>, datastores: DataStore<any, any>[]) {
+    try {
+        for (const dataStore of datastores) {
+            dataStore.clearCache();
+        }
+
+        const tableNames = await getTableNames(db);
+        for (const table of tableNames) {
+            await db.deleteFrom(table as any).execute();
+            console.log(`All data wiped from table: ${table}`);
+        }
+
+        console.log('All data wiped successfully from all tables.');
+    } catch (error) {
+        console.error('An error occurred while wiping the database:', error);
+    }
+}
 
 export abstract class DataStore<K, Data> {
     constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
@@ -112,6 +133,9 @@ export abstract class DataStore<K, Data> {
     abstract refreshCache(...args: any): Promise<void>;
     abstract getFromCache(id: K): Data;
     abstract setInCache(id: K, data: Partial<Data>): void;
+    clearCache() {
+        this.cache.clear();
+    };
 
     protected abstract cache: Collection<K, any>;
     protected db: Kysely<Database>;

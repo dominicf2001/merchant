@@ -1,9 +1,10 @@
 import { Pool } from "pg";
 import { Kysely, PostgresDialect, sql } from "kysely";
 import { processDatabase } from "kanel";
-import config from "./kanelrc.js";
-import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../utilities.js";
+import config from "./kanelrc";
+import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../utilities";
 import Database from "./schemas/Database.js";
+import { getTableNames } from "./datastores/DataStore";
 
 const args: string[] = process.argv.slice(2);
 const shouldOverwrite: boolean = args[0] === "-f";
@@ -23,37 +24,13 @@ const db = new Kysely<Database>({
     log: ["query", "error"],
 });
 
-async function main() {
+(async function main() {
     try {
         if (shouldOverwrite) {
-            await db.schema.dropTable("users").ifExists().cascade().execute();
-            await db.schema.dropTable("items").ifExists().cascade().execute();
-            await db.schema.dropTable("stocks").ifExists().cascade().execute();
-            await db.schema
-                .dropTable("commands")
-                .ifExists()
-                .cascade()
-                .execute();
-            await db.schema
-                .dropTable("user_activities")
-                .ifExists()
-                .cascade()
-                .execute();
-            await db.schema
-                .dropTable("user_items")
-                .ifExists()
-                .cascade()
-                .execute();
-            await db.schema
-                .dropTable("user_stocks")
-                .ifExists()
-                .cascade()
-                .execute();
-            await db.schema
-                .dropTable("user_cooldowns")
-                .ifExists()
-                .cascade()
-                .execute();
+            const tableNames = await getTableNames(db);
+            for (const table of tableNames) {
+                await db.schema.dropTable(table).ifExists().cascade().execute();
+            }
         }
 
         // USERS
@@ -299,6 +276,5 @@ async function main() {
     } catch (error) {
         console.error("An error occurred:", error);
     }
-}
+})();
 
-main();

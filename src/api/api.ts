@@ -1,25 +1,27 @@
 import Koa from "koa";
 import Router from "koa-router";
-import cors from "@koa/cors";
 import bodyParser from "koa-bodyparser";
-import { Stocks, Users } from "./database/db-objects";
+import { Stocks, Users, datastores, db } from "../database/db-objects";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { existsSync, rmSync } from "fs";
-import { readdir, readFile } from "fs/promises";
+import { readdir, readFile, writeFile } from "fs/promises";
 import { DateTime } from "luxon";
+import { StatusCodes } from 'http-status-codes';
 import {
     MENTIONED_ACTIVITY_VALUE,
     MESSAGE_ACTIVITY_VALUE,
     client,
     getRandomInt,
-} from "./utilities";
-import { updateStockPrices } from "./stock-utilities";
-import { isStockInterval } from "./database/datastores/Stocks";
+} from "../utilities";
+import { updateStockPrices } from "../stock-utilities";
+import { isStockInterval } from "../database/datastores/Stocks";
 import path from "path";
+import { dbWipe } from "../database/datastores/DataStore";
 
 const execAsync = promisify(exec);
 
+// TODO: centralize types
 interface Message {
     id: string;
     type: string;
@@ -62,7 +64,9 @@ interface SimParams {
     clearCache: boolean;
 }
 
-const SIM_OUT_DIR = "./cache/";
+const SIM_DATA_PATH = "./src/api/sim-data.json"
+
+const SIM_OUT_PATH = "./src/api/cache/";
 
 export const api = new Koa();
 const router = new Router();
@@ -90,12 +94,12 @@ router.get("/guilds", async (ctx) => {
 router.get("/stock/:startDate/:range", async (ctx) => {
     try {
         if (!ctx.params.startDate) {
-            ctx.throw("Missing start date", 400);
+            ctx.throw("Missing start date", StatusCodes.BAD_REQUEST);
             return;
         }
 
         if (!isStockInterval(ctx.params.range)) {
-            ctx.throw("Invalid or missing range", 400);
+            ctx.throw("Invalid or missing range", StatusCodes.BAD_REQUEST);
             return;
         }
 
@@ -118,6 +122,7 @@ router.get("/stock/:startDate/:range", async (ctx) => {
         const stockResponses = (await Promise.all(
             stocks.map(async (s) => {
                 try {
+                    // TODO: this is a bottleneck, need to find solution
                     const username = (await client.users.fetch(s.stock_id)).username;
 
                     const history = (
@@ -147,20 +152,43 @@ router.get("/stock/:startDate/:range", async (ctx) => {
         ctx.body = stockResponses;
     } catch (error) {
         console.error("Error when getting stocks: ", error);
-        ctx.status = 500;
+        ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        ctx.body = error.message;
+    }
+});
+
+router.get("/sim", async (ctx) => {
+    try {
+        const simData = JSON.parse((await readFile(SIM_DATA_PATH, "utf8"))) as SimParams;
+
+        if (!Object.values(simData).length) {
+            ctx.status = StatusCodes.NO_CONTENT;
+            return;
+        }
+
+        ctx.body = simData;
+    } catch (error) {
+        console.error("Error when getting sim: ", error);
+        ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
         ctx.body = error.message;
     }
 });
 
 router.post("/sim", async (ctx) => {
     try {
+        console.log("Clearing database...");
+        await dbWipe(db, datastores);
+
         const reqBody: SimParams = ctx.request.body as SimParams;
 
         const start = reqBody.start ?? "2000-01-01";
         const end = reqBody.end ?? DateTime.fromJSDate(new Date()).toSQLDate();
+
+        console.log(start);
+        console.log(end);
         const guildID = reqBody.guildID;
 
-        const outPath = path.join(SIM_OUT_DIR, guildID);
+        const outPath = path.join(SIM_OUT_PATH, guildID);
 
         if (reqBody.clearCache) {
             rmSync(outPath, { recursive: true, force: true });
@@ -227,11 +255,14 @@ router.post("/sim", async (ctx) => {
             if (currDate > endDate) break;
         }
 
-        ctx.status = 200;
+        // store simulation param data
+        await writeFile(SIM_DATA_PATH, JSON.stringify(reqBody));
+
+        ctx.status = StatusCodes.OK;
         console.log("Complete...");
     } catch (error) {
         console.error("Error during simulation:", error);
-        ctx.status = 500;
+        ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
         ctx.body = error.message;
     }
 });

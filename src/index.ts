@@ -1,8 +1,8 @@
 import cron from "node-cron";
 import fs from "fs";
-import { api } from "./api";
 import { Events, EmbedBuilder } from "discord.js";
 import { Users, Commands, Stocks } from "./database/db-objects";
+import { api } from "./api/api";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
 import {
     secondsToHms,

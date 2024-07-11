@@ -13,6 +13,7 @@ import {
 import { DateTime } from "luxon";
 import fs from "fs";
 import path from "path";
+import { Kysely } from "kysely";
 
 export const { TOKEN } = JSON.parse(
     fs.readFileSync(`${__dirname}/../token.json`, "utf8"),

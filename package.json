@@ -21,6 +21,7 @@
     "chart.js": "^3.9.1",
     "chartjs-node-canvas": "^4.1.6",
     "discord.js": "^14.9.0",
+    "http-status-codes": "^2.3.0",
     "jest": "^29.7.0",
     "kanel": "^3.5.5",
     "koa": "^2.15.3",
