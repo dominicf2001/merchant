@@ -110,7 +110,9 @@ export abstract class DataStore<K, Data> {
             const allData: Data[] = [];
             for (const id of this.cache.keys()) {
                 const data = this.getFromCache(id);
-                allData.push(data);
+                if (data) {
+                    allData.push(data);
+                }
             }
             return allData;
         } else {
@@ -131,13 +133,13 @@ export abstract class DataStore<K, Data> {
     }
 
     abstract refreshCache(...args: any): Promise<void>;
-    abstract getFromCache(id: K): Data;
+    abstract getFromCache(id: K): Data | undefined;
     abstract setInCache(id: K, data: Partial<Data>): void;
     clearCache() {
         this.cache.clear();
     };
 
-    protected abstract cache: Collection<K, any>;
+    protected abstract cache: Collection<K, NonNullable<any>>;
     protected db: Kysely<Database>;
     protected tableName: TableName;
     protected tableID: TableID;

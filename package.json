@@ -10,7 +10,8 @@
     "db:init:force": "tsx ./src/database/db-init.ts -f",
     "build": "tsc",
     "start": "node ./built/index.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
+    "dev:bot": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
+    "dev:api": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/api/api.ts",
     "lint": "prettier --write \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint:check": "prettier --check \"src/**/*.{js,ts,jsx,tsx}\""
   },

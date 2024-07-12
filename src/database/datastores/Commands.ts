@@ -9,7 +9,6 @@ import fs from "fs";
 class Commands extends DataStore<string, Command> {
     constructor(db: Kysely<Database>) {
         super(db, "commands", "command_id");
-        this.refreshCache();
     }
 
     async execute(

@@ -9,7 +9,6 @@ import fs from "fs";
 class Items extends DataStore<string, Item> {
     constructor(db: Kysely<Database>) {
         super(db, "items", "item_id");
-        this.refreshCache();
     }
 
     async use(

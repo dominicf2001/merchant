@@ -1,8 +1,7 @@
 import cron from "node-cron";
 import fs from "fs";
 import { Events, EmbedBuilder } from "discord.js";
-import { Users, Commands, Stocks } from "./database/db-objects";
-import { api } from "./api/api";
+import { Users, Commands, Stocks, datastores } from "./database/db-objects";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
 import {
     secondsToHms,
@@ -22,10 +21,8 @@ import {
 } from "./utilities";
 
 client.once(Events.ClientReady, async () => {
+    datastores.forEach(ds => ds.refreshCache());
     console.log("Bot ready as " + client.user.tag);
-    api.listen("3000", () => {
-        console.log("API listening on port 3000");
-    });
 });
 
 client.on(Events.InviteCreate, async (invite) => {

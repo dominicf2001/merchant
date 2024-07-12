@@ -19,7 +19,6 @@ import { Collection } from "discord.js";
 class Users extends DataStore<string, User> {
     constructor(db: Kysely<Database>) {
         super(db, "users", "user_id");
-        this.refreshCache();
     }
 
     async set(

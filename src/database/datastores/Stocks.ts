@@ -16,7 +16,6 @@ export type StockInterval = "now" | "hour" | "day" | "month";
 class Stocks extends DataStore<string, Stock> {
     constructor(db: Kysely<Database>) {
         super(db, "stocks", "stock_id");
-        this.refreshCache();
     }
 
     async set(
@@ -272,7 +271,8 @@ class Stocks extends DataStore<string, Stock> {
                 "now",
                 date
             );
-            this.cache.set(latestStock[this.tableID], stockHistory);
+
+            this.cache.set(latestStock["stock_id"], stockHistory);
         }
     }
 

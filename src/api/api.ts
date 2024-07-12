@@ -11,6 +11,7 @@ import { StatusCodes } from 'http-status-codes';
 import {
     MENTIONED_ACTIVITY_VALUE,
     MESSAGE_ACTIVITY_VALUE,
+    TOKEN,
     client,
     getRandomInt,
 } from "../utilities";
@@ -273,3 +274,9 @@ router.post("/sim", async (ctx) => {
 });
 
 api.use(router.routes()).use(router.allowedMethods());
+
+client.login(TOKEN);
+
+api.listen("3000", () => {
+    console.log("API listening on port 3000");
+});
