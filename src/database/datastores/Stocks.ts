@@ -159,10 +159,10 @@ class Stocks extends DataStore<string, Stock> {
         date: DateTime = DateTime.now(),
     ): Promise<Stock[]> {
         // only 'now' is stored in the cache currently
-        if (interval === "now" && this.getFromCache(stock_id)) {
-            // cache hit on 'now'
-            return this.cache.get(stock_id);
-        }
+        //if (interval === "now" && this.getFromCache(stock_id)) {
+        //    // cache hit on 'now'
+        //    return this.cache.get(stock_id);
+        //}
 
         let intervalOffset: Object;
         switch (interval) {

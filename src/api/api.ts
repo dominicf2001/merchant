@@ -18,6 +18,7 @@ import { updateStockPrices } from "../stock-utilities";
 import { isStockInterval } from "../database/datastores/Stocks";
 import path from "path";
 import { dbWipe } from "../database/datastores/DataStore";
+import { warn } from "console";
 
 const execAsync = promisify(exec);
 
@@ -64,14 +65,20 @@ interface SimParams {
     clearCache: boolean;
 }
 
-const SIM_DATA_PATH = "./src/api/sim-data.json"
+const SIM_DATA_PATH = "./built/api/sim-data.json"
 
-const SIM_OUT_PATH = "./src/api/cache/";
+const SIM_OUT_PATH = "./built/api/cache/";
 
 export const api = new Koa();
 const router = new Router();
 
 api.use(bodyParser());
+
+async function getSimData(): Promise<SimParams | undefined> {
+    if (existsSync(SIM_DATA_PATH)) {
+        return JSON.parse((await readFile(SIM_DATA_PATH, "utf8")));
+    }
+}
 
 let guilds: Guild[] = [];
 router.get("/guilds", async (ctx) => {
@@ -118,7 +125,7 @@ router.get("/stock/:startDate/:range", async (ctx) => {
 
         let stocks = await Stocks.getAll();
         // TODO: implement paging
-        stocks = stocks.slice(0, 3);
+        stocks = stocks.slice(0, 5);
         const stockResponses = (await Promise.all(
             stocks.map(async (s) => {
                 try {
@@ -159,17 +166,16 @@ router.get("/stock/:startDate/:range", async (ctx) => {
 
 router.get("/sim", async (ctx) => {
     try {
-        const simData = JSON.parse((await readFile(SIM_DATA_PATH, "utf8"))) as SimParams;
-
-        if (!Object.values(simData).length) {
-            ctx.status = StatusCodes.NO_CONTENT;
+        const simData = await getSimData();
+        if (!simData) {
+            ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
             return;
         }
 
         ctx.body = simData;
     } catch (error) {
         console.error("Error when getting sim: ", error);
-        ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        ctx.status = StatusCodes.NO_CONTENT;
         ctx.body = error.message;
     }
 });
@@ -180,17 +186,16 @@ router.post("/sim", async (ctx) => {
         await dbWipe(db, datastores);
 
         const reqBody: SimParams = ctx.request.body as SimParams;
-
         const start = reqBody.start ?? "2000-01-01";
         const end = reqBody.end ?? DateTime.fromJSDate(new Date()).toSQLDate();
-
-        console.log(start);
-        console.log(end);
         const guildID = reqBody.guildID;
 
         const outPath = path.join(SIM_OUT_PATH, guildID);
 
-        if (reqBody.clearCache) {
+        const simData = await getSimData();
+
+        const simParamsChanged = simData.start != start || simData.end != end || simData.guildID != guildID;
+        if (reqBody.clearCache || simParamsChanged) {
             rmSync(outPath, { recursive: true, force: true });
         }
 
