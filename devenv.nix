@@ -12,11 +12,8 @@
     enable = true;
     package = pkgs.postgresql_16;
     initialDatabases = [{ name = "merchant"; }];
+    listen_addresses = "127.0.0.1";
   };
-
-  enterShell = ''
-    devenv up -d
-  '';
 
   languages.typescript.enable = true;
 }
