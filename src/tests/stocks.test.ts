@@ -130,7 +130,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataTwo = Array.from({ length: 4 }, (_, i) => ({
@@ -138,7 +138,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataThree = Array.from({ length: 15 }, (_, i) => ({
@@ -146,7 +146,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         await db.transaction().execute(async (trx) => {
@@ -181,7 +181,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
@@ -189,7 +189,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
@@ -197,7 +197,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         await db.transaction().execute(async (trx) => {
@@ -230,7 +230,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
@@ -238,7 +238,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
@@ -246,7 +246,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         await db.transaction().execute(async (trx) => {
@@ -300,7 +300,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
@@ -308,7 +308,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i, days: 1 })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
@@ -316,7 +316,7 @@ describe("HISTORY Operations", () => {
             price: faker.number.int(100),
             created_date: baselineDate
                 .minus({ minutes: i, days: 3 })
-                .toISO() as StocksCreatedDate,
+                .toUTC().toSQL() as StocksCreatedDate,
         }));
 
         await db.transaction().execute(async (trx) => {

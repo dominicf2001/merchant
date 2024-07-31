@@ -4,9 +4,10 @@ import { Collection } from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
 import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
+import { DateTime } from "luxon";
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
-    v === null ? null : new Date(v).toISOString(),
+    v === null ? null : DateTime.fromSQL(v).toUTC().toSQL(),
 );
 
 const dialect = new PostgresDialect({
@@ -21,6 +22,12 @@ const dialect = new PostgresDialect({
 
 export const db = new Kysely<Database>({
     dialect,
+    log(event) {
+        if (event.level === 'query') {
+            console.log(event.query.sql)
+            console.log(event.query.parameters)
+        }
+    }
     // log: ["query", "error"],
 });
 

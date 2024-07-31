@@ -19,7 +19,6 @@ import { updateStockPrices } from "../stock-utilities";
 import { isStockInterval } from "../database/datastores/Stocks";
 import path from "path";
 import { dbWipe } from "../database/datastores/DataStore";
-import { warn } from "console";
 
 const execAsync = promisify(exec);
 
@@ -81,6 +80,7 @@ async function getSimData(): Promise<SimParams | undefined> {
     }
 }
 
+// gets available guilds
 let guilds: Guild[] = [];
 router.get("/guilds", async (ctx) => {
     if (!guilds.length) {
@@ -99,6 +99,7 @@ router.get("/guilds", async (ctx) => {
     ctx.body = guilds;
 });
 
+// gets stocks starting a startDate within specified range
 router.get("/stock/:startDate/:range", async (ctx) => {
     try {
         if (!ctx.params.startDate) {
@@ -165,6 +166,7 @@ router.get("/stock/:startDate/:range", async (ctx) => {
     }
 });
 
+// gets last simulation info
 router.get("/sim", async (ctx) => {
     try {
         const simData = await getSimData();
@@ -181,13 +183,14 @@ router.get("/sim", async (ctx) => {
     }
 });
 
+// runs a simulation
 router.post("/sim", async (ctx) => {
     try {
         console.log("Clearing database...");
         await dbWipe(db, datastores);
 
         const reqBody: SimParams = ctx.request.body as SimParams;
-        const start = reqBody.start ?? "2000-01-01";
+        const start = reqBody.start ?? "2000-01-01T00:00";
         const end = reqBody.end ?? DateTime.fromJSDate(new Date()).toSQLDate();
         const guildID = reqBody.guildID;
 
@@ -223,42 +226,43 @@ router.post("/sim", async (ctx) => {
 
         console.log("Simulating...");
         const minuteIncrement = 5;
-        let currDate = DateTime.fromISO(messages[0].timestamp);
-        let nextTickDate = currDate.plus({ minutes: minuteIncrement });
-        const endDate = DateTime.fromISO(messages[messages.length - 1].timestamp);
+        const startDate = DateTime.fromISO(start);
+        const endDate = DateTime.fromISO(end);
 
-        for (const currMessage of messages) {
-            currDate = DateTime.fromISO(currMessage.timestamp);
+        let nextTickDate = startDate.plus({ minutes: minuteIncrement });
+        let msgIndex = 0;
+        while (nextTickDate < endDate) {
+            while (messages[msgIndex] && DateTime.fromISO(messages[msgIndex].timestamp) < nextTickDate) {
+                const currMsg = messages[msgIndex];
 
-            if (currDate >= nextTickDate) {
-                await updateStockPrices(currDate);
-                nextTickDate = nextTickDate.plus({ minutes: minuteIncrement });
-            }
-
-            const authorId = currMessage.author.id;
-            const user = await Users.get(authorId);
-            if (!user) {
-                await Users.set(authorId);
-                await Stocks.updateStockPrice(authorId, 1, currDate);
-            }
-
-            for (const mentionedUser of currMessage.mentions) {
-                if (mentionedUser.id !== authorId && !mentionedUser.isBot) {
-                    await Users.addActivity(
-                        mentionedUser.id,
-                        MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
-                        currDate
-                    );
+                const authorId = currMsg.author.id;
+                const user = await Users.get(authorId);
+                if (!user) {
+                    await Users.set(authorId);
+                    await Stocks.updateStockPrice(authorId, 1, startDate);
                 }
+
+                for (const mentionedUser of currMsg.mentions) {
+                    if (mentionedUser.id !== authorId && !mentionedUser.isBot) {
+                        await Users.addActivity(
+                            mentionedUser.id,
+                            MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
+                            startDate
+                        );
+                    }
+                }
+
+                await Users.addActivity(
+                    authorId,
+                    MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
+                    startDate
+                );
+
+                ++msgIndex;
             }
 
-            await Users.addActivity(
-                authorId,
-                MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
-                currDate
-            );
-
-            if (currDate > endDate) break;
+            await updateStockPrices(nextTickDate);
+            nextTickDate = nextTickDate.plus({ minutes: minuteIncrement });
         }
 
         // store simulation param data

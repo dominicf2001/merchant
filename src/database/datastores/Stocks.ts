@@ -6,6 +6,7 @@ import { Kysely, Updateable, Insertable, sql } from "kysely";
 import Database from "../schemas/Database";
 import { Users } from "./Users";
 import { Collection } from "discord.js";
+import { warn } from "console";
 
 export function isStockInterval(a: any): a is StockInterval {
     const stockIntervals = ["now", "hour", "day", "month"] as const;
@@ -63,7 +64,7 @@ class Stocks extends DataStore<string, Stock> {
 
         await this.set(stock_id, {
             price: amount,
-            created_date: date.toISO() as StocksCreatedDate
+            created_date: date.toUTC().toSQL() as StocksCreatedDate
         });
     }
 
@@ -155,8 +156,9 @@ class Stocks extends DataStore<string, Stock> {
     async getStockHistory(
         stock_id: string,
         interval: StockInterval,
-        date: DateTime = DateTime.now(),
+        latestStockDate: DateTime = DateTime.now(),
     ): Promise<Stock[]> {
+        // TODO: uncomment cache after handling it properly in simulation
         // only 'now' is stored in the cache currently
         //if (interval === "now" && this.getFromCache(stock_id)) {
         //    // cache hit on 'now'
@@ -174,12 +176,13 @@ class Stocks extends DataStore<string, Stock> {
             case "day":
                 intervalOffset = { days: 30 };
                 break;
+            // not working currently due to group by created_day
             case "month":
                 intervalOffset = { months: 6 };
                 break;
         }
 
-        const oldestStockDate: string = date.minus(intervalOffset).toISO();
+        const oldestStockDate: DateTime = latestStockDate.minus(intervalOffset);
 
         const stockHistory: Stock[] = await this.db
             .selectFrom("stocks as s1")
@@ -194,10 +197,25 @@ class Stocks extends DataStore<string, Stock> {
                                     .max("created_date")
                                     .as("max_created_date"),
                             (eb) =>
+                                sql`extract(hour from ${eb.ref("created_date")})`.as(
+                                    "created_hour",
+                                ),
+                            (eb) =>
+                                sql`extract(day from ${eb.ref("created_date")})`.as(
+                                    "created_day",
+                                ),
+                            (eb) =>
+                                sql`extract(month from ${eb.ref("created_date")})`.as(
+                                    "created_month",
+                                ),
+                            (eb) =>
                                 sql`extract(${sql.raw(interval === "now" ? "minute" : interval)} from ${eb.ref("created_date")})`.as(
                                     "created_interval",
                                 ),
                         ])
+                        .groupBy("created_hour")
+                        .groupBy("created_day")
+                        .groupBy("created_month")
                         .groupBy("created_interval")
                         .groupBy("stock_id")
                         .as("s2"),
@@ -211,7 +229,12 @@ class Stocks extends DataStore<string, Stock> {
             .where(
                 "s1.created_date",
                 ">=",
-                oldestStockDate as StocksCreatedDate,
+                oldestStockDate.toUTC().toSQL() as StocksCreatedDate,
+            )
+            .where(
+                "s1.created_date",
+                "<=",
+                latestStockDate.toUTC().toSQL() as StocksCreatedDate,
             )
             .orderBy("s1.created_date", "desc")
             .execute();

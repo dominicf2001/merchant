@@ -67,14 +67,14 @@ class Users extends DataStore<string, User> {
 
             const newUserActivity: UserActivity = {
                 user_id: user_id as UsersUserId,
-                last_activity_date: data.last_activity_date ?? DateTime.now().toISO(),
+                last_activity_date: data.last_activity_date ?? DateTime.now().toUTC().toSQL(),
                 ...data,
             } as UserActivity;
 
             (await db
                 .insertInto("user_activities")
                 .values({
-                    first_activity_date: data.first_activity_date ?? DateTime.now().toISO(),
+                    first_activity_date: data.first_activity_date ?? DateTime.now().toUTC().toSQL(),
                     ...newUserActivity,
                 })
                 .onConflict((oc) =>
@@ -121,7 +121,7 @@ class Users extends DataStore<string, User> {
             await this.set(user_id);
         }
 
-        const now = date.toISO();
+        const now = date.toUTC().toSQL();
 
         await db
             .insertInto("user_activities")
@@ -168,7 +168,7 @@ class Users extends DataStore<string, User> {
                     user_id: user_id as UsersUserId,
                     stock_id: stock_id as UsersUserId,
                     purchase_date:
-                        DateTime.now().toISO() as UserStocksPurchaseDate,
+                        DateTime.now().toUTC().toSQL() as UserStocksPurchaseDate,
                     quantity: amount,
                     purchase_price: currentStockPrice,
                 })
@@ -301,7 +301,7 @@ class Users extends DataStore<string, User> {
             .values({
                 user_id: user_id as UsersUserId,
                 command_id: command_id as CommandsCommandId,
-                start_date: DateTime.now().toISO(),
+                start_date: DateTime.now().toUTC().toSQL(),
             })
             .execute();
     }

@@ -19,6 +19,7 @@ import {
     TICK_CHANNEL_ID,
     client,
 } from "./utilities";
+import { DateTime } from "luxon";
 
 client.once(Events.ClientReady, async () => {
     datastores.forEach(ds => ds.refreshCache());
@@ -142,7 +143,7 @@ client.on(Events.MessageCreate, async (message) => {
 
 // CRON HANDLING
 function logToFile(message: string): void {
-    const timestamp = new Date().toISOString();
+    const timestamp = DateTime.now().toISO();
     const logMessage = `${timestamp} - ${message}\n`;
 
     fs.appendFile("cron.log", logMessage, (err) => {

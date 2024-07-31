@@ -19,7 +19,7 @@ export async function updateStockPrices(date: DateTime = DateTime.now()): Promis
 
             // update storage
             await Users.setActivity(stock.stock_id, {
-                last_activity_date: date.toISO(),
+                last_activity_date: date.toUTC().toSQL(),
                 activity_points_short: 0,
                 activity_points_short_ema: EMA,
                 activity_points_short_emsd: EMSD,
