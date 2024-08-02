@@ -60,8 +60,8 @@ export default {
 
 async function sendStockChart(message: Message, args: string[]): Promise<void> {
     const stockUser = message.mentions.users.first();
-    const validIntervals: StockInterval[] = ["now", "hour", "day", "month"];
-    const intervalArg = findTextArgs(args)[0] ?? "now";
+    const validIntervals: StockInterval[] = ["minute", "hour", "day", "month"];
+    const intervalArg = findTextArgs(args)[0] ?? "minute";
     const interval: StockInterval | undefined = validIntervals.find(
         (vi) => vi === intervalArg,
     );
@@ -108,7 +108,7 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
 
     let dateFormat: string;
     switch (interval) {
-        case "now":
+        case "minute":
             dateFormat = "h:mm:ss";
             break;
         case "hour":
@@ -134,7 +134,7 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
         type: "line",
         data: {
             labels: stockHistory.map((h) =>
-                DateTime.fromISO(h.created_date).toFormat(dateFormat),
+                DateTime.fromSQL(h.created_date).toFormat(dateFormat),
             ),
             datasets: [
                 {
@@ -206,7 +206,7 @@ async function sendStockList(
 
     // getting the 'now' stock history pulls from a cache
     const histories = await Promise.all(
-        stocks.map((s) => Stocks.getStockHistory(s.stock_id, "now")),
+        stocks.map((s) => Stocks.getStockHistory(s.stock_id, "minute")),
     );
 
     const totalPages = Math.ceil(stocks.length / pageSize);

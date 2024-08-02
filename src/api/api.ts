@@ -11,11 +11,13 @@ import { StatusCodes } from 'http-status-codes';
 import {
     MENTIONED_ACTIVITY_VALUE,
     MESSAGE_ACTIVITY_VALUE,
+    SMA_UPDATE_HOURS,
     TOKEN,
     client,
     getRandomInt,
+    marketIsOpen,
 } from "../utilities";
-import { updateStockPrices } from "../stock-utilities";
+import { updateSMAS, updateStockPrices } from "../stock-utilities";
 import { isStockInterval } from "../database/datastores/Stocks";
 import path from "path";
 import { dbWipe } from "../database/datastores/DataStore";
@@ -100,10 +102,10 @@ router.get("/guilds", async (ctx) => {
 });
 
 // gets stocks starting a startDate within specified range
-router.get("/stock/:startDate/:range", async (ctx) => {
+router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
     try {
-        if (!ctx.params.startDate) {
-            ctx.throw("Missing start date", StatusCodes.BAD_REQUEST);
+        if (!ctx.params.endDate) {
+            ctx.throw("Missing end date", StatusCodes.BAD_REQUEST);
             return;
         }
 
@@ -112,7 +114,11 @@ router.get("/stock/:startDate/:range", async (ctx) => {
             return;
         }
 
-        const startDate = DateTime.fromISO(ctx.params.startDate);
+        const endDate = DateTime.fromISO(ctx.params.endDate);
+        const startDate: DateTime | null = ctx.params.startDate ?
+            DateTime.fromISO(ctx.params.startDate) :
+            null;
+
         const range = ctx.params.range;
 
         interface IStockEntry {
@@ -125,17 +131,18 @@ router.get("/stock/:startDate/:range", async (ctx) => {
             history: IStockEntry[];
         }
 
-        let stocks = await Stocks.getAll();
+        const users = await Users.getAll();
+
         // TODO: implement paging
-        stocks = stocks.slice(0, 5);
         const stockResponses = (await Promise.all(
-            stocks.map(async (s) => {
+            users.map(async (user) => {
                 try {
+                    const userId = user.user_id;
                     // TODO: this is a bottleneck, need to find solution
-                    const username = (await client.users.fetch(s.stock_id)).username;
+                    const username = (await client.users.fetch(userId)).username;
 
                     const history = (
-                        await Stocks.getStockHistory(s.stock_id, range, startDate)
+                        await Stocks.getStockHistory(userId, range, { end: endDate, start: startDate })
                     ).map((entry) => {
                         return {
                             value: entry.price,
@@ -149,7 +156,6 @@ router.get("/stock/:startDate/:range", async (ctx) => {
                     } as IStockResponse;
                 }
                 catch (error) {
-                    console.error(error);
                     return {
                         name: "",
                         history: [],
@@ -198,7 +204,7 @@ router.post("/sim", async (ctx) => {
 
         const simData = await getSimData();
 
-        const simParamsChanged = simData.start != start || simData.end != end || simData.guildID != guildID;
+        const simParamsChanged = (start < simData.start || end > simData.end) || simData.guildID != guildID;
         if (reqBody.clearCache || simParamsChanged) {
             rmSync(outPath, { recursive: true, force: true });
         }
@@ -235,33 +241,41 @@ router.post("/sim", async (ctx) => {
             while (messages[msgIndex] && DateTime.fromISO(messages[msgIndex].timestamp) < nextTickDate) {
                 const currMsg = messages[msgIndex];
 
-                const authorId = currMsg.author.id;
-                const user = await Users.get(authorId);
-                if (!user) {
-                    await Users.set(authorId);
-                    await Stocks.updateStockPrice(authorId, 1, startDate);
-                }
-
-                for (const mentionedUser of currMsg.mentions) {
-                    if (mentionedUser.id !== authorId && !mentionedUser.isBot) {
-                        await Users.addActivity(
-                            mentionedUser.id,
-                            MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
-                            startDate
-                        );
+                if (marketIsOpen(nextTickDate)) {
+                    const authorId = currMsg.author.id;
+                    const user = await Users.get(authorId);
+                    if (!user) {
+                        await Users.set(authorId);
+                        await Stocks.updateStockPrice(authorId, 1, startDate);
                     }
-                }
 
-                await Users.addActivity(
-                    authorId,
-                    MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
-                    startDate
-                );
+                    for (const mentionedUser of currMsg.mentions) {
+                        if (mentionedUser.id !== authorId && !mentionedUser.isBot) {
+                            await Users.addActivity(
+                                mentionedUser.id,
+                                MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
+                                startDate
+                            );
+                        }
+                    }
+
+                    await Users.addActivity(
+                        authorId,
+                        MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
+                        startDate
+                    );
+                }
 
                 ++msgIndex;
             }
 
-            await updateStockPrices(nextTickDate);
+            if (marketIsOpen(nextTickDate)) {
+                if (SMA_UPDATE_HOURS.includes(nextTickDate.hour)) {
+                    await updateSMAS(nextTickDate);
+                }
+
+                await updateStockPrices(nextTickDate);
+            }
             nextTickDate = nextTickDate.plus({ minutes: minuteIncrement });
         }
 

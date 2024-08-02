@@ -1,9 +1,8 @@
 import { Users, Stocks } from "./database/db-objects";
-import { StocksCreatedDate } from "./database/schemas/public/Stocks";
 import { UserActivities as UserActivity } from "./database/schemas/public/UserActivities";
 import { DateTime } from "luxon";
 
-export async function updateStockPrices(date: DateTime = DateTime.now()): Promise<void> {
+export async function updateStockPrices(date = DateTime.now()): Promise<void> {
     const allStocks = await Stocks.getAll();
 
     await Promise.all(
@@ -29,11 +28,11 @@ export async function updateStockPrices(date: DateTime = DateTime.now()): Promis
 }
 
 function calculateStockPrice(EMA: number, EMSD: number, SMA: number): number {
-    const EMA_WEIGHT = 0.4;
-    const EMSD_WEIGHT = 0.2;
-    const SMA_WEIGHT = 0.4;
+    const EMA_WEIGHT = .5;
+    const EMSD_WEIGHT = .5;
+    const SMA_WEIGHT = 3;
 
-    const RANDOMNESS_FACTOR = 0.15;
+    const RANDOMNESS_FACTOR = 4;
     const randomAdjustment = (Math.random() - 0.5) * RANDOMNESS_FACTOR;
 
     const newPrice =
@@ -57,7 +56,7 @@ function calculateEMA(activity: UserActivity): number {
 }
 
 function calculateEMSD(activity: UserActivity): number {
-    const SMOOTHING_FACTOR = 0.4;
+    const SMOOTHING_FACTOR = 0.3;
 
     const oldEMSD = activity.activity_points_short_emsd;
     const newEMA = calculateEMA(activity);
@@ -70,16 +69,15 @@ function calculateEMSD(activity: UserActivity): number {
     );
 }
 
-export async function updateSMAS(): Promise<void> {
+export async function updateSMAS(today = DateTime.now()): Promise<void> {
     const allStocks = await Stocks.getAll();
 
     await Promise.all(
         allStocks.map(async (stock) => {
             const activity = await Users.getActivity(stock.stock_id);
 
-            const maxIntervals = 7 * 3;
-            const startDate = DateTime.fromISO(activity.first_activity_date);
-            const today = DateTime.now();
+            const maxIntervals = 3 * 3;
+            const startDate = DateTime.fromSQL(activity.first_activity_date);
 
             const oldSMA = activity.activity_points_long_sma;
             const activityPoints = activity.activity_points_long;

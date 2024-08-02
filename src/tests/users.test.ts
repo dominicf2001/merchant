@@ -22,7 +22,7 @@ describe("BALANCE, ACTIVITY_POINTS, ARMOR Operations", () => {
         await sleep(sleepDuration);
 
         const activity = await Users.getActivity(userId);
-        expect(DateTime.fromISO(activity.first_activity_date) < DateTime.now())
+        expect(DateTime.fromSQL(activity.first_activity_date) < DateTime.now())
             .toBeTruthy;
     });
 

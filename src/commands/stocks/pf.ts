@@ -107,7 +107,7 @@ async function sendPurchaseHistoryList(
         );
 
     for (const userStock of userStocks) {
-        const purchaseDate: string = DateTime.fromISO(
+        const purchaseDate: string = DateTime.fromSQL(
             userStock.purchase_date,
         ).toString();
         embed.addFields({

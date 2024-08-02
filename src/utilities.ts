@@ -67,6 +67,8 @@ export const client: Client = new Client({
     ],
 });
 
+export const SMA_UPDATE_HOURS = [OPEN_HOUR + 1, , OPEN_HOUR + 7, OPEN_HOUR + 13];
+
 // HELPER FUNCTIONS
 export function secondsToHms(d: number): string {
     const h = Math.floor(d / 3600);
@@ -97,8 +99,8 @@ export function formatNumber(num: number, decimalPlaces: number = 2): number {
     );
 }
 
-export function marketIsOpen(): boolean {
-    const currentHour = DateTime.now().setZone(TIMEZONE).hour;
+export function marketIsOpen(date = DateTime.now()): boolean {
+    const currentHour = date.setZone(TIMEZONE).hour;
     return currentHour >= OPEN_HOUR && currentHour < CLOSE_HOUR;
 }
 

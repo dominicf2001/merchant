@@ -6,13 +6,18 @@ import { Kysely, Updateable, Insertable, sql } from "kysely";
 import Database from "../schemas/Database";
 import { Users } from "./Users";
 import { Collection } from "discord.js";
-import { warn } from "console";
 
 export function isStockInterval(a: any): a is StockInterval {
-    const stockIntervals = ["now", "hour", "day", "month"] as const;
+    const stockIntervals = ["minute", "hour", "day", "month"] as const;
     return stockIntervals.includes(a);
 }
-export type StockInterval = "now" | "hour" | "day" | "month";
+export type StockInterval = "minute" | "hour" | "day" | "month";
+
+interface StockHistoryOptions {
+    start?: DateTime,
+    end?: DateTime,
+    offset?: number
+}
 
 class Stocks extends DataStore<string, Stock> {
     constructor(db: Kysely<Database>) {
@@ -66,18 +71,6 @@ class Stocks extends DataStore<string, Stock> {
             price: amount,
             created_date: date.toUTC().toSQL() as StocksCreatedDate
         });
-    }
-
-    async get(
-        stock_id: string,
-    ): Promise<Stock | undefined> {
-        if (this.cache.has(stock_id)) {
-            // cache hit
-            return this.getFromCache(stock_id);
-        } else {
-            // cache miss
-            return await this.getFromDB(stock_id);
-        }
     }
 
     async getFromDB(
@@ -156,33 +149,34 @@ class Stocks extends DataStore<string, Stock> {
     async getStockHistory(
         stock_id: string,
         interval: StockInterval,
-        latestStockDate: DateTime = DateTime.now(),
+        opts: StockHistoryOptions
     ): Promise<Stock[]> {
-        // TODO: uncomment cache after handling it properly in simulation
-        // only 'now' is stored in the cache currently
-        //if (interval === "now" && this.getFromCache(stock_id)) {
-        //    // cache hit on 'now'
-        //    return this.cache.get(stock_id);
-        //}
+        // only 'minute' is stored in the cache assuming the current date
+        const usingDefaultOptions = Object.values(opts).every(opt => opt == null);
+        if (usingDefaultOptions && interval === "minute" && this.getFromCache(stock_id)) {
+            // cache hit on 'minute'
+            return this.cache.get(stock_id);
+        }
 
         let intervalOffset: Object;
         switch (interval) {
-            case "now":
-                intervalOffset = { minutes: 60 };
+            case "minute":
+                intervalOffset = { minutes: opts.offset ?? 60 };
                 break;
             case "hour":
-                intervalOffset = { hours: 24 };
+                intervalOffset = { hours: opts.offset ?? 24 };
                 break;
             case "day":
-                intervalOffset = { days: 30 };
+                intervalOffset = { days: opts.offset ?? 30 };
                 break;
-            // not working currently due to group by created_day
             case "month":
-                intervalOffset = { months: 6 };
+                intervalOffset = { months: opts.offset ?? 6 };
                 break;
         }
 
-        const oldestStockDate: DateTime = latestStockDate.minus(intervalOffset);
+        const latestStockDate = opts.end ?? DateTime.now();
+        const oldestStockDate: DateTime = opts.start ?? latestStockDate.minus(intervalOffset);
+        console.log(oldestStockDate.toSQL());
 
         const stockHistory: Stock[] = await this.db
             .selectFrom("stocks as s1")
@@ -197,25 +191,11 @@ class Stocks extends DataStore<string, Stock> {
                                     .max("created_date")
                                     .as("max_created_date"),
                             (eb) =>
-                                sql`extract(hour from ${eb.ref("created_date")})`.as(
-                                    "created_hour",
-                                ),
-                            (eb) =>
-                                sql`extract(day from ${eb.ref("created_date")})`.as(
-                                    "created_day",
-                                ),
-                            (eb) =>
-                                sql`extract(month from ${eb.ref("created_date")})`.as(
-                                    "created_month",
-                                ),
-                            (eb) =>
-                                sql`extract(${sql.raw(interval === "now" ? "minute" : interval)} from ${eb.ref("created_date")})`.as(
+                                sql`date_trunc(${interval}, ${eb.ref("created_date")})`.as(
                                     "created_interval",
-                                ),
+                                )
+
                         ])
-                        .groupBy("created_hour")
-                        .groupBy("created_day")
-                        .groupBy("created_month")
                         .groupBy("created_interval")
                         .groupBy("stock_id")
                         .as("s2"),
@@ -264,10 +244,10 @@ class Stocks extends DataStore<string, Stock> {
                             eb.fn.max("created_date").as("max_created_date"),
                         (eb) =>
                             sql`extract(day from ${eb.ref("created_date")})`.as(
-                                "created_interval",
+                                "created_day",
                             ),
                     ])
-                    .groupBy("created_interval")
+                    .groupBy("created_day")
                     .groupBy("stock_id")
                     .as("s2"),
             )
@@ -291,8 +271,8 @@ class Stocks extends DataStore<string, Stock> {
         for (const latestStock of latestStocks) {
             const stockHistory: Stock[] = await this.getStockHistory(
                 latestStock.stock_id,
-                "now",
-                date
+                "minute",
+                { end: date }
             );
 
             this.cache.set(latestStock["stock_id"], stockHistory);

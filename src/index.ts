@@ -18,11 +18,14 @@ import {
     TOKEN,
     TICK_CHANNEL_ID,
     client,
+    SMA_UPDATE_HOURS,
 } from "./utilities";
 import { DateTime } from "luxon";
 
 client.once(Events.ClientReady, async () => {
-    datastores.forEach(ds => ds.refreshCache());
+    for (const ds of datastores) {
+        await ds.refreshCache();
+    }
     console.log("Bot ready as " + client.user.tag);
 });
 
@@ -180,7 +183,14 @@ let stockTicker = cron.schedule(
     },
 );
 
-const updateTimes = `${OPEN_HOUR + 1},${OPEN_HOUR + 7},${OPEN_HOUR + 13}`;
+let updateTimes = "";
+for (let i = 0; i < SMA_UPDATE_HOURS.length; ++i) {
+    updateTimes += SMA_UPDATE_HOURS[i];
+    if (i != SMA_UPDATE_HOURS.length - 1) {
+        updateTimes += ",";
+    }
+}
+
 let smaUpdater = cron.schedule(
     `0 ${updateTimes} * * *`,
     async () => {

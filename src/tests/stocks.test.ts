@@ -122,7 +122,7 @@ describe("HISTORY Operations", () => {
         await sleep(sleepDuration);
     });
 
-    test('Get stock history for "now" interval', async () => {
+    test('Get stock history for "minute" interval', async () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 10 }, (_, i) => ({
@@ -157,16 +157,16 @@ describe("HISTORY Operations", () => {
             ]);
         });
 
-        const stockHistory = await Stocks.getStockHistory(testStockId, "now");
+        const stockHistory = await Stocks.getStockHistory(testStockId, "minute");
         const stockHistoryTwo = await Stocks.getStockHistory(
             testStockIdTwo,
-            "now",
+            "minute",
         );
         // test cache hit
         await Stocks.refreshCache();
         const stockHistoryThree = await Stocks.getStockHistory(
             testStockIdThree,
-            "now",
+            "minute",
         );
         expect(stockHistory?.length).toBe(10);
         expect(stockHistoryTwo?.length).toBe(4);
@@ -261,14 +261,14 @@ describe("HISTORY Operations", () => {
         expect(latestStocks?.length).toBe(3);
 
         for (const latestStock of latestStocks) {
-            const latestStockDate = DateTime.fromISO(latestStock.created_date);
+            const latestStockDate = DateTime.fromSQL(latestStock.created_date);
             const stockHistory = await Stocks.getStockHistory(
                 latestStock.stock_id,
-                "now",
+                "minute",
             );
 
             for (const stock of stockHistory) {
-                const stockDate = DateTime.fromISO(stock.created_date);
+                const stockDate = DateTime.fromSQL(stock.created_date);
                 expect(latestStockDate >= stockDate).toBeTruthy();
             }
         }
@@ -279,14 +279,14 @@ describe("HISTORY Operations", () => {
         expect(latestStocksFromCache?.length).toBe(3);
 
         for (const latestStock of latestStocksFromCache) {
-            const latestStockDate = DateTime.fromISO(latestStock.created_date);
+            const latestStockDate = DateTime.fromSQL(latestStock.created_date);
             const stockHistory = await Stocks.getStockHistory(
                 latestStock.stock_id,
-                "now",
+                "minute",
             );
 
             for (const stock of stockHistory) {
-                const stockDate = DateTime.fromISO(stock.created_date);
+                const stockDate = DateTime.fromSQL(stock.created_date);
                 expect(latestStockDate >= stockDate).toBeTruthy();
             }
         }

@@ -432,7 +432,7 @@ class Users extends DataStore<string, User> {
             .executeTakeFirst()) as UserCooldown;
 
         if (userCooldown) {
-            const startDateTime = DateTime.fromISO(userCooldown.start_date);
+            const startDateTime = DateTime.fromSQL(userCooldown.start_date);
             if (!startDateTime.isValid) {
                 console.error("Invalid start date:", userCooldown.start_date);
                 return 0;
