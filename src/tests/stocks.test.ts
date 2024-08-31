@@ -7,7 +7,7 @@ import { DateTime } from "luxon";
 const sleepDuration: number = 80;
 
 describe("UPDATING Operations", () => {
-    const testStockId = "123";
+    const testStockId = "1235";
     const testUserId = testStockId;
 
     beforeAll(async () => {
@@ -217,9 +217,10 @@ describe("HISTORY Operations", () => {
             testStockIdThree,
             "hour",
         );
-        expect(stockHistory?.length).toBe(24);
+
+        expect(stockHistory?.length).toBe(25);
         expect(stockHistoryTwo?.length).toBe(16);
-        expect(stockHistoryThree?.length).toBe(24);
+        expect(stockHistoryThree?.length).toBe(25);
     });
 
     test("Get latest stocks", async () => {

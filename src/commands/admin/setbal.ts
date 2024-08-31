@@ -3,7 +3,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, userMention, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
 
 const data: Command = {

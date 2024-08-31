@@ -20,6 +20,6 @@
   "STOCKDOWN_EMOJI_CODE": "<:stockdown:1117496855870328833>",
   "DB_NAME": "merchant",
   "DB_HOST": "localhost",
-  "DB_USER": "dominicf",
+  "DB_USER": "dominic",
   "DB_PORT": 5432
 }

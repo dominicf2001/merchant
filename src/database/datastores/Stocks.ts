@@ -149,7 +149,7 @@ class Stocks extends DataStore<string, Stock> {
     async getStockHistory(
         stock_id: string,
         interval: StockInterval,
-        opts: StockHistoryOptions
+        opts: StockHistoryOptions = {}
     ): Promise<Stock[]> {
         // only 'minute' is stored in the cache assuming the current date
         const usingDefaultOptions = Object.values(opts).every(opt => opt == null);
@@ -176,7 +176,6 @@ class Stocks extends DataStore<string, Stock> {
 
         const latestStockDate = opts.end ?? DateTime.now();
         const oldestStockDate: DateTime = opts.start ?? latestStockDate.minus(intervalOffset);
-        console.log(oldestStockDate.toSQL());
 
         const stockHistory: Stock[] = await this.db
             .selectFrom("stocks as s1")

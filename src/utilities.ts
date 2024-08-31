@@ -13,7 +13,6 @@ import {
 import { DateTime } from "luxon";
 import fs from "fs";
 import path from "path";
-import { Kysely } from "kysely";
 
 export const { TOKEN } = JSON.parse(
     fs.readFileSync(`${__dirname}/../token.json`, "utf8"),
@@ -67,7 +66,7 @@ export const client: Client = new Client({
     ],
 });
 
-export const SMA_UPDATE_HOURS = [OPEN_HOUR + 1, , OPEN_HOUR + 7, OPEN_HOUR + 13];
+export const SMA_UPDATE_HOURS = [OPEN_HOUR + 1, OPEN_HOUR + 7, OPEN_HOUR + 13];
 
 // HELPER FUNCTIONS
 export function secondsToHms(d: number): string {
