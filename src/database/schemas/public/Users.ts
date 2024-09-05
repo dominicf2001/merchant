@@ -8,11 +8,11 @@ export type UsersUserId = string & { __brand: 'UsersUserId' };
 
 /** Represents the table public.users */
 export default interface UsersTable {
-  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  balance: ColumnType<number, number | null, number | null>;
+  balance: ColumnType<number, number | undefined, number>;
 
-  armor: ColumnType<number, number | null, number | null>;
+  armor: ColumnType<number, number | undefined, number>;
 }
 
 export type Users = Selectable<UsersTable>;

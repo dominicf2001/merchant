@@ -7,11 +7,11 @@ import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
 /** Represents the table public.user_cooldowns */
 export default interface UserCooldownsTable {
-  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  command_id: ColumnType<CommandsCommandId, CommandsCommandId, CommandsCommandId | null>;
+  command_id: ColumnType<CommandsCommandId, CommandsCommandId, CommandsCommandId>;
 
-  start_date: ColumnType<string, string | null, string | null>;
+  start_date: ColumnType<string, string | undefined, string>;
 }
 
 export type UserCooldowns = Selectable<UserCooldownsTable>;

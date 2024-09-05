@@ -7,11 +7,11 @@ import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
 /** Represents the table public.user_items */
 export default interface UserItemsTable {
-  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  item_id: ColumnType<ItemsItemId, ItemsItemId, ItemsItemId | null>;
+  item_id: ColumnType<ItemsItemId, ItemsItemId, ItemsItemId>;
 
-  quantity: ColumnType<number, number | null, number | null>;
+  quantity: ColumnType<number, number | undefined, number>;
 }
 
 export type UserItems = Selectable<UserItemsTable>;

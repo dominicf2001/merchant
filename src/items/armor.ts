@@ -4,7 +4,7 @@ import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
 const data: Item = {
     item_id: "armor" as ItemsItemId,
-    price: 750,
+    price: 5000,
     emoji_code: ":shield:",
     description:
         "Protects against nametag, dye, and mute (Can only apply one at a time)",

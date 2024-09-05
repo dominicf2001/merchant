@@ -11,7 +11,7 @@ import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
 const data: Item = {
     item_id: "dye" as ItemsItemId,
-    price: 1500,
+    price: 100000,
     emoji_code: ":art:",
     description: "Sets the color of any user's name",
     usage: `${inlineCode("$use dye [color] \n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable")}`,

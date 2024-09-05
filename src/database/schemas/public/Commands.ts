@@ -8,15 +8,15 @@ export type CommandsCommandId = string & { __brand: 'CommandsCommandId' };
 
 /** Represents the table public.commands */
 export default interface CommandsTable {
-  command_id: ColumnType<CommandsCommandId, CommandsCommandId, CommandsCommandId | null>;
+  command_id: ColumnType<CommandsCommandId, CommandsCommandId, CommandsCommandId>;
 
-  description: ColumnType<string, string | null, string | null>;
+  description: ColumnType<string, string | undefined, string>;
 
-  usage: ColumnType<string, string | null, string | null>;
+  usage: ColumnType<string, string | undefined, string>;
 
-  cooldown_time: ColumnType<number, number | null, number | null>;
+  cooldown_time: ColumnType<number, number | undefined, number>;
 
-  is_admin: ColumnType<boolean, boolean | null, boolean | null>;
+  is_admin: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
 export type Commands = Selectable<CommandsTable>;

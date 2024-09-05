@@ -20,7 +20,7 @@ export default {
         const newBalance: number = +findNumericArgs(args)[0];
         const target = message.mentions.users.first() ?? message.author;
 
-        if (!newBalance) {
+        if (!newBalance === undefined) {
             await message.reply("You must specify a balance.");
             return;
         }

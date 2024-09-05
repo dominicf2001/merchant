@@ -9,11 +9,11 @@ export type StocksCreatedDate = string & { __brand: 'StocksCreatedDate' };
 
 /** Represents the table public.stocks */
 export default interface StocksTable {
-  stock_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  stock_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  created_date: ColumnType<StocksCreatedDate, StocksCreatedDate | null, StocksCreatedDate | null>;
+  created_date: ColumnType<StocksCreatedDate, StocksCreatedDate | undefined, StocksCreatedDate>;
 
-  price: ColumnType<number, number | null, number | null>;
+  price: ColumnType<number, number | undefined, number>;
 }
 
 export type Stocks = Selectable<StocksTable>;

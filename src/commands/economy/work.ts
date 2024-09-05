@@ -10,7 +10,7 @@ const data: Command = {
     command_id: "work" as CommandsCommandId,
     description: `Make some tendies`,
     usage: `${inlineCode("$work")}`,
-    cooldown_time: 30000,
+    cooldown_time: 1800000,
     is_admin: false,
 };
 

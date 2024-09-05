@@ -96,47 +96,36 @@ class Stocks extends DataStore<string, Stock> {
 
     async getLatestStocks(): Promise<Stock[]> {
         let latestStocks: Stock[] = [];
-        // How can cache undefined???
-        if (this.cache?.size) {
-            for (const stockId of this.cache.keys()) {
-                console.log(stockId);
-                const stockCache = this.cache.get(stockId);
-                if (stockCache[0]) {
-                    latestStocks.push(stockCache[0]);
-                }
-            }
-        } else {
-            try {
-                latestStocks = await this.db
-                    .selectFrom("stocks as s1")
-                    .selectAll()
-                    .innerJoin(
-                        (eb) =>
-                            eb
-                                .selectFrom("stocks")
-                                .select([
-                                    "stock_id",
-                                    (eb) =>
-                                        eb.fn
-                                            .max("created_date")
-                                            .as("max_created_date"),
-                                ])
-                                .groupBy("stock_id")
-                                .as("s2"),
-                        (join) =>
-                            join
-                                .onRef("s1.stock_id", "=", "s2.stock_id")
-                                .onRef(
-                                    "s1.created_date",
-                                    "=",
-                                    "s2.max_created_date",
-                                ),
-                    )
-                    .orderBy("s1.created_date", "desc")
-                    .execute();
-            } catch (error) {
-                console.error("Error getting latest stocks: ", error);
-            }
+        try {
+            latestStocks = await this.db
+                .selectFrom("stocks as s1")
+                .selectAll()
+                .innerJoin(
+                    (eb) =>
+                        eb
+                            .selectFrom("stocks")
+                            .select([
+                                "stock_id",
+                                (eb) =>
+                                    eb.fn
+                                        .max("created_date")
+                                        .as("max_created_date"),
+                            ])
+                            .groupBy("stock_id")
+                            .as("s2"),
+                    (join) =>
+                        join
+                            .onRef("s1.stock_id", "=", "s2.stock_id")
+                            .onRef(
+                                "s1.created_date",
+                                "=",
+                                "s2.max_created_date",
+                            ),
+                )
+                .orderBy("s1.created_date", "desc")
+                .execute();
+        } catch (error) {
+            console.error("Error getting latest stocks: ", error);
         }
         return latestStocks;
     }
@@ -144,7 +133,13 @@ class Stocks extends DataStore<string, Stock> {
     async getLatestStock(
         stock_id: string,
     ): Promise<Stock | undefined> {
-        return await this.get(stock_id);
+        return await this.db
+            .selectFrom("stocks as s1")
+            .where("stock_id", "=", stock_id as UsersUserId)
+            .orderBy("created_date desc")
+            .selectAll()
+            .limit(1)
+            .executeTakeFirst();
     }
 
     async getStockHistory(

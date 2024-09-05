@@ -98,7 +98,7 @@ export function formatNumber(num: number, decimalPlaces: number = 2): number {
     );
 }
 
-export function marketIsOpen(date = DateTime.now()): boolean {
+export function marketIsOpen(date: DateTime = DateTime.now()): boolean {
     const currentHour = date.setZone(TIMEZONE).hour;
     return currentHour >= OPEN_HOUR && currentHour < CLOSE_HOUR;
 }

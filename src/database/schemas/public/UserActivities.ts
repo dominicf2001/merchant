@@ -6,21 +6,21 @@ import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
 /** Represents the table public.user_activities */
 export default interface UserActivitiesTable {
-  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  activity_points_short: ColumnType<number, number | null, number | null>;
+  activity_points_short: ColumnType<number, number | undefined, number>;
 
-  activity_points_long: ColumnType<number, number | null, number | null>;
+  activity_points_long: ColumnType<number, number | undefined, number>;
 
-  activity_points_short_ema: ColumnType<number, number | null, number | null>;
+  activity_points_short_ema: ColumnType<number, number | undefined, number>;
 
-  activity_points_short_emsd: ColumnType<number, number | null, number | null>;
+  activity_points_short_emsd: ColumnType<number, number | undefined, number>;
 
-  activity_points_long_sma: ColumnType<number, number | null, number | null>;
+  activity_points_long_sma: ColumnType<number, number | undefined, number>;
 
-  last_activity_date: ColumnType<string, string | null, string | null>;
+  last_activity_date: ColumnType<string, string | undefined, string>;
 
-  first_activity_date: ColumnType<string, string | null, string | null>;
+  first_activity_date: ColumnType<string, string | undefined, string>;
 }
 
 export type UserActivities = Selectable<UserActivitiesTable>;

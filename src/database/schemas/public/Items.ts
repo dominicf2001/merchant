@@ -8,15 +8,15 @@ export type ItemsItemId = string & { __brand: 'ItemsItemId' };
 
 /** Represents the table public.items */
 export default interface ItemsTable {
-  item_id: ColumnType<ItemsItemId, ItemsItemId, ItemsItemId | null>;
+  item_id: ColumnType<ItemsItemId, ItemsItemId, ItemsItemId>;
 
-  price: ColumnType<number, number | null, number | null>;
+  price: ColumnType<number, number | undefined, number>;
 
-  description: ColumnType<string, string | null, string | null>;
+  description: ColumnType<string, string | undefined, string>;
 
-  usage: ColumnType<string, string | null, string | null>;
+  usage: ColumnType<string, string | undefined, string>;
 
-  emoji_code: ColumnType<string, string | null, string | null>;
+  emoji_code: ColumnType<string, string | undefined, string>;
 }
 
 export type Items = Selectable<ItemsTable>;

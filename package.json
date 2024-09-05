@@ -7,6 +7,7 @@
     "db:init": "bun run ./src/database/db-init.ts",
     "db:init:force": "bun run ./src/database/db-init.ts -f",
     "build": "bun build ./src/index.ts ./src/api/api.ts --outdir=./built",
+    "dev": "bun --watch run ./src/index.ts && bun --watch run ./src/api/api.ts",
     "dev:bot": "bun --watch run ./src/index.ts",
     "dev:api": "bun --watch run ./src/api/api.ts",
     "lint": "bun prettier --write \"src/**/*.{js,ts,jsx,tsx}\"",

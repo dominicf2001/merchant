@@ -9,15 +9,15 @@ export type UserStocksPurchaseDate = string & { __brand: 'UserStocksPurchaseDate
 
 /** Represents the table public.user_stocks */
 export default interface UserStocksTable {
-  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  stock_id: ColumnType<UsersUserId, UsersUserId, UsersUserId | null>;
+  stock_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  purchase_date: ColumnType<UserStocksPurchaseDate, UserStocksPurchaseDate | null, UserStocksPurchaseDate | null>;
+  purchase_date: ColumnType<UserStocksPurchaseDate, UserStocksPurchaseDate | undefined, UserStocksPurchaseDate>;
 
-  quantity: ColumnType<number, number | null, number | null>;
+  quantity: ColumnType<number, number | undefined, number>;
 
-  purchase_price: ColumnType<number, number | null, number | null>;
+  purchase_price: ColumnType<number, number | undefined, number>;
 }
 
 export type UserStocks = Selectable<UserStocksTable>;

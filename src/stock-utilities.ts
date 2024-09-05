@@ -3,12 +3,11 @@ import { UserActivities as UserActivity } from "./database/schemas/public/UserAc
 import { DateTime } from "luxon";
 
 
-// Constants for price calculation
 const ACTIVITY_DECAY_FACTOR = 0.98;
 const PRICE_MOMENTUM_FACTOR = 0.8;
 const VOLATILITY_DAMPENING = 0.4;
-const MAX_PRICE_CHANGE_PERCENT = 0.07; // Increased to allow more short-term movement
-const SHORT_TERM_FLUCTUATION_FACTOR = 0.03; // New factor for short-term changes
+const MAX_PRICE_CHANGE_PERCENT = 0.07;
+const SHORT_TERM_FLUCTUATION_FACTOR = 0.03;
 
 export async function updateStockPrices(date = DateTime.now()): Promise<void> {
     const allStocks = await Stocks.getAll();
@@ -75,7 +74,7 @@ function calculateEMA(activity: UserActivity): number {
 }
 
 function calculateEMSD(activity: UserActivity): number {
-    const SMOOTHING_FACTOR = 0.2; // Increased for more responsiveness
+    const SMOOTHING_FACTOR = 0.2;
     const oldEMSD = activity.activity_points_short_emsd;
     const newEMA = calculateEMA(activity);
     const activityPoints = activity.activity_points_short;

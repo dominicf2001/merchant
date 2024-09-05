@@ -3,7 +3,7 @@ import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
 const data: Item = {
     item_id: "unmute" as ItemsItemId,
-    price: 1000,
+    price: 150000,
     emoji_code: ":loud_sound:",
     description: "Unmutes a user",
     usage: `${inlineCode("$use unmute [@user]")}`,
