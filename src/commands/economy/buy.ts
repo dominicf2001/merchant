@@ -52,7 +52,7 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
         return;
     }
 
-    const latestStock = await Stocks.getLatestStock(stockUser.id);
+    const latestStock = await Stocks.get(stockUser.id);
 
     if (!latestStock) {
         await message.reply(`That stock does not exist.`);
@@ -64,8 +64,8 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
     const totalBought: number =
         latestStock.price * quantity > authorBalance || args.includes("all")
             ? Math.floor(
-                  Math.floor((authorBalance / latestStock.price) * 100) / 100,
-              )
+                Math.floor((authorBalance / latestStock.price) * 100) / 100,
+            )
             : quantity;
     const totalCost: number = latestStock.price * totalBought;
 

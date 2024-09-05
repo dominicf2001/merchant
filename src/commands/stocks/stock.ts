@@ -67,7 +67,7 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
         return;
     }
 
-    const latestStock = await Stocks.getLatestStock(stockUser.id);
+    const latestStock = await Stocks.get(stockUser.id);
     if (!latestStock) {
         await message.reply("This stock does not exist.");
         return;
@@ -211,7 +211,7 @@ async function sendStockList(
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
 
-    const stocks = await Stocks.getLatestStocks();
+    const stocks = await Stocks.getAll();
     const slicedStocks = stocks.slice(startIndex, endIndex);
 
     // getting the 'minute' stock history pulls from a cache

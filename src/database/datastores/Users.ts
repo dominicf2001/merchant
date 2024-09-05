@@ -154,7 +154,7 @@ class Users extends DataStore<string, User> {
         let amountAdded = 0;
 
         const currentStockPrice: number = (
-            await Stocks.getLatestStock(stock_id)
+            await Stocks.get(stock_id)
         )?.price;
 
         // prevents a user from being created and from inserting a non-existent stock
@@ -368,7 +368,7 @@ class Users extends DataStore<string, User> {
         let portfolioValue = 0;
         for (const userStock of userStocks) {
             const latestPrice = (
-                await Stocks.getLatestStock(userStock.stock_id)
+                await Stocks.get(userStock.stock_id)
             ).price;
             portfolioValue += latestPrice * userStock.quantity;
         }
@@ -393,7 +393,7 @@ class Users extends DataStore<string, User> {
         // Populate with the latest stock information
         let stockPromises: Promise<Stock>[] = [];
         for (const stock of userStock) {
-            stockPromises.push(Stocks.getLatestStock(stock.stock_id));
+            stockPromises.push(Stocks.get(stock.stock_id));
         }
 
         return (await Promise.all(stockPromises)) as Stock[];

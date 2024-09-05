@@ -81,6 +81,7 @@ class Stocks extends DataStore<string, Stock> {
             .selectAll()
             .where("stock_id", "=", stock_id as UsersUserId)
             .orderBy("created_date desc")
+            .limit(1)
             .executeTakeFirst()) as Stock;
     }
 
@@ -94,7 +95,7 @@ class Stocks extends DataStore<string, Stock> {
         return Number(result.total_shares_purchased) ?? 0;
     }
 
-    async getLatestStocks(): Promise<Stock[]> {
+    async getAll(): Promise<Stock[]> {
         let latestStocks: Stock[] = [];
         try {
             latestStocks = await this.db
@@ -130,16 +131,14 @@ class Stocks extends DataStore<string, Stock> {
         return latestStocks;
     }
 
-    async getLatestStock(
+    async get(
         stock_id: string,
     ): Promise<Stock | undefined> {
-        return await this.db
-            .selectFrom("stocks as s1")
-            .where("stock_id", "=", stock_id as UsersUserId)
-            .orderBy("created_date desc")
-            .selectAll()
-            .limit(1)
-            .executeTakeFirst();
+        let latestStock = this.getFromCache(stock_id);
+        if (!latestStock) {
+            latestStock = await this.getFromDB(stock_id);
+        }
+        return latestStock;
     }
 
     async getStockHistory(
@@ -261,7 +260,7 @@ class Stocks extends DataStore<string, Stock> {
 
     // caches the 'now' stock history for each stock
     async refreshCache(date: DateTime = DateTime.now()): Promise<void> {
-        const latestStocks: Stock[] = await this.getLatestStocks();
+        const latestStocks: Stock[] = await this.getAll();
 
         for (const latestStock of latestStocks) {
             const stockHistory: Stock[] = await this.getStockHistory(

@@ -36,7 +36,7 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
         ? 99999
         : +findNumericArgs(args)[0] || 1;
 
-    const latestStock = await Stocks.getLatestStock(stockUser.id);
+    const latestStock = await Stocks.get(stockUser.id);
 
     if (!latestStock) {
         await message.reply(`That stock does not exist.`);

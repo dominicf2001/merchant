@@ -57,7 +57,7 @@ async function sendStockList(message: Message, args: string[]): Promise<void> {
         }
 
         const latestStockPrice: number = (
-            await Stocks.getLatestStock(stock.stock_id)
+            await Stocks.get(stock.stock_id)
         ).price;
         const latestValue: number = quantity * latestStockPrice;
         const gain: number = latestValue - purchaseValue;

@@ -35,7 +35,7 @@ describe("UPDATING Operations", () => {
         await Stocks.updateStockPrice(testStockId, 20);
         await sleep(sleepDuration);
 
-        let latestStock = await Stocks.getLatestStock(testStockId);
+        let latestStock = await Stocks.get(testStockId);
         expect(latestStock?.price).toBe(20);
 
         latestStock = Stocks.getFromCache(testStockId);
@@ -52,7 +52,7 @@ describe("UPDATING Operations", () => {
         await Stocks.updateStockPrice(testStockId, 30);
         await sleep(sleepDuration);
 
-        let latestStock = await Stocks.getLatestStock(testStockId);
+        let latestStock = await Stocks.get(testStockId);
         expect(latestStock?.price).toBe(30);
 
         latestStock = Stocks.getFromCache(testStockId);
@@ -75,7 +75,7 @@ describe("UPDATING Operations", () => {
         await Stocks.updateStockPrice(testStockId, 250);
         await sleep(sleepDuration);
 
-        let latestStock = await Stocks.getLatestStock(testStockId);
+        let latestStock = await Stocks.get(testStockId);
         expect(latestStock?.price).toBe(250);
 
         latestStock = Stocks.getFromCache(testStockId);
@@ -258,7 +258,7 @@ describe("HISTORY Operations", () => {
             ]);
         });
 
-        const latestStocks = await Stocks.getLatestStocks();
+        const latestStocks = await Stocks.getAll();
         expect(latestStocks?.length).toBe(3);
 
         for (const latestStock of latestStocks) {
@@ -276,7 +276,7 @@ describe("HISTORY Operations", () => {
 
         // test cache hit
         await Stocks.refreshCache();
-        const latestStocksFromCache = await Stocks.getLatestStocks();
+        const latestStocksFromCache = await Stocks.getAll();
         expect(latestStocksFromCache?.length).toBe(3);
 
         for (const latestStock of latestStocksFromCache) {
