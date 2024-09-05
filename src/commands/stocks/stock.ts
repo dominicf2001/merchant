@@ -73,7 +73,7 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
         return;
     }
 
-    const stockHistory = await Stocks.getStockHistory(stockUser.id, interval);
+    const stockHistory = (await Stocks.getStockHistory(stockUser.id, interval)).reverse();
     const initialPrice = stockHistory.length > 0 ? stockHistory[0].price : 0;
     const priceBounds = stockHistory.reduce(
         ({ highest, lowest }, h) => {
@@ -125,12 +125,11 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
         type: "line",
         data: {
             labels: stockHistory
-                .map((h) => DateTime.fromSQL(h.created_date).toFormat(dateFormat))
-                .reverse(),
+                .map((h) => DateTime.fromSQL(h.created_date).toFormat(dateFormat)),
             datasets: [
                 {
                     label: `Stock price (${interval})`,
-                    data: stockHistory.map((h) => h.price).reverse(),
+                    data: stockHistory.map((h) => h.price),
                     fill: false,
                     borderColor: lineColor,
                     borderWidth: 4,
