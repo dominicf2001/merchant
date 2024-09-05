@@ -275,8 +275,6 @@ class Stocks extends DataStore<string, Stock> {
                 { end: date }
             );
 
-            console.log(latestStock.stock_id);
-            console.log(stockHistory);
             this.cache.set(latestStock.stock_id, stockHistory);
         }
     }

@@ -54,7 +54,7 @@ export default {
         }
 
         try {
-            const newRoleName = "color" + target.id;
+            const newRoleName = "color-" + color;
             let colorRole = (await message.guild.roles.fetch()).find(
                 (role) => role.name === newRoleName,
             );

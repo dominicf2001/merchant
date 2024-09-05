@@ -20,7 +20,7 @@ export default {
         let itemName = findTextArgs(args)[0];
 
         if (!itemName) {
-            await message.reply("Please specifiy an item.");
+            await message.reply("Please specify an item.");
             return;
         }
 
@@ -30,7 +30,13 @@ export default {
             await message.reply("You do not have this item!");
             return;
         }
-        await Items.use(itemName, message, args.slice(1));
-        await Users.addItem(message.author.id, itemName, -1);
+
+        try {
+            await Items.use(itemName, message, args.slice(1));
+            await Users.addItem(message.author.id, itemName, -1);
+        }
+        catch (error) {
+            await message.reply(error.message);
+        }
     },
 };

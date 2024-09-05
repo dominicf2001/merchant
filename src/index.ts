@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import fs from "fs";
-import { Events, EmbedBuilder } from "discord.js";
+import { Events, EmbedBuilder, PermissionFlagsBits } from "discord.js";
 import { Users, Commands, Stocks, datastores } from "./database/db-objects";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
 import {
@@ -87,7 +87,7 @@ client.on(Events.MessageCreate, async (message) => {
         const command = await Commands.get(commandName);
         if (!command) return;
 
-        if (command.is_admin && message.member.moderatable) {
+        if (command.is_admin && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
             await message.reply(
                 "You do not have permission to use this command.",
             );
@@ -166,9 +166,9 @@ let stockTicker = cron.schedule(
                     await updateStockPrices();
                     logToFile("Stock prices updated successfully.");
                     const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
-                    if (tickChannel.isTextBased()) {
-                        await tickChannel.send("Stocks ticked");
-                    }
+                    //if (tickChannel.isTextBased()) {
+                    //    await tickChannel.send("Stocks ticked");
+                    //}
                 } catch (error) {
                     logToFile(`Stock price update failed: ${error.message}`);
                     console.error(error);

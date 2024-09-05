@@ -25,7 +25,6 @@ import {
 import { DateTime } from "luxon";
 import { ChartConfiguration } from "chart.js";
 import { StockInterval } from "../../database/datastores/Stocks";
-import work from "../economy/work";
 
 const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;
@@ -214,7 +213,6 @@ async function sendStockList(
     const endIndex: number = startIndex + pageSize;
 
     const stocks = await Stocks.getLatestStocks();
-    console.log(stocks);
     const slicedStocks = stocks.slice(startIndex, endIndex);
 
     // getting the 'minute' stock history pulls from a cache

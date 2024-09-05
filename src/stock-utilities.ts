@@ -11,7 +11,6 @@ const MAX_PRICE_CHANGE_PERCENT = 0.07; // Increased to allow more short-term mov
 const SHORT_TERM_FLUCTUATION_FACTOR = 0.03; // New factor for short-term changes
 
 export async function updateStockPrices(date = DateTime.now()): Promise<void> {
-    console.log('updating stocks');
     const allStocks = await Stocks.getAll();
     await Promise.all(
         allStocks.map(async (stock) => {

@@ -1,4 +1,4 @@
-import { Message, inlineCode, EmbedBuilder } from "discord.js";
+import { Message, inlineCode, EmbedBuilder, AttachmentBuilder } from "discord.js";
 import { findTextArgs } from "../utilities";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
@@ -13,25 +13,23 @@ const data: Item = {
 export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
-        const msgToSend = findTextArgs(args).join(" ");
+        // TODO: fix attachments
+        const msgToSend = args.join(" ");
 
-        const attachmentsArray = [...message.attachments.values()];
-
-        if (!msgToSend && message.attachments.size === 0) {
-            throw new Error("You need to provide a message or an attachment.");
+        if (!msgToSend) {
+            throw new Error("You must provide a message.");
         }
 
         await message.delete();
 
-        const embed = new EmbedBuilder().setColor("Blurple").setFields({
-            name: `${msgToSend}`,
-            value: `says: <@${message.author.id}>`,
-        });
+        const embed = new EmbedBuilder()
+            .setColor("Blurple")
+            .setDescription(msgToSend)
+            .setFooter({ text: `Sent by ${message.author.tag}`, iconURL: message.author.displayAvatarURL() });
 
         await message.channel.send({
             content: "@everyone",
             embeds: [embed],
-            files: attachmentsArray,
         });
     },
 };

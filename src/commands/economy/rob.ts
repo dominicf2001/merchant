@@ -63,7 +63,7 @@ export default {
             case "tendies":
                 if (getRandomInt(1, 100) >= CURRENCY_ROB_CHANCE) {
                     const targetBalance = await Users.getBalance(target.id);
-                    const robAmount: number = Math.floor(
+                    const robAmount: number = Math.ceil(
                         targetBalance * (CURRENCY_ROB_PERCENTAGE / 100),
                     );
 
@@ -75,7 +75,7 @@ export default {
                     const authorBalance = await Users.getBalance(
                         message.author.id,
                     );
-                    const penaltyAmount: number = Math.floor(
+                    const penaltyAmount: number = Math.ceil(
                         authorBalance * (CURRENCY_FINE_PERCENTAGE / 100),
                     );
 
@@ -103,7 +103,7 @@ export default {
 
                     const item =
                         targetItems[
-                            Math.floor(Math.random() * targetItems.length)
+                        Math.floor(Math.random() * targetItems.length)
                         ];
 
                     await Users.addItem(target.id, item.item_id, -1);
