@@ -68,8 +68,8 @@ interface SimParams {
     clearCache: boolean;
 }
 
-const SIM_DATA_PATH = "./src/api/sim-data.json";
-const SIM_OUT_PATH = "./src/api/cache/";
+const SIM_DATA_PATH = "./built/api/sim-data.json";
+const SIM_OUT_PATH = "./built/api/cache/";
 
 export const api = new Koa();
 const router = new Router();
