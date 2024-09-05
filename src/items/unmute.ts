@@ -9,7 +9,7 @@ const data: Item = {
     usage: `${inlineCode("$use unmute [@user]")}`,
 };
 
-module.exports = {
+export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
         let target = message.mentions.members.first();

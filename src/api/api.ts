@@ -7,12 +7,13 @@ import { exec } from "child_process";
 import { existsSync, rmSync } from "fs";
 import { readdir, readFile, writeFile } from "fs/promises";
 import { DateTime } from "luxon";
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
 import {
     MENTIONED_ACTIVITY_VALUE,
     MESSAGE_ACTIVITY_VALUE,
     SMA_UPDATE_HOURS,
     TOKEN,
+    USER_TOKEN,
     client,
     getRandomInt,
     marketIsOpen,
@@ -67,9 +68,8 @@ interface SimParams {
     clearCache: boolean;
 }
 
-const SIM_DATA_PATH = "./built/api/sim-data.json"
-
-const SIM_OUT_PATH = "./built/api/cache/";
+const SIM_DATA_PATH = "./src/api/sim-data.json";
+const SIM_OUT_PATH = "./src/api/cache/";
 
 export const api = new Koa();
 const router = new Router();
@@ -78,7 +78,7 @@ api.use(bodyParser());
 
 async function getSimData(): Promise<SimParams | undefined> {
     if (existsSync(SIM_DATA_PATH)) {
-        return JSON.parse((await readFile(SIM_DATA_PATH, "utf8")));
+        return JSON.parse(await readFile(SIM_DATA_PATH, "utf8"));
     }
 }
 
@@ -86,15 +86,17 @@ async function getSimData(): Promise<SimParams | undefined> {
 let guilds: Guild[] = [];
 router.get("/guilds", async (ctx) => {
     if (!guilds.length) {
-        const { stdout } = await execAsync("discordchatexporter-cli guilds");
+        const { stdout } = await execAsync(
+            `discordchatexporter-cli guilds -t ${USER_TOKEN}`,
+        );
         const guildStrs = stdout.split("\n").slice(1, -1);
 
         for (const guildStr of guildStrs) {
             const splitStr = guildStr.split("|");
             guilds.push({
                 id: splitStr[0].trim(),
-                name: splitStr[1].trim()
-            })
+                name: splitStr[1].trim(),
+            });
         }
     }
 
@@ -103,6 +105,7 @@ router.get("/guilds", async (ctx) => {
 
 // gets stocks starting a startDate within specified range
 router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
+    console.log("STOCKS");
     try {
         if (!ctx.params.endDate) {
             ctx.throw("Missing end date", StatusCodes.BAD_REQUEST);
@@ -115,9 +118,9 @@ router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
         }
 
         const endDate = DateTime.fromISO(ctx.params.endDate);
-        const startDate: DateTime | null = ctx.params.startDate ?
-            DateTime.fromISO(ctx.params.startDate) :
-            null;
+        const startDate: DateTime | null = ctx.params.startDate
+            ? DateTime.fromISO(ctx.params.startDate)
+            : null;
 
         const range = ctx.params.range;
 
@@ -131,38 +134,42 @@ router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
             history: IStockEntry[];
         }
 
-        const users = await Users.getAll();
+        let users = await Users.getAll();
 
-        // TODO: implement paging
-        const stockResponses = (await Promise.all(
-            users.map(async (user) => {
-                try {
-                    const userId = user.user_id;
-                    // TODO: this is a bottleneck, need to find solution
-                    const username = (await client.users.fetch(userId)).username;
+        const stockResponses = (
+            await Promise.all(
+                users.map(async (user) => {
+                    try {
+                        const userId = user.user_id;
+                        // TODO: this is a bottleneck, need to find solution
+                        //const username = (await client.users.fetch(userId))
+                        //    .username;
 
-                    const history = (
-                        await Stocks.getStockHistory(userId, range, { end: endDate, start: startDate })
-                    ).map((entry) => {
+                        const history = (
+                            await Stocks.getStockHistory(userId, range, {
+                                end: endDate,
+                                start: startDate,
+                            })
+                        ).map((entry) => {
+                            return {
+                                value: entry.price,
+                                time: new Date(entry.created_date).getTime(),
+                            } as IStockEntry;
+                        });
+
                         return {
-                            value: entry.price,
-                            time: new Date(entry.created_date).getTime(),
-                        } as IStockEntry;
-                    });
-
-                    return {
-                        name: username,
-                        history: history,
-                    } as IStockResponse;
-                }
-                catch (error) {
-                    return {
-                        name: "",
-                        history: [],
-                    } as IStockResponse;
-                }
-            }),
-        )).filter(s => s.history.length);
+                            name: userId,
+                            history: history,
+                        } as IStockResponse;
+                    } catch (error) {
+                        return {
+                            name: "",
+                            history: [],
+                        } as IStockResponse;
+                    }
+                }),
+            )
+        ).filter((s) => s.history.length);
 
         ctx.body = stockResponses;
     } catch (error) {
@@ -172,19 +179,19 @@ router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
     }
 });
 
-// gets last simulation info
+// gets last simulation in
 router.get("/sim", async (ctx) => {
     try {
         const simData = await getSimData();
         if (!simData) {
-            ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
+            ctx.status = StatusCodes.NO_CONTENT;
             return;
         }
 
         ctx.body = simData;
     } catch (error) {
         console.error("Error when getting sim: ", error);
-        ctx.status = StatusCodes.NO_CONTENT;
+        ctx.status = StatusCodes.INTERNAL_SERVER_ERROR;
         ctx.body = error.message;
     }
 });
@@ -204,14 +211,19 @@ router.post("/sim", async (ctx) => {
 
         const simData = await getSimData();
 
-        const simParamsChanged = (start < simData.start || end > simData.end) || simData.guildID != guildID;
+        const simParamsChanged =
+            !simData ||
+            start < simData.start ||
+            end > simData.end ||
+            simData.guildID != guildID;
+
         if (reqBody.clearCache || simParamsChanged) {
             rmSync(outPath, { recursive: true, force: true });
         }
 
         if (!existsSync(outPath)) {
             console.log("Exporting...");
-            const cmd = `discordchatexporter-cli exportguild -g ${guildID} -f Json -o ${outPath}/ --after "${start}" --before "${end}" --parallel 8`;
+            const cmd = `discordchatexporter-cli exportguild -g ${guildID} -f Json -o ${outPath}/ --after "${start}" --before "${end}" --parallel 8 -t ${USER_TOKEN}`;
             const { stdout } = await execAsync(cmd);
             console.log(stdout);
         }
@@ -223,12 +235,16 @@ router.post("/sim", async (ctx) => {
                 const filePath = path.join(outPath, fileName);
                 const content = await readFile(filePath, "utf8");
                 return JSON.parse(content);
-            })
+            }),
         );
 
         const messages = channels
             .flatMap((channel) => channel.messages as Message[])
-            .sort((a, b) => DateTime.fromISO(a.timestamp).toMillis() - DateTime.fromISO(b.timestamp).toMillis());
+            .sort(
+                (a, b) =>
+                    DateTime.fromISO(a.timestamp).toMillis() -
+                    DateTime.fromISO(b.timestamp).toMillis(),
+            );
 
         console.log("Simulating...");
         const minuteIncrement = 5;
@@ -238,7 +254,10 @@ router.post("/sim", async (ctx) => {
         let nextTickDate = startDate.plus({ minutes: minuteIncrement });
         let msgIndex = 0;
         while (nextTickDate < endDate) {
-            while (messages[msgIndex] && DateTime.fromISO(messages[msgIndex].timestamp) < nextTickDate) {
+            while (
+                messages[msgIndex] &&
+                DateTime.fromISO(messages[msgIndex].timestamp) < nextTickDate
+            ) {
                 const currMsg = messages[msgIndex];
 
                 if (marketIsOpen(nextTickDate)) {
@@ -250,11 +269,14 @@ router.post("/sim", async (ctx) => {
                     }
 
                     for (const mentionedUser of currMsg.mentions) {
-                        if (mentionedUser.id !== authorId && !mentionedUser.isBot) {
+                        if (
+                            mentionedUser.id !== authorId &&
+                            !mentionedUser.isBot
+                        ) {
                             await Users.addActivity(
                                 mentionedUser.id,
                                 MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
-                                startDate
+                                startDate,
                             );
                         }
                     }
@@ -262,7 +284,7 @@ router.post("/sim", async (ctx) => {
                     await Users.addActivity(
                         authorId,
                         MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
-                        startDate
+                        startDate,
                     );
                 }
 

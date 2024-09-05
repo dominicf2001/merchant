@@ -68,7 +68,7 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
     const user = await Users.get(message.author.id);
-    if (user) {
+    if (!user) {
         await Users.set(message.author.id);
         await Stocks.updateStockPrice(message.author.id, 1);
     }
@@ -165,8 +165,7 @@ let stockTicker = cron.schedule(
                 try {
                     await updateStockPrices();
                     logToFile("Stock prices updated successfully.");
-                    const tickChannel =
-                        await client.channels.fetch(TICK_CHANNEL_ID);
+                    const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
                     if (tickChannel.isTextBased()) {
                         await tickChannel.send("Stocks ticked");
                     }

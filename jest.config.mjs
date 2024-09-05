@@ -65,7 +65,7 @@ const config = {
     // globalSetup: undefined,
 
     // A path to a module which exports an async function that is triggered once after all test suites
-    globalTeardown: "<rootDir>/built/tests/teardown.js",
+    globalTeardown: "<rootDir>/src/tests/teardown.js",
 
     // A set of global variables that need to be available in all test environments
     // globals: {},
@@ -84,7 +84,7 @@ const config = {
         // "mjs",
         // "cjs",
         // "jsx",
-        // "ts",
+        "ts"
         // "tsx",
         // "json",
         // "node",
@@ -127,7 +127,7 @@ const config = {
     // rootDir: undefined,
 
     // A list of paths to directories that Jest should use to search for files in
-    roots: ["<rootDir>/built/tests"],
+    roots: ["<rootDir>/src/tests"],
 
     // Allows you to use a custom runner instead of Jest's default test runner
     // runner: "jest-runner",

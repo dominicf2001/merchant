@@ -29,18 +29,18 @@ class Commands extends DataStore<string, Command> {
     }
 
     async refreshCache(): Promise<void> {
-        const foldersPath: string = path.join(process.cwd(), "built/commands");
+        const foldersPath: string = path.join(process.cwd(), "src/commands");
         const commandFolders: string[] = fs.readdirSync(foldersPath);
 
         for (const folder of commandFolders) {
             const commandsPath: string = path.join(foldersPath, folder);
             const commandFiles: string[] = fs
                 .readdirSync(commandsPath)
-                .filter((file) => file.endsWith(".js"));
+                .filter((file) => file.endsWith(".ts"));
             for (const file of commandFiles) {
                 const filePath: string = path.join(commandsPath, file);
                 const commandObj = (await import(filePath)).default;
-                if ("data" in commandObj && "execute" in commandObj) {
+                if (commandObj && "data" in commandObj && "execute" in commandObj) {
                     this.behaviors.set(
                         commandObj.data.command_id,
                         commandObj.execute,

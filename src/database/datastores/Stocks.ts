@@ -99,6 +99,7 @@ class Stocks extends DataStore<string, Stock> {
         // How can cache undefined???
         if (this.cache?.size) {
             for (const stockId of this.cache.keys()) {
+                console.log(stockId);
                 const stockCache = this.cache.get(stockId);
                 if (stockCache[0]) {
                     latestStocks.push(stockCache[0]);
@@ -274,7 +275,9 @@ class Stocks extends DataStore<string, Stock> {
                 { end: date }
             );
 
-            this.cache.set(latestStock["stock_id"], stockHistory);
+            console.log(latestStock.stock_id);
+            console.log(stockHistory);
+            this.cache.set(latestStock.stock_id, stockHistory);
         }
     }
 

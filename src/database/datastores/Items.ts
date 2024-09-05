@@ -29,14 +29,14 @@ class Items extends DataStore<string, Item> {
     }
 
     async refreshCache(): Promise<void> {
-        const itemsPath = path.join(process.cwd(), "built/items");
+        const itemsPath = path.join(process.cwd(), "src/items");
         const itemFiles = fs
             .readdirSync(itemsPath)
-            .filter((file) => file.endsWith(".js"));
+            .filter((file) => file.endsWith(".ts"));
         for (const file of itemFiles) {
             const filePath = path.join(itemsPath, file);
             const itemObj = (await import(filePath)).default;
-            if ("data" in itemObj && "use" in itemObj) {
+            if (itemObj && "data" in itemObj && "use" in itemObj) {
                 this.behaviors.set(itemObj.data.item_id, itemObj.use);
                 await this.set(itemObj.data.item_id, itemObj.data);
             } else {

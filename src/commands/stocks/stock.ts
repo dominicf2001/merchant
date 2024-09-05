@@ -1,4 +1,4 @@
-import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import QuickChart from "quickchart-js";
 import { Stocks } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
@@ -25,13 +25,10 @@ import {
 import { DateTime } from "luxon";
 import { ChartConfiguration } from "chart.js";
 import { StockInterval } from "../../database/datastores/Stocks";
+import work from "../economy/work";
 
 const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;
-
-const width = 3000;
-const height = 1400;
-const backgroundColour = "white";
 
 const data: Command = {
     command_id: "stock" as CommandsCommandId,
@@ -125,23 +122,21 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
             break;
     }
 
-    const chartJSNodeCanvas = new ChartJSNodeCanvas({
-        width,
-        height,
-        backgroundColour,
-    });
     const configuration: ChartConfiguration = {
         type: "line",
         data: {
-            labels: stockHistory.map((h) =>
-                DateTime.fromSQL(h.created_date).toFormat(dateFormat),
-            ),
+            labels: stockHistory
+                .map((h) => DateTime.fromSQL(h.created_date).toFormat(dateFormat))
+                .reverse(),
             datasets: [
                 {
                     label: `Stock price (${interval})`,
-                    data: stockHistory.map((h) => h.price),
+                    data: stockHistory.map((h) => h.price).reverse(),
                     fill: false,
                     borderColor: lineColor,
+                    borderWidth: 4,
+                    pointBackgroundColor: lineColor,
+                    pointRadius: 0,
                 },
             ],
         },
@@ -150,17 +145,25 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
                 x: {
                     ticks: {
                         font: {
-                            size: 33,
+                            size: 24,
                         },
+                        color: "#ffffff",
+                    },
+                    grid: {
+                        display: false,
                     },
                 },
                 y: {
-                    min: lowestPrice * 0.97,
-                    max: highestPrice * 1.03,
+                    min: lowestPrice * 0.95,
+                    max: highestPrice * 1.05,
                     ticks: {
                         font: {
-                            size: 36,
+                            size: 24,
                         },
+                        color: "#cccccc",
+                    },
+                    grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
                     },
                 },
             },
@@ -168,16 +171,25 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
                 legend: {
                     labels: {
                         font: {
-                            size: 60,
+                            size: 30,
                         },
+                        color: "#ffffff",
                     },
+                },
+            },
+            elements: {
+                line: {
+                    tension: 0.4, // smoothing
                 },
             },
         },
     };
 
-    const image = await chartJSNodeCanvas.renderToBuffer(configuration);
-    const attachment = new AttachmentBuilder(image);
+    const chart = new QuickChart();
+    chart.setConfig(configuration)
+        .setWidth(1200)
+        .setHeight(600)
+    const attachment = new AttachmentBuilder((await chart.toBinary()));
 
     const embed = new EmbedBuilder()
         .setColor("Blurple")
@@ -202,9 +214,10 @@ async function sendStockList(
     const endIndex: number = startIndex + pageSize;
 
     const stocks = await Stocks.getLatestStocks();
+    console.log(stocks);
     const slicedStocks = stocks.slice(startIndex, endIndex);
 
-    // getting the 'now' stock history pulls from a cache
+    // getting the 'minute' stock history pulls from a cache
     const histories = await Promise.all(
         stocks.map((s) => Stocks.getStockHistory(s.stock_id, "minute")),
     );

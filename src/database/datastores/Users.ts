@@ -474,7 +474,7 @@ class Users extends DataStore<string, User> {
             .execute()) as User[];
 
         results.forEach((result) => {
-            this.cache.set("user_id", result);
+            this.cache.set(result.user_id, result);
         });
     }
 
