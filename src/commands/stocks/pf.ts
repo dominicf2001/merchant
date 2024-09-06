@@ -66,11 +66,17 @@ async function sendStockList(message: Message, args: string[]): Promise<void> {
             gain < 0 ? STOCKDOWN_EMOJI_CODE : STOCKUP_EMOJI_CODE;
         const gainedOrLost: string = gain < 0 ? "lost" : "gained";
 
-        const user = await message.client.users.fetch(stock.stock_id);
+        const stockUser = await Users.get(stock.stock_id);
+        let username = stockUser.username;
+        if (!username) {
+            username = (await message.client.users.fetch(stock.stock_id)).username;
+            await Users.set(stock.stock_id, { username: username });
+        }
+
         totalValue += purchaseValue + gain;
         totalChange += gain;
         embed.addFields({
-            name: `${arrow} ${inlineCode(user.username)} ${CURRENCY_EMOJI_CODE} ${formatNumber(gain)} ${gainedOrLost} all time`,
+            name: `${arrow} ${inlineCode(username)} ${CURRENCY_EMOJI_CODE} ${formatNumber(gain)} ${gainedOrLost} all time`,
             value: `Total shares: :receipt: ${formatNumber(quantity)}\nTotal invested: ${CURRENCY_EMOJI_CODE} ${formatNumber(purchaseValue)}`,
         });
     }

@@ -15,6 +15,7 @@ import { Items } from "./Items";
 import { Stocks } from "./Stocks";
 import { Commands } from "./Commands";
 import { Collection } from "discord.js";
+import { client } from "src/utilities";
 
 class Users extends DataStore<string, User> {
     constructor(db: Kysely<Database>) {
@@ -29,6 +30,16 @@ class Users extends DataStore<string, User> {
             "user_id": user_id as UsersUserId,
             ...data,
         } as User;
+
+        if (!this.cache.has(user_id)) {
+            try {
+                newUser.username = (await client.users.fetch(user_id)).username;
+            }
+            catch (error) {
+                console.error(error);
+                return;
+            }
+        }
 
         try {
             const result = (await this.db

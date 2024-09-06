@@ -37,6 +37,7 @@ const db = new Kysely<Database>({
         await db.schema
             .createTable("users")
             .addColumn("user_id", "varchar(30)", (col) => col.notNull())
+            .addColumn("username", "varchar(255)", (col) => col.notNull().unique())
             .addColumn("balance", "integer", (col) =>
                 col
                     .notNull()

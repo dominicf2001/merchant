@@ -1,5 +1,5 @@
 import QuickChart from "quickchart-js";
-import { Stocks } from "../../database/db-objects";
+import { Stocks, Users } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     STOCKDOWN_EMOJI_CODE,
@@ -236,8 +236,12 @@ async function sendStockList(
         const currentPrice = stock.price;
 
         try {
-            const username = (await message.client.users.fetch(stock.stock_id))
-                .username;
+            const stockUser = await Users.get(stock.stock_id);
+            let username = stockUser.username;
+            if (!username) {
+                username = (await message.client.users.fetch(stock.stock_id)).username;
+                await Users.set(stock.stock_id, { username: username });
+            }
             const arrow =
                 currentPrice - previousPrice < 0
                     ? STOCKDOWN_EMOJI_CODE

@@ -67,10 +67,13 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    const user = await Users.get(message.author.id);
-    if (!user) {
+    // this needs to come before stocks exists 
+    if (!Users.exists(message.author.id)) {
         await Users.set(message.author.id);
-        await Stocks.updateStockPrice(message.author.id, 1);
+    }
+
+    if (!Stocks.exists(message.author.id)) {
+        await Stocks.set(message.author.id);
     }
 
     const prefix: string = "$";

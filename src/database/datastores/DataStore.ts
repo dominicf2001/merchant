@@ -139,6 +139,10 @@ export abstract class DataStore<K, Data> {
             .execute();
     }
 
+    exists(id: K): boolean {
+        return Array.from(this.cache.keys()).includes(id);
+    }
+
     abstract refreshCache(...args: any): Promise<void>;
     abstract getFromCache(id: K): Data | undefined;
     abstract setInCache(id: K, data: Partial<Data>): void;

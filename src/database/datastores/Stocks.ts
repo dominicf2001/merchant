@@ -28,11 +28,6 @@ class Stocks extends DataStore<string, Stock> {
         stock_id: string,
         data: Insertable<Stock> | Updateable<Stock> = {},
     ): Promise<void> {
-        // create the user associated with this stock if they dont exist
-        if (!Users.getFromCache(stock_id)) {
-            await Users.set(stock_id);
-        }
-
         const newData: Stock = {
             stock_id: stock_id as UsersUserId,
             ...data,
