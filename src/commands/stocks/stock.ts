@@ -235,24 +235,21 @@ async function sendStockList(
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
 
-        let username: string | null;
         try {
-            username = (await message.client.users.fetch(stock.stock_id))
+            const username = (await message.client.users.fetch(stock.stock_id))
                 .username;
+            const arrow =
+                currentPrice - previousPrice < 0
+                    ? STOCKDOWN_EMOJI_CODE
+                    : STOCKUP_EMOJI_CODE;
+
+            paginatedMenu.addFields({
+                name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
+                value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`,
+            });
         }
         catch {
-            continue;
         }
-
-        const arrow =
-            currentPrice - previousPrice < 0
-                ? STOCKDOWN_EMOJI_CODE
-                : STOCKUP_EMOJI_CODE;
-
-        paginatedMenu.addFields({
-            name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
-            value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`,
-        });
         ++i;
     }
 
