@@ -38,13 +38,8 @@ export default {
         let i = 1;
         for (const userAndNetworth of topUsers) {
             const { user, netWorth } = userAndNetworth;
-            let username = user.username;
-            if (!username) {
-                username = (await message.client.users.fetch(user.user_id)).username;
-                await Users.set(user.user_id, { username: username });
-            }
             embed.addFields({
-                name: `${i++}. ${inlineCode(username)}`,
+                name: `${i++}. ${inlineCode(user.username)}`,
                 value: `${CURRENCY_EMOJI_CODE} ${formatNumber(netWorth)}`,
             });
         }

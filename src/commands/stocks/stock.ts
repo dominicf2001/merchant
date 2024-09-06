@@ -237,18 +237,13 @@ async function sendStockList(
 
         try {
             const stockUser = await Users.get(stock.stock_id);
-            let username = stockUser.username;
-            if (!username) {
-                username = (await message.client.users.fetch(stock.stock_id)).username;
-                await Users.set(stock.stock_id, { username: username });
-            }
             const arrow =
                 currentPrice - previousPrice < 0
                     ? STOCKDOWN_EMOJI_CODE
                     : STOCKUP_EMOJI_CODE;
 
             paginatedMenu.addFields({
-                name: `${arrow} ${inlineCode(username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
+                name: `${arrow} ${inlineCode(stockUser.username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
                 value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`,
             });
         }
