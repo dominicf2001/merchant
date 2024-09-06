@@ -234,8 +234,15 @@ async function sendStockList(
     for (const stock of slicedStocks) {
         const previousPrice = histories[i][1]?.price ?? 0;
         const currentPrice = stock.price;
-        const username = (await message.client.users.fetch(stock.stock_id))
-            .username;
+
+        let username: string | null;
+        try {
+            username = (await message.client.users.fetch(stock.stock_id))
+                .username;
+        }
+        catch {
+            continue;
+        }
 
         const arrow =
             currentPrice - previousPrice < 0
