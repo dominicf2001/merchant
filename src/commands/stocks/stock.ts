@@ -232,24 +232,18 @@ async function sendStockList(
 
     let i = 0;
     for (const stock of slicedStocks) {
-        const previousPrice = histories[i][1]?.price ?? 0;
+        const previousPrice = histories[i++][1]?.price ?? 0;
         const currentPrice = stock.price;
+        const stockUser = await Users.get(stock.stock_id);
+        const arrow =
+            currentPrice - previousPrice < 0
+                ? STOCKDOWN_EMOJI_CODE
+                : STOCKUP_EMOJI_CODE;
 
-        try {
-            const stockUser = await Users.get(stock.stock_id);
-            const arrow =
-                currentPrice - previousPrice < 0
-                    ? STOCKDOWN_EMOJI_CODE
-                    : STOCKUP_EMOJI_CODE;
-
-            paginatedMenu.addFields({
-                name: `${arrow} ${inlineCode(stockUser.username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
-                value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`,
-            });
-        }
-        catch {
-        }
-        ++i;
+        paginatedMenu.addFields({
+            name: `${arrow} ${inlineCode(stockUser.username)} - ${CURRENCY_EMOJI_CODE} ${formatNumber(stock.price)}`,
+            value: `${"Previous tick:"} ${CURRENCY_EMOJI_CODE} ${formatNumber(previousPrice)}`,
+        });
     }
 
     const embed = paginatedMenu.createEmbed();
