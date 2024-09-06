@@ -87,6 +87,11 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         ? 99999
         : +findNumericArgs(args)[0] || 1;
 
+    if (true){	
+        await message.reply(`Buying items is currently disabled. The economy must stabilize first.`);
+        return;
+    }
+
     if (!itemName) {
         throw new Error(`Please specify an item or stock.`);
     }
