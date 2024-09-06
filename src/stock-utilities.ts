@@ -65,8 +65,8 @@ export async function updateStockPrices(date = DateTime.now()): Promise<void> {
             await Users.setActivity(stock.stock_id, {
                 last_activity_date: date.toUTC().toSQL(),
                 activity_points_short: decayedShortActivity,
-                activity_points_short_ema: EMA,
-                activity_points_short_emsd: EMSD,
+                activity_points_short_ema: EMA < 0 ? 0 : EMA,
+                activity_points_short_emsd: EMSD < 0 ? 0 : EMSD,
             });
         }),
     );
