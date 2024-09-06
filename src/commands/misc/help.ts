@@ -66,7 +66,7 @@ export default {
                 return;
             }
 
-            await message.reply("This item or command does not exist.");
+            throw new Error("This item or command does not exist.");
         } else {
             const pageNum = +findNumericArgs(args)[0] || 1;
             await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);

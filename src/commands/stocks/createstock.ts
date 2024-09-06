@@ -19,14 +19,12 @@ export default {
     async execute(message: Message, args: string[]): Promise<void> {
         const stockUser = message.mentions.members.first();
         if (!stockUser) {
-            await message.reply("Please specify a user.");
-            return;
+            throw new Error("Please specify a user.");
         }
 
         const stock = await Stocks.get(stockUser.id);
         if (stock) {
-            await message.reply("This stock already exists!");
-            return;
+            throw new Error("This stock already exists!");
         } else {
             await Stocks.updateStockPrice(stockUser.id, 1);
             const embed = new EmbedBuilder().setColor("Blurple").setFields({

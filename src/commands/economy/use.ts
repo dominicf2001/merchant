@@ -20,15 +20,13 @@ export default {
         let itemName = findTextArgs(args)[0];
 
         if (!itemName) {
-            await message.reply("Please specify an item.");
-            return;
+            throw new Error("Please specify an item.");
         }
 
         const item = await Users.getItem(message.author.id, itemName);
 
         if (!item) {
-            await message.reply("You do not have this item!");
-            return;
+            throw new Error("You do not have this item!");
         }
 
         try {

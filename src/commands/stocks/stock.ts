@@ -63,14 +63,12 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
     );
 
     if (!interval) {
-        await message.reply("Invalid interval.");
-        return;
+        throw new Error("Invalid interval.");
     }
 
     const latestStock = await Stocks.get(stockUser.id);
     if (!latestStock) {
-        await message.reply("This stock does not exist.");
-        return;
+        throw new Error("This stock does not exist.");
     }
 
     const stockHistory = (await Stocks.getStockHistory(stockUser.id, interval)).reverse();

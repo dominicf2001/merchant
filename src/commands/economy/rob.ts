@@ -9,7 +9,6 @@ import {
     ITEM_FINE_PERCENTAGE,
     CURRENCY_FINE_PERCENTAGE,
     findTextArgs,
-    getRandomFloat,
     getRandomInt,
 } from "../../utilities";
 import {
@@ -31,7 +30,7 @@ const data: Command = {
     command_id: "rob" as CommandsCommandId,
     description: `Rob user of tendies or a random item with a chance of failure + fine`,
     usage: `${inlineCode("$rob [@user] [tendies/item]")}`,
-    cooldown_time: 5000,
+    cooldown_time: 1800000,
     is_admin: false,
 };
 
@@ -44,18 +43,15 @@ export default {
         // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
 
         if (!target) {
-            await message.reply("Please specify a target.");
-            return;
+            throw new Error("Please specify a target.");
         }
 
         if (target.id === message.author.id) {
-            await message.reply("You cannot rob yourself.");
-            return;
+            throw new Error("You cannot rob yourself.");
         }
 
         if (!isValidRobType(robType)) {
-            await message.reply("Invalid rob type.");
-            return;
+            throw new Error("Invalid rob type.");
         }
         let reply = "";
 
@@ -92,13 +88,11 @@ export default {
                     );
 
                     if (authorItemCount >= MAX_INV_SIZE) {
-                        await message.reply("Your inventory is full.");
-                        return;
+                        throw new Error("Your inventory is full.");
                     }
 
                     if (!targetItems.length) {
-                        await message.reply("This user has no items.");
-                        return;
+                        throw new Error("This user has no items.");
                     }
 
                     const item =

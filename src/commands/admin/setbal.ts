@@ -21,13 +21,11 @@ export default {
         const target = message.mentions.users.first() ?? message.author;
 
         if (!newBalance === undefined) {
-            await message.reply("You must specify a balance.");
-            return;
+            throw new Error("You must specify a balance.");
         }
 
         if (!target) {
-            await message.reply("You must specify a target.");
-            return;
+            throw new Error("You must specify a target.");
         }
 
         await Users.setBalance(target.id, newBalance);

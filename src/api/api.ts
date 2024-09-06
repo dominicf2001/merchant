@@ -275,7 +275,7 @@ router.post("/sim", async (ctx) => {
                         ) {
                             await Users.addActivity(
                                 mentionedUser.id,
-                                MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
+                                MENTIONED_ACTIVITY_VALUE * getRandomInt(1, 2),
                                 startDate,
                             );
                         }
@@ -283,7 +283,7 @@ router.post("/sim", async (ctx) => {
 
                     await Users.addActivity(
                         authorId,
-                        MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
+                        MESSAGE_ACTIVITY_VALUE * getRandomInt(1, 2),
                         startDate,
                     );
                 }

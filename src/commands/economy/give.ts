@@ -24,28 +24,24 @@ export default {
         const target = message.mentions.users.first();
 
         if (!target) {
-            await message.reply("Please specify a target.");
-            return;
+            throw new Error("Please specify a target.");
         }
 
         let authorBalance: number = await Users.getBalance(message.author.id);
         const transferAmount: number = +findNumericArgs(args)[0];
 
         if (!transferAmount || transferAmount <= 0) {
-            await message.reply(`Specify more than zero tendies.`);
-            return;
+            throw new Error(`Specify more than zero tendies.`);
         }
 
         if (!Number.isInteger(transferAmount)) {
-            await message.reply(`You can only give a whole number of tendies.`);
-            return;
+            throw new Error(`You can only give a whole number of tendies.`);
         }
 
         if (transferAmount > authorBalance) {
-            await message.reply(
+            throw new Error(
                 `You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`,
             );
-            return;
         }
 
         await Users.addBalance(message.author.id, -transferAmount);

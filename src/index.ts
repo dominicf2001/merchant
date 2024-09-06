@@ -35,7 +35,7 @@ client.on(Events.InviteCreate, async (invite) => {
     if (marketIsOpen()) {
         await Users.addActivity(
             invite.inviterId,
-            INVITE_ACTIVITY_VALUE * getRandomInt(2, 4),
+            INVITE_ACTIVITY_VALUE * getRandomInt(1, 2),
         );
     }
 });
@@ -46,7 +46,7 @@ client.on(Events.MessageReactionAdd, async (_, user) => {
     if (marketIsOpen()) {
         await Users.addActivity(
             user.id,
-            REACTION_ACTIVITY_VALUE * getRandomInt(2, 4),
+            REACTION_ACTIVITY_VALUE * getRandomInt(1, 2),
         );
     }
 });
@@ -58,7 +58,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     if (marketIsOpen()) {
         await Users.addActivity(
             newState.member.user.id,
-            VOICE_ACTIVITY_VALUE * getRandomInt(2, 4),
+            VOICE_ACTIVITY_VALUE * getRandomInt(1, 2),
         );
     }
 });
@@ -118,11 +118,7 @@ client.on(Events.MessageCreate, async (message) => {
             }
         } catch (error) {
             console.error(error);
-            const embed = new EmbedBuilder().setColor("Yellow").setFields({
-                name: `An error occurred when executing ${command.command_id}. Please try again later.`,
-                value: ` `,
-            });
-            await message.reply({ embeds: [embed] });
+            await message.reply(error.message);
         }
     } else {
         // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
@@ -132,13 +128,13 @@ client.on(Events.MessageCreate, async (message) => {
                 if (user.id != message.author.id && !user.bot) {
                     await Users.addActivity(
                         user.id,
-                        MENTIONED_ACTIVITY_VALUE * getRandomInt(2, 4),
+                        MENTIONED_ACTIVITY_VALUE * getRandomInt(1, 2),
                     );
                 }
             });
             await Users.addActivity(
                 message.author.id,
-                MESSAGE_ACTIVITY_VALUE * getRandomInt(2, 4),
+                MESSAGE_ACTIVITY_VALUE * getRandomInt(1, 2),
             );
         }
     }

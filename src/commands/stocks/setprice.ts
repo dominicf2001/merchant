@@ -21,8 +21,7 @@ export default {
         const newPrice: number = +findNumericArgs(args);
 
         if (!newPrice) {
-            await message.reply("Please specify a price.");
-            return;
+            throw new Error("Please specify a price.");
         }
 
         await Stocks.updateStockPrice(stockUser.id, newPrice);

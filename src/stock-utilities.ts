@@ -1,12 +1,19 @@
 import { Users, Stocks } from "./database/db-objects";
 import { UserActivities as UserActivity } from "./database/schemas/public/UserActivities";
 import { DateTime } from "luxon";
+import { getRandomFloat, getRandomInt } from "./utilities";
 
+interface RunInstance {
+    end: DateTime,
+    multiplier: number
+}
 
-const ACTIVITY_DECAY_FACTOR = 0.98;
-const PRICE_MOMENTUM_FACTOR = 0.8;
-const VOLATILITY_DAMPENING = 0.4;
-const MAX_PRICE_CHANGE_PERCENT = 0.07;
+const runMap = new Map<string, RunInstance>();
+
+const ACTIVITY_DECAY_FACTOR = 0.8;
+const PRICE_MOMENTUM_FACTOR = 0.95;
+const VOLATILITY_DAMPENING = 0.5;
+const MAX_PRICE_CHANGE_PERCENT = 0.05;
 const SHORT_TERM_FLUCTUATION_FACTOR = 0.03;
 
 export async function updateStockPrices(date = DateTime.now()): Promise<void> {
@@ -19,23 +26,42 @@ export async function updateStockPrices(date = DateTime.now()): Promise<void> {
             const SMA = activity.activity_points_long_sma;
 
             const previousPrice = stock.price;
-            const newPrice = calculateStockPrice(EMA, EMSD, SMA, previousPrice);
+            let newPrice = calculateStockPrice(EMA, EMSD, SMA, previousPrice);
 
             // Apply short-term fluctuation
             const fluctuation = (Math.random() - 0.5) * 2 * SHORT_TERM_FLUCTUATION_FACTOR * previousPrice;
-            let fluctuatedPrice = newPrice + fluctuation;
+            newPrice = newPrice + fluctuation;
 
             // Limit the maximum price change
             const maxChange = previousPrice * MAX_PRICE_CHANGE_PERCENT;
-            const limitedNewPrice = Math.max(
-                Math.min(fluctuatedPrice, previousPrice + maxChange),
+            newPrice = Math.max(
+                Math.min(newPrice, previousPrice + maxChange),
                 previousPrice - maxChange
             );
 
-            await Stocks.updateStockPrice(stock.stock_id, Math.ceil(Math.round(limitedNewPrice * 100) / 100), date);
+            // Apply short-term bull/bear runs
+            if (runMap.has(stock.stock_id)) {
+                const runInstance = runMap.get(stock.stock_id);
+                if (DateTime.now() > runInstance.end) {
+                    runMap.delete(stock.stock_id);
+                }
+                else {
+                    const change = (runInstance.multiplier * newPrice) * (Math.random() - 0.5) * 2;
+                    newPrice = newPrice + change;
+                }
+            }
+            else {
+                if (Math.random() > .97) {
+                    runMap.set(stock.stock_id, {
+                        end: DateTime.now().plus({ minutes: getRandomInt(10, 60) }),
+                        multiplier: getRandomFloat(.02, .1) * (Math.random() - 0.5)
+                    });
+                }
+            }
+
+            await Stocks.updateStockPrice(stock.stock_id, Math.ceil(Math.round(newPrice * 100) / 100), date);
 
             const decayedShortActivity = Math.floor(activity.activity_points_short * ACTIVITY_DECAY_FACTOR);
-
             await Users.setActivity(stock.stock_id, {
                 last_activity_date: date.toUTC().toSQL(),
                 activity_points_short: decayedShortActivity,
@@ -49,7 +75,7 @@ export async function updateStockPrices(date = DateTime.now()): Promise<void> {
 function calculateStockPrice(EMA: number, EMSD: number, SMA: number, previousPrice: number): number {
     const EMA_WEIGHT = 0.25;
     const EMSD_WEIGHT = 0.15;
-    const SMA_WEIGHT = 2.2;
+    const SMA_WEIGHT = 2.6;
     const RANDOMNESS_FACTOR = 1.5;
 
     const randomAdjustment = (Math.random() - 0.5) * RANDOMNESS_FACTOR;
@@ -90,7 +116,7 @@ export async function updateSMAS(today = DateTime.now()): Promise<void> {
     await Promise.all(
         allStocks.map(async (stock) => {
             const activity = await Users.getActivity(stock.stock_id);
-            const maxIntervals = 10 * 3; // Reduced to 10 days for slightly more responsiveness
+            const maxIntervals = 10 * 3;
             const startDate = DateTime.fromSQL(activity.first_activity_date);
             const oldSMA = activity.activity_points_long_sma;
             const activityPoints = activity.activity_points_long;

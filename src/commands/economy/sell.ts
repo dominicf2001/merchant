@@ -39,30 +39,25 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
     const latestStock = await Stocks.get(stockUser.id);
 
     if (!latestStock) {
-        await message.reply(`That stock does not exist.`);
-        return;
+        throw new Error(`That stock does not exist.`);
     }
 
     if (message.author.id === stockUser.id) {
-        await message.reply(`You cannot own your own stock.`);
-        return;
+        throw new Error(`You cannot own your own stock.`);
     }
 
     if (!Number.isInteger(quantity)) {
-        await message.reply(`You can only sell a whole number of shares.`);
-        return;
+        throw new Error(`You can only sell a whole number of shares.`);
     }
 
     if (quantity <= 0) {
-        await message.reply(`You can only sell one or more shares.`);
-        return;
+        throw new Error(`You can only sell one or more shares.`);
     }
 
     let userStocks = await Users.getUserStocks(message.author.id, stockUser.id);
 
     if (!userStocks.length) {
-        await message.reply(`You do not own any shares of this stock.`);
-        return;
+        throw new Error(`You do not own any shares of this stock.`);
     }
     const totalSold: number = -(await Users.addStock(
         message.author.id,
@@ -93,32 +88,27 @@ async function sellItem(message: Message, args: string[]): Promise<void> {
         : +findNumericArgs(args)[0] || 1;
 
     if (!itemName) {
-        await message.reply(`Please specify an item or stock.`);
-        return;
+        throw new Error(`Please specify an item or stock.`);
     }
 
     const item = await Items.get(itemName);
 
     if (!item) {
-        await message.reply(`That item does not exist.`);
-        return;
+        throw new Error(`That item does not exist.`);
     }
 
     if (!Number.isInteger(quantity)) {
-        await message.reply(`You can only sell a whole number of items.`);
-        return;
+        throw new Error(`You can only sell a whole number of items.`);
     }
 
     if (quantity <= 0) {
-        await message.reply(`You can only sell one or more items.`);
-        return;
+        throw new Error(`You can only sell one or more items.`);
     }
 
     const userItem = await Users.getItem(message.author.id, itemName);
 
     if (!userItem) {
-        await message.reply(`You do not have this item.`);
-        return;
+        throw new Error(`You do not have this item.`);
     }
 
     const totalSold: number = -(await Users.addItem(

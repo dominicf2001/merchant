@@ -38,25 +38,21 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
         : +findNumericArgs(args)[0] || 1;
 
     if (!Number.isInteger(quantity)) {
-        await message.reply(`You can only purchase a whole number of shares.`);
-        return;
+        throw new Error(`You can only purchase a whole number of shares.`);
     }
 
     if (quantity <= 0) {
-        await message.reply(`You can only purchase one or more shares.`);
-        return;
+        throw new Error(`You can only purchase one or more shares.`);
     }
 
     if (message.author.id === stockUser.id) {
-        await message.reply(`You cannot own your own stock.`);
-        return;
+        throw new Error(`You cannot own your own stock.`);
     }
 
     const latestStock = await Stocks.get(stockUser.id);
 
     if (!latestStock) {
-        await message.reply(`That stock does not exist.`);
-        return;
+        throw new Error(`That stock does not exist.`);
     }
 
     const authorBalance: number = await Users.getBalance(message.author.id);
@@ -92,35 +88,30 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         : +findNumericArgs(args)[0] || 1;
 
     if (!itemName) {
-        await message.reply(`Please specify an item or stock.`);
-        return;
+        throw new Error(`Please specify an item or stock.`);
     }
 
     const item = await Items.get(itemName);
 
     if (!item) {
-        await message.reply(`That item doesn't exist.`);
-        return;
+        throw new Error(`That item doesn't exist.`);
     }
 
     if (!Number.isInteger(quantity)) {
-        await message.reply(`You can only purchase a whole number of items.`);
-        return;
+        throw new Error(`You can only purchase a whole number of items.`);
     }
 
     if (quantity <= 0) {
-        await message.reply(`You can only purchase one or more items.`);
-        return;
+        throw new Error(`You can only purchase one or more items.`);
     }
 
     const itemCount: number = await Users.getItemCount(message.author.id);
     const freeInventorySpace = MAX_INV_SIZE - itemCount;
 
     if (freeInventorySpace <= 0) {
-        await message.reply(
+        throw new Error(
             `You can only store ${MAX_INV_SIZE} items at a time.`,
         );
-        return;
     }
     // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
     // buy as many as possible
@@ -134,8 +125,7 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         totalBought > freeInventorySpace ? freeInventorySpace : totalBought;
 
     if (!totalBought) {
-        await message.reply(`You are too poor to purchase this item.`);
-        return;
+        throw new Error(`You are too poor to purchase this item.`);
     }
 
     const totalCost: number = item.price * totalBought;

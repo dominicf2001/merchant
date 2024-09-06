@@ -4,7 +4,7 @@ import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 import { Users } from "../database/db-objects";
 const data: Item = {
     item_id: "nametag" as ItemsItemId,
-    price: 2000,
+    price: 150000,
     emoji_code: ":label:",
     description: "Sets any user's nickname",
     usage: `${inlineCode("$use nametag [@user]")}`,
