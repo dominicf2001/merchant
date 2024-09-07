@@ -62,7 +62,7 @@ class Commands extends DataStore<string, Command> {
 }
 
 class CommandsFactory extends DataStoreFactory<Commands> {
-    protected constructDataStore(guildID: string): Commands {
+    protected construct(guildID: string): Commands {
         return new Commands(db, guildID);
     }
 }

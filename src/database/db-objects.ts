@@ -4,6 +4,8 @@ import { CommandsFactory } from "./datastores/Commands";
 import { StocksFactory } from "./datastores/Stocks";
 import { db } from "./datastores/DataStore";
 
+export { UsersFactory, ItemsFactory, StocksFactory, CommandsFactory, db };
+
 export function getDatastores(guildId: string) {
     return {
         Users: UsersFactory.get(guildId),
@@ -12,5 +14,3 @@ export function getDatastores(guildId: string) {
         Commands: CommandsFactory.get(guildId),
     };
 }
-
-export { UsersFactory, ItemsFactory, StocksFactory, CommandsFactory, db };

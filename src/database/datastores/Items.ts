@@ -54,7 +54,7 @@ class Items extends DataStore<string, Item> {
 }
 
 class ItemsFactory extends DataStoreFactory<Items> {
-    protected constructDataStore(guildID: string): Items {
+    protected construct(guildID: string): Items {
         return new Items(db, guildID);
     }
 }

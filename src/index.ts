@@ -246,5 +246,3 @@ let dailyCleanup = cron.schedule(
 stockTicker.start();
 smaUpdater.start();
 dailyCleanup.start();
-
-client.login(TOKEN);

@@ -1,5 +1,5 @@
 import { DataStore, DataStoreFactory, db } from "./DataStore";
-import { UsersUserId } from "../schemas/public/Users";
+import { UsersGuildId, UsersUserId } from "../schemas/public/Users";
 import { Stocks as Stock, StocksCreatedDate } from "../schemas/public/Stocks";
 import { DateTime } from "luxon";
 import { Kysely, Updateable, Insertable, sql } from "kysely";
@@ -29,6 +29,7 @@ class Stocks extends DataStore<string, Stock> {
     ): Promise<void> {
         const newData: Stock = {
             stock_id: stock_id as UsersUserId,
+            guild_id: this.guildID as UsersGuildId,
             ...data,
         } as Stock;
 
@@ -38,7 +39,7 @@ class Stocks extends DataStore<string, Stock> {
             .returningAll()
             .onConflict((oc) =>
                 oc
-                    .columns(["stock_id", "created_date"])
+                    .columns(["stock_id", "guild_id", "created_date"])
                     .doUpdateSet(newData),
             )
             .executeTakeFirstOrThrow()) as Stock;
@@ -74,6 +75,7 @@ class Stocks extends DataStore<string, Stock> {
             .selectFrom("stocks")
             .selectAll()
             .where("stock_id", "=", stock_id as UsersUserId)
+            .where("guild_id", "=", this.guildID as UsersGuildId)
             .orderBy("created_date desc")
             .limit(1)
             .executeTakeFirst()) as Stock;
@@ -84,6 +86,7 @@ class Stocks extends DataStore<string, Stock> {
             .selectFrom("user_stocks")
             .select((eb) => eb.fn.sum("quantity").as("total_shares_purchased"))
             .where("stock_id", "=", stock_id as UsersUserId)
+            .where("guild_id", "=", this.guildID as UsersGuildId)
             .executeTakeFirst();
 
         return Number(result.total_shares_purchased) ?? 0;
@@ -106,6 +109,7 @@ class Stocks extends DataStore<string, Stock> {
                                         .max("created_date")
                                         .as("max_created_date"),
                             ])
+                            .where("guild_id", "=", this.guildID as UsersGuildId)
                             .groupBy("stock_id")
                             .as("s2"),
                     (join) =>
@@ -118,6 +122,7 @@ class Stocks extends DataStore<string, Stock> {
                             ),
                 )
                 .orderBy("s1.created_date", "desc")
+                .where("guild_id", "=", this.guildID as UsersGuildId)
                 .execute();
         } catch (error) {
             console.error("Error getting latest stocks: ", error);
@@ -184,6 +189,7 @@ class Stocks extends DataStore<string, Stock> {
                                 )
 
                         ])
+                        .where("guild_id", "=", this.guildID as UsersGuildId)
                         .groupBy("created_interval")
                         .groupBy("stock_id")
                         .as("s2"),
@@ -194,6 +200,7 @@ class Stocks extends DataStore<string, Stock> {
             )
             .selectAll()
             .where("s1.stock_id", "=", stock_id as UsersUserId)
+            .where("guild_id", "=", this.guildID as UsersGuildId)
             .where(
                 "s1.created_date",
                 ">=",
@@ -217,6 +224,7 @@ class Stocks extends DataStore<string, Stock> {
         await this.db
             .deleteFrom("stocks")
             .where("stock_id", "=", stock_id as UsersUserId)
+            .where("guild_id", "=", this.guildID as UsersGuildId)
             .execute();
     }
 
@@ -235,10 +243,12 @@ class Stocks extends DataStore<string, Stock> {
                                 "created_day",
                             ),
                     ])
+                    .where("guild_id", "=", this.guildID as UsersGuildId)
                     .groupBy("created_day")
                     .groupBy("stock_id")
                     .as("s2"),
             )
+            .where("guild_id", "=", this.guildID as UsersGuildId)
             .whereRef("s1.stock_id", "=", "s2.stock_id")
             .whereRef("s1.created_date", "<", "s2.max_created_date")
             .execute();
@@ -271,7 +281,7 @@ class Stocks extends DataStore<string, Stock> {
 }
 
 class StocksFactory extends DataStoreFactory<Stocks> {
-    protected constructDataStore(guildID: string): Stocks {
+    protected construct(guildID: string): Stocks {
         return new Stocks(db, guildID);
     }
 }
