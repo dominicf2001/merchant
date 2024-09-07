@@ -1,12 +1,10 @@
 import { DateTime } from "luxon";
-import { UsersFactory, ItemsFactory, StocksFactory } from "../database/db-objects";
+import { getDatastores } from "../database/db-objects";
 import { sleep } from "../utilities";
 
 const guildId = "1234";
 
-const Users = UsersFactory.get(guildId);
-const Stocks = StocksFactory.get(guildId);
-const Items = ItemsFactory.get(guildId);
+const { Users, Stocks, Items } = getDatastores(guildId);
 
 const sleepDuration: number = 80;
 
@@ -14,6 +12,10 @@ describe("BALANCE, ACTIVITY_POINTS, ARMOR Operations", () => {
     const userId = "123";
 
     beforeAll(async () => {
+        for (const ds of Object.values(getDatastores(guildId))) {
+            ds.isTesting = true;
+        }
+
         await Users.delete(userId);
         await sleep(sleepDuration);
     });

@@ -169,6 +169,7 @@ export abstract class DataStore<K, Data> {
     protected tableName: TableName;
     protected tableID: TableID;
     protected guildID: string;
+    isTesting: boolean;
 }
 
 export abstract class DataStoreFactory<DS> {

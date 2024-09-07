@@ -32,6 +32,10 @@ class Users extends DataStore<string, User> {
             ...data,
         } as User;
 
+        if (this.isTesting) {
+            newUser.username = user_id;
+        }
+
         if (!this.cache.has(user_id) && (newUser.username === undefined)) {
             try {
                 newUser.username = (await client.users.fetch(user_id)).username;

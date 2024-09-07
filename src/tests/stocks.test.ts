@@ -1,13 +1,12 @@
 import { sleep } from "../utilities";
-import { StocksFactory, UsersFactory, db } from "../database/db-objects";
+import { StocksFactory, UsersFactory, db, getDatastores } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";
 
 const guildId = "4321";
 
-const Users = UsersFactory.get(guildId);
-const Stocks = StocksFactory.get(guildId);
+const { Users, Stocks } = getDatastores(guildId);
 
 const sleepDuration: number = 80;
 
@@ -16,6 +15,10 @@ describe("UPDATING Operations", () => {
     const testUserId = testStockId;
 
     beforeAll(async () => {
+        for (const ds of Object.values(getDatastores(guildId))) {
+            ds.isTesting = true;
+        }
+
         await Users.delete(testUserId);
         await sleep(sleepDuration);
 
