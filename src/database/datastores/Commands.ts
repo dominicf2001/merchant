@@ -1,4 +1,4 @@
-import { DataStore, db, BehaviorFunction } from "./DataStore";
+import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Kysely } from "kysely";
 import { Commands as Command } from "../schemas/public/Commands";
 import { Collection, Message } from "discord.js";
@@ -61,5 +61,11 @@ class Commands extends DataStore<string, Command> {
     protected cache = new Collection<string, Command>;
 }
 
-const commands = new Commands(db);
-export { commands as Commands };
+class CommandsFactory extends DataStoreFactory<Commands> {
+    protected constructDataStore(guildID: string): Commands {
+        return new Commands(db, guildID);
+    }
+}
+
+const commandsFactory = new CommandsFactory(db);
+export { commandsFactory as CommandsFactory };

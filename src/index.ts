@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import fs from "fs";
 import { Events, PermissionFlagsBits } from "discord.js";
-import { UsersFactory, Commands, Stocks, datastores } from "./database/db-objects";
+import { getDatastores } from "./database/db-objects";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
 import {
     secondsToHms,
@@ -23,15 +23,19 @@ import {
 import { DateTime } from "luxon";
 
 client.once(Events.ClientReady, async () => {
-    for (const ds of datastores) {
-        await ds.refreshCache();
+    const guilds = client.guilds.cache;
+    for (const guild of guilds.values()) {
+        const datastores = Object.values(getDatastores(guild.id));
+        for (const ds of datastores) {
+            await ds.refreshCache();
+        }
     }
     console.log("Bot ready as " + client.user.tag);
 });
 
 client.on(Events.InviteCreate, async (invite) => {
     if (invite.inviter.bot) return;
-    const Users = UsersFactory.get(invite.guild.id);
+    const { Users } = getDatastores(invite.guild.id);
 
     if (marketIsOpen()) {
         await Users.addActivity(
@@ -43,7 +47,7 @@ client.on(Events.InviteCreate, async (invite) => {
 
 client.on(Events.MessageReactionAdd, async (interaction, user) => {
     if (user.bot) return;
-    const Users = UsersFactory.get(interaction.message.guildId);
+    const { Users } = getDatastores(interaction.message.guild.id);
 
     if (marketIsOpen()) {
         await Users.addActivity(
@@ -57,7 +61,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     if (oldState.channel || !newState.channel || newState.member.user.bot)
         return;
 
-    const Users = UsersFactory.get(oldState.guild.id);
+    const { Users } = getDatastores(oldState.guild.id);
 
     if (marketIsOpen()) {
         await Users.addActivity(
@@ -71,7 +75,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    const Users = UsersFactory.get(message.guildId);
+    const { Users, Commands, Stocks } = getDatastores(message.guildId);
 
     // this needs to come before stocks exists 
     if (!Users.exists(message.author.id)) {
@@ -168,8 +172,10 @@ let stockTicker = cron.schedule(
         setTimeout(
             async () => {
                 try {
-                    // TODO: do for each guildId
-                    await updateStockPrices();
+                    const guilds = client.guilds.cache;
+                    for (const guild of guilds.values()) {
+                        await updateStockPrices(guild.id);
+                    }
                     logToFile("Stock prices updated successfully.");
                     // const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
                     //if (tickChannel.isTextBased()) {
@@ -200,7 +206,10 @@ let smaUpdater = cron.schedule(
     `0 ${updateTimes} * * *`,
     async () => {
         try {
-            await updateSMAS();
+            const guilds = client.guilds.cache;
+            for (const guild of guilds.values()) {
+                await updateSMAS(guild.id);
+            }
             logToFile("SMA updated successfully.");
         } catch (error) {
             console.error(error);
@@ -217,7 +226,11 @@ let dailyCleanup = cron.schedule(
     "0 5 * * *",
     async () => {
         try {
-            await Stocks.cleanUpStocks();
+            const guilds = client.guilds.cache;
+            for (const guild of guilds.values()) {
+                const { Stocks } = getDatastores(guild.id);
+                await Stocks.cleanUpStocks();
+            }
             console.log("Cleanup has occurred!");
             logToFile("Daily cleanup executed successfully.");
         } catch (error) {

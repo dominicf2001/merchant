@@ -1,4 +1,4 @@
-import { DataStore, db, BehaviorFunction } from "./DataStore";
+import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Items as Item } from "../schemas/public/Items";
 import { Kysely } from "kysely";
 import { Collection, Message } from "discord.js";
@@ -7,8 +7,8 @@ import path from "path";
 import fs from "fs";
 
 class Items extends DataStore<string, Item> {
-    constructor(db: Kysely<Database>) {
-        super(db, "items", "item_id");
+    constructor(db: Kysely<Database>, guildID: string) {
+        super(db, "items", "item_id", guildID);
     }
 
     async use(
@@ -53,5 +53,11 @@ class Items extends DataStore<string, Item> {
     protected cache = new Collection<string, Item>;
 }
 
-const items = new Items(db);
-export { items as Items };
+class ItemsFactory extends DataStoreFactory<Items> {
+    protected constructDataStore(guildID: string): Items {
+        return new Items(db, guildID);
+    }
+}
+
+const itemsFactory = new ItemsFactory(db);
+export { itemsFactory as ItemsFactory };

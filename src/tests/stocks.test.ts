@@ -1,10 +1,13 @@
 import { sleep } from "../utilities";
-import { Stocks, UsersFactory, db } from "../database/db-objects";
+import { StocksFactory, UsersFactory, db } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";
 
-const Users = UsersFactory.get("4321");
+const guildId = "4321";
+
+const Users = UsersFactory.get(guildId);
+const Stocks = StocksFactory.get(guildId);
 
 const sleepDuration: number = 80;
 
@@ -128,6 +131,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 10 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -136,6 +140,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 4 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -144,6 +149,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 15 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -179,6 +185,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -187,6 +194,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -195,6 +203,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -229,6 +238,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -237,6 +247,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -245,6 +256,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -299,6 +311,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -307,6 +320,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -315,6 +329,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate

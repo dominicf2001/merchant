@@ -1,4 +1,4 @@
-import { Stocks } from "../../database/db-objects";
+import { StocksFactory } from "../../database/db-objects";
 import { Message, userMention, EmbedBuilder, inlineCode } from "discord.js";
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
 import {
@@ -17,6 +17,8 @@ const data: Partial<Command> = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Stocks = StocksFactory.get(message.guildId);
+
         const stockUser = message.mentions.members.first();
         const newPrice: number = +findNumericArgs(args);
 

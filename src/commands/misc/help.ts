@@ -1,4 +1,4 @@
-import { Commands, Items } from "../../database/db-objects";
+import { CommandsFactory, ItemsFactory } from "../../database/db-objects";
 import {
     PaginatedMenuBuilder,
     findTextArgs,
@@ -32,6 +32,9 @@ const data: Partial<Command> = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Commands = CommandsFactory.get(message.guildId);
+        const Items = ItemsFactory.get(message.guildId);
+
         if (args.length) {
             const name = findTextArgs(args)[0].toLowerCase();
             const embed = new EmbedBuilder()
@@ -80,6 +83,8 @@ async function sendHelpMenu(
     pageSize: number = 5,
     pageNum: number = 1,
 ): Promise<void> {
+    const Commands = CommandsFactory.get(message.guildId);
+
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
     const commands = await Commands.getAll();

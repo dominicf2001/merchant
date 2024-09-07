@@ -1,4 +1,4 @@
-import { UsersFactory, Stocks } from "./database/db-objects";
+import { UsersFactory, StocksFactory } from "./database/db-objects";
 import { UserActivities as UserActivity } from "./database/schemas/public/UserActivities";
 import { DateTime } from "luxon";
 import { getRandomFloat, getRandomInt } from "./utilities";
@@ -18,6 +18,7 @@ const SHORT_TERM_FLUCTUATION_FACTOR = 0.03;
 
 export async function updateStockPrices(guildId: string, date = DateTime.now()): Promise<void> {
     const Users = UsersFactory.get(guildId);
+    const Stocks = StocksFactory.get(guildId);
 
     const allStocks = await Stocks.getAll();
     await Promise.all(
@@ -115,6 +116,7 @@ function calculateEMSD(activity: UserActivity): number {
 
 export async function updateSMAS(guildId: string, today = DateTime.now()): Promise<void> {
     const Users = UsersFactory.get(guildId);
+    const Stocks = StocksFactory.get(guildId);
 
     const allStocks = await Stocks.getAll();
     await Promise.all(

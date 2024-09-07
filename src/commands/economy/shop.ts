@@ -1,4 +1,4 @@
-import { Items } from "../../database/db-objects";
+import { ItemsFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
@@ -38,6 +38,8 @@ async function sendShopMenu(
     pageSize: number = 5,
     pageNum: number = 1,
 ): Promise<void> {
+    const Items = ItemsFactory.get(message.guildId);
+
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
     const items = await Items.getAll();

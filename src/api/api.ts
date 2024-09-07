@@ -1,7 +1,7 @@
 import Koa from "koa";
 import Router from "koa-router";
 import bodyParser from "koa-bodyparser";
-import { Stocks, UsersFactory, datastores, db } from "../database/db-objects";
+import { StocksFactory, UsersFactory, db } from "../database/db-objects";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { existsSync, rmSync } from "fs";
@@ -106,7 +106,8 @@ router.get("/guilds", async (ctx) => {
 // gets stocks starting a startDate within specified range
 router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
     // TODO: accept an object instead of url params. Include guildId
-    const Users = UsersFactory.get("123"); // TODO: remove
+    const Users = UsersFactory.get("123"); // TODO: replace 
+    const Stocks = StocksFactory.get("123"); // TODO: replace 
     try {
         if (!ctx.params.endDate) {
             ctx.throw("Missing end date", StatusCodes.BAD_REQUEST);
@@ -200,10 +201,11 @@ router.get("/sim", async (ctx) => {
 // runs a simulation
 router.post("/sim", async (ctx) => {
     try {
-        const Users = UsersFactory.get("123"); // TODO: remove
+        const Users = UsersFactory.get("123"); // TODO: replace 
+        const Stocks = StocksFactory.get("123"); // TODO: replace 
 
         console.log("Clearing database...");
-        await dbWipe(db, datastores);
+        await dbWipe(db);
 
         const reqBody: SimParams = ctx.request.body as SimParams;
         const start = reqBody.start ?? "2000-01-01T00:00";

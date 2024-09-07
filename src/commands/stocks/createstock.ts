@@ -1,4 +1,4 @@
-import { Stocks } from "../../database/db-objects";
+import { StocksFactory } from "../../database/db-objects";
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import {
     Commands as Command,
@@ -16,6 +16,8 @@ const data: Partial<Command> = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Stocks = StocksFactory.get(message.guildId);
+
         const stockUser = message.mentions.members.first();
         if (!stockUser) {
             throw new Error("Please specify a user.");

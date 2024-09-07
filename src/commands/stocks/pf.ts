@@ -1,4 +1,4 @@
-import { UsersFactory, Stocks } from "../../database/db-objects";
+import { UsersFactory, StocksFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     STOCKDOWN_EMOJI_CODE,
@@ -34,6 +34,7 @@ export default {
 
 async function sendStockList(message: Message, args: string[]): Promise<void> {
     const Users = UsersFactory.get(message.guildId);
+    const Stocks = StocksFactory.get(message.guildId);
 
     const portfolio = await Users.getPortfolio(message.author.id);
 

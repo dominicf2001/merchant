@@ -1,5 +1,5 @@
 import QuickChart from "quickchart-js";
-import { Stocks, UsersFactory } from "../../database/db-objects";
+import { StocksFactory, UsersFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     STOCKDOWN_EMOJI_CODE,
@@ -55,7 +55,7 @@ export default {
 };
 
 async function sendStockChart(message: Message, args: string[]): Promise<void> {
-    const Users = UsersFactory.get(message.guildId);
+    const Stocks = StocksFactory.get(message.guildId);
 
     const stockUser = message.mentions.users.first();
     const validIntervals: StockInterval[] = ["minute", "hour", "day", "month"];
@@ -209,6 +209,7 @@ async function sendStockList(
     pageNum: number = 1,
 ): Promise<void> {
     const Users = UsersFactory.get(message.guildId);
+    const Stocks = StocksFactory.get(message.guildId);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;

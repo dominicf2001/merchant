@@ -1,10 +1,9 @@
-import { DataStore, db } from "./DataStore";
+import { DataStore, DataStoreFactory, db } from "./DataStore";
 import { UsersUserId } from "../schemas/public/Users";
 import { Stocks as Stock, StocksCreatedDate } from "../schemas/public/Stocks";
 import { DateTime } from "luxon";
 import { Kysely, Updateable, Insertable, sql } from "kysely";
 import Database from "../schemas/Database";
-import { Users } from "./Users";
 import { Collection } from "discord.js";
 
 export function isStockInterval(a: any): a is StockInterval {
@@ -20,8 +19,8 @@ interface StockHistoryOptions {
 }
 
 class Stocks extends DataStore<string, Stock> {
-    constructor(db: Kysely<Database>) {
-        super(db, "stocks", "stock_id");
+    constructor(db: Kysely<Database>, guildID: string) {
+        super(db, "stocks", "stock_id", guildID);
     }
 
     async set(
@@ -271,5 +270,11 @@ class Stocks extends DataStore<string, Stock> {
     protected cache = new Collection<string, Stock[]>;
 }
 
-const stocks = new Stocks(db);
-export { stocks as Stocks };
+class StocksFactory extends DataStoreFactory<Stocks> {
+    protected constructDataStore(guildID: string): Stocks {
+        return new Stocks(db, guildID);
+    }
+}
+
+const stocksFactory = new StocksFactory(db);
+export { stocksFactory as StocksFactory };

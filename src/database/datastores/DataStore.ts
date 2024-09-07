@@ -3,8 +3,9 @@ import Database from "../schemas/Database";
 import { Collection } from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
-import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
+import { client, DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
 import { DateTime } from "luxon";
+import { getDatastores } from "../db-objects";
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
     v === null ? null : DateTime.fromSQL(v).toUTC().toSQL(),
@@ -45,10 +46,14 @@ export type BehaviorFunction = (
     args: string[],
 ) => Promise<void>;
 
-export async function dbWipe(db: Kysely<Database>, datastores: DataStore<any, any>[]) {
+export async function dbWipe(db: Kysely<Database>) {
     try {
-        for (const dataStore of datastores) {
-            dataStore.clearCache();
+        const guilds = client.guilds.cache;
+        for (const guild of guilds.values()) {
+            const datastores = Object.values(getDatastores(guild.id));
+            for (const ds of datastores) {
+                ds.clearCache();
+            }
         }
 
         const tableNames = await getTableNames(db);

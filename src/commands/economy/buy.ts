@@ -1,4 +1,4 @@
-import { UsersFactory, Items, Stocks } from "../../database/db-objects";
+import { UsersFactory, ItemsFactory, StocksFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
@@ -33,6 +33,7 @@ export default {
 
 async function buyStock(message: Message, args: string[]): Promise<void> {
     const Users = UsersFactory.get(message.guildId);
+    const Stocks = StocksFactory.get(message.guildId);
 
     const stockUser = message.mentions.users.first();
     const quantity: number = args.includes("all")
@@ -81,6 +82,7 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
 
 async function buyItem(message: Message, args: string[]): Promise<void> {
     const Users = UsersFactory.get(message.guildId);
+    const Items = ItemsFactory.get(message.guildId);
 
     const itemName: string =
         findTextArgs(args)[0]?.toLowerCase() === "all"

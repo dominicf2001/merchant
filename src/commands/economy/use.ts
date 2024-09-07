@@ -1,4 +1,4 @@
-import { UsersFactory, Items } from "../../database/db-objects";
+import { UsersFactory, ItemsFactory } from "../../database/db-objects";
 import { findTextArgs } from "../../utilities";
 import {
     Commands as Command,
@@ -18,6 +18,7 @@ export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
         const Users = UsersFactory.get(message.guildId);
+        const Items = ItemsFactory.get(message.guildId);
 
         let itemName = findTextArgs(args)[0];
 
