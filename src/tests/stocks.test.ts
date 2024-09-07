@@ -1,8 +1,10 @@
 import { sleep } from "../utilities";
-import { Stocks, Users, db } from "../database/db-objects";
+import { Stocks, UsersFactory, db } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";
+
+const Users = UsersFactory.get("4321");
 
 const sleepDuration: number = 80;
 

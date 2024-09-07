@@ -1,4 +1,4 @@
-import { Users, Stocks } from "./database/db-objects";
+import { UsersFactory, Stocks } from "./database/db-objects";
 import { UserActivities as UserActivity } from "./database/schemas/public/UserActivities";
 import { DateTime } from "luxon";
 import { getRandomFloat, getRandomInt } from "./utilities";
@@ -16,7 +16,9 @@ const VOLATILITY_DAMPENING = 0.5;
 const MAX_PRICE_CHANGE_PERCENT = 0.05;
 const SHORT_TERM_FLUCTUATION_FACTOR = 0.03;
 
-export async function updateStockPrices(date = DateTime.now()): Promise<void> {
+export async function updateStockPrices(guildId: string, date = DateTime.now()): Promise<void> {
+    const Users = UsersFactory.get(guildId);
+
     const allStocks = await Stocks.getAll();
     await Promise.all(
         allStocks.map(async (stock) => {
@@ -111,7 +113,9 @@ function calculateEMSD(activity: UserActivity): number {
     );
 }
 
-export async function updateSMAS(today = DateTime.now()): Promise<void> {
+export async function updateSMAS(guildId: string, today = DateTime.now()): Promise<void> {
+    const Users = UsersFactory.get(guildId);
+
     const allStocks = await Stocks.getAll();
     await Promise.all(
         allStocks.map(async (stock) => {

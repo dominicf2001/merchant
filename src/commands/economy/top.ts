@@ -1,12 +1,12 @@
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
-import { Users } from "../../database/db-objects";
+import { UsersFactory } from "../../database/db-objects";
 import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "top" as CommandsCommandId,
     description: `See who are the goodest boys`,
     usage: `${inlineCode("$top")}`,
@@ -17,6 +17,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const allUsers = await Users.getAll();
 
         const netWorths = await Promise.all(

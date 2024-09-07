@@ -1,4 +1,4 @@
-import { DataStore, db } from "./DataStore";
+import { DataStore, DataStoreFactory, db } from "./DataStore";
 import { Users as User, UsersUserId } from "../schemas/public/Users";
 import { UserItems as UserItem } from "../schemas/public/UserItems";
 import { UserStocks as UserStock } from "../schemas/public/UserStocks";
@@ -18,8 +18,8 @@ import { Collection } from "discord.js";
 import { client } from "src/utilities";
 
 class Users extends DataStore<string, User> {
-    constructor(db: Kysely<Database>) {
-        super(db, "users", "user_id");
+    constructor(db: Kysely<Database>, guildID: string) {
+        super(db, "users", "user_id", guildID);
     }
 
     async set(
@@ -492,5 +492,11 @@ class Users extends DataStore<string, User> {
     protected cache = new Collection<string, User>;
 }
 
-const users = new Users(db);
-export { users as Users };
+class UsersFactory extends DataStoreFactory<Users> {
+    protected constructDataStore(guildID: string): Users {
+        return new Users(db, guildID);
+    }
+}
+
+const usersFactory = new UsersFactory(db);
+export { usersFactory as UsersFactory };

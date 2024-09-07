@@ -38,6 +38,7 @@ class Items extends DataStore<string, Item> {
             const itemObj = (await import(filePath)).default;
             if (itemObj && "data" in itemObj && "use" in itemObj) {
                 this.behaviors.set(itemObj.data.item_id, itemObj.use);
+                // TODO: custom query that on conflict does nothing
                 await this.set(itemObj.data.item_id, itemObj.data);
             } else {
                 // console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);

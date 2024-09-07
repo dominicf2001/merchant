@@ -1,7 +1,7 @@
 import Koa from "koa";
 import Router from "koa-router";
 import bodyParser from "koa-bodyparser";
-import { Stocks, Users, datastores, db } from "../database/db-objects";
+import { Stocks, UsersFactory, datastores, db } from "../database/db-objects";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { existsSync, rmSync } from "fs";
@@ -105,7 +105,8 @@ router.get("/guilds", async (ctx) => {
 
 // gets stocks starting a startDate within specified range
 router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
-    console.log("STOCKS");
+    // TODO: accept an object instead of url params. Include guildId
+    const Users = UsersFactory.get("123"); // TODO: remove
     try {
         if (!ctx.params.endDate) {
             ctx.throw("Missing end date", StatusCodes.BAD_REQUEST);
@@ -199,6 +200,8 @@ router.get("/sim", async (ctx) => {
 // runs a simulation
 router.post("/sim", async (ctx) => {
     try {
+        const Users = UsersFactory.get("123"); // TODO: remove
+
         console.log("Clearing database...");
         await dbWipe(db, datastores);
 
@@ -293,10 +296,10 @@ router.post("/sim", async (ctx) => {
 
             if (marketIsOpen(nextTickDate)) {
                 if (SMA_UPDATE_HOURS.includes(nextTickDate.hour)) {
-                    await updateSMAS(nextTickDate);
+                    await updateSMAS(guildID, nextTickDate);
                 }
 
-                await updateStockPrices(nextTickDate);
+                await updateStockPrices(guildID, nextTickDate);
             }
             nextTickDate = nextTickDate.plus({ minutes: minuteIncrement });
         }

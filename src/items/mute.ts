@@ -1,11 +1,11 @@
 import { Message, inlineCode, EmbedBuilder } from "discord.js";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { Users } from "../database/db-objects";
+import { UsersFactory } from "../database/db-objects";
 import { MUTE_DURATION_MIN } from "../utilities";
 
 const durationMs: number = MUTE_DURATION_MIN * 60000;
 
-const data: Item = {
+const data: Partial<Item> = {
     item_id: "mute" as ItemsItemId,
     price: 100000,
     emoji_code: ":mute:",
@@ -16,6 +16,8 @@ const data: Item = {
 export default {
     data: data,
     async use(message: Message, args: string): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         let target = message.mentions.members.first();
 
         if (!target) {

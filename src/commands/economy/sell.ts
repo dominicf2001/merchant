@@ -1,4 +1,4 @@
-import { Users, Items, Stocks } from "../../database/db-objects";
+import { UsersFactory, Items, Stocks } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
@@ -11,7 +11,7 @@ import {
 } from "../../database/schemas/public/Commands";
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "sell" as CommandsCommandId,
     description: `sell an item or a stock`,
     usage: `${inlineCode("$sell [item/@user]")}\n${inlineCode("$sell [item/@user] [#amount/all]")}`,
@@ -31,6 +31,8 @@ export default {
 };
 
 async function sellStock(message: Message, args: string[]): Promise<void> {
+    const Users = UsersFactory.get(message.guildId);
+
     const stockUser = message.mentions.users.first();
     const quantity: number = args.includes("all")
         ? 99999
@@ -78,6 +80,8 @@ async function sellStock(message: Message, args: string[]): Promise<void> {
 }
 
 async function sellItem(message: Message, args: string[]): Promise<void> {
+    const Users = UsersFactory.get(message.guildId);
+
     const itemName: string =
         findTextArgs(args)[0]?.toLowerCase() === "all"
             ? findTextArgs(args)[1]?.toLowerCase()

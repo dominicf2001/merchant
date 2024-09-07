@@ -63,18 +63,37 @@ export async function dbWipe(db: Kysely<Database>, datastores: DataStore<any, an
     }
 }
 
+export abstract class DataStoreFactory<DS> {
+    constructor(db: Kysely<Database>) {
+        this.db = db;
+    }
+
+    get(guildID: string): DS {
+        if (!this.guildDataStores.has(guildID)) {
+            this.guildDataStores.set(guildID, this.constructDataStore(guildID));
+        }
+        return this.guildDataStores.get(guildID);
+    }
+
+    protected abstract constructDataStore(guildID: string): DS;
+
+    protected guildDataStores = new Collection<string, DS>;
+    protected db: Kysely<Database>;
+}
+
 export abstract class DataStore<K, Data> {
-    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
+    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID, guildID: string) {
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;
+        this.guildID = guildID;
     }
 
     async set(
         id: K,
         data: Insertable<Data> | Updateable<Data> = {},
     ): Promise<void> {
-        const newData: Data = { [this.tableID]: id as any, ...data } as Data;
+        const newData: Data = { [this.tableID]: id as any, guild_id: this.guildID, ...data } as Data;
 
         try {
             const result = (await this.db
@@ -154,5 +173,7 @@ export abstract class DataStore<K, Data> {
     protected db: Kysely<Database>;
     protected tableName: TableName;
     protected tableID: TableID;
+    protected guildID: string;
 }
+
 

@@ -1,8 +1,9 @@
 import { Message, inlineCode, EmbedBuilder } from "discord.js";
 import { findTextArgs } from "../utilities";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { Users } from "../database/db-objects";
-const data: Item = {
+import { UsersFactory } from "../database/db-objects";
+
+const data: Partial<Item> = {
     item_id: "nametag" as ItemsItemId,
     price: 150000,
     emoji_code: ":label:",
@@ -13,6 +14,8 @@ const data: Item = {
 export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const target = message.mentions.members.first() ?? message.member;
         const newNickname = findTextArgs(args).join(" ");
 

@@ -1,4 +1,4 @@
-import { Users, Items, Stocks } from "../../database/db-objects";
+import { UsersFactory, Stocks } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     STOCKDOWN_EMOJI_CODE,
@@ -13,7 +13,7 @@ import {
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import { DateTime } from "luxon";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "pf" as CommandsCommandId,
     description: `View your portfolio`,
     cooldown_time: 0,
@@ -33,6 +33,8 @@ export default {
 };
 
 async function sendStockList(message: Message, args: string[]): Promise<void> {
+    const Users = UsersFactory.get(message.guildId);
+
     const portfolio = await Users.getPortfolio(message.author.id);
 
     const embed = new EmbedBuilder()
@@ -89,6 +91,8 @@ async function sendPurchaseHistoryList(
     message: Message,
     args: string[],
 ): Promise<void> {
+    const Users = UsersFactory.get(message.guildId);
+
     // TODO: implement paging
     const pageNum: number = +findNumericArgs(args)[0] ?? 1;
     const stockUser = message.mentions.users.first();

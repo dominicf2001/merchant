@@ -1,4 +1,4 @@
-import { Users } from "../../database/db-objects";
+import { UsersFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
@@ -26,7 +26,7 @@ function isValidRobType(robType: string): robType is RobType {
     return Object.keys(RobType).includes(robType as RobType);
 }
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "rob" as CommandsCommandId,
     description: `Rob user of tendies or a random item with a chance of failure + fine`,
     usage: `${inlineCode("$rob [@user] [tendies/item]")}`,
@@ -37,6 +37,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const robType: RobType = (findTextArgs(args)[0] ??
             "tendies") as RobType;
         const target = message.mentions.users.first();

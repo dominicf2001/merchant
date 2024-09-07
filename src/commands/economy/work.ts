@@ -1,4 +1,4 @@
-import { Users } from "../../database/db-objects";
+import { UsersFactory } from "../../database/db-objects";
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import { CURRENCY_EMOJI_CODE, getRandomInt } from "../../utilities";
 import {
@@ -6,7 +6,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "work" as CommandsCommandId,
     description: `Make some tendies`,
     usage: `${inlineCode("$work")}`,
@@ -17,6 +17,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const tendiesMade = getRandomInt(10, 50);
         await Users.addBalance(message.author.id, tendiesMade);
 

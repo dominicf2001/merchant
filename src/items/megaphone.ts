@@ -1,8 +1,7 @@
 import { Message, inlineCode, EmbedBuilder, AttachmentBuilder } from "discord.js";
-import { findTextArgs } from "../utilities";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
-const data: Item = {
+const data: Partial<Item> = {
     item_id: "megaphone" as ItemsItemId,
     price: 100000,
     emoji_code: ":mega:",

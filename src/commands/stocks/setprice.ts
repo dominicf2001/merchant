@@ -6,7 +6,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "setprice" as CommandsCommandId,
     description: `Set a stock price`,
     usage: `${inlineCode("$setprice [@user] [#amount]")}`,

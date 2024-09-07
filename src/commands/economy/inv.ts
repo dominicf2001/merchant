@@ -1,4 +1,4 @@
-import { Users, Items } from "../../database/db-objects";
+import { UsersFactory, Items } from "../../database/db-objects";
 import { formatNumber, MAX_INV_SIZE } from "../../utilities";
 import {
     Commands as Command,
@@ -6,7 +6,7 @@ import {
 } from "../../database/schemas/public/Commands";
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "inv" as CommandsCommandId,
     description: `View your inventory`,
     usage: `${inlineCode("$inv")}`,
@@ -17,6 +17,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const [items, armor, itemCount] = await Promise.all([
             Users.getItems(message.author.id),
             Users.getArmor(message.author.id),

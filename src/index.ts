@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import fs from "fs";
-import { Events, EmbedBuilder, PermissionFlagsBits } from "discord.js";
-import { Users, Commands, Stocks, datastores } from "./database/db-objects";
+import { Events, PermissionFlagsBits } from "discord.js";
+import { UsersFactory, Commands, Stocks, datastores } from "./database/db-objects";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
 import {
     secondsToHms,
@@ -31,6 +31,7 @@ client.once(Events.ClientReady, async () => {
 
 client.on(Events.InviteCreate, async (invite) => {
     if (invite.inviter.bot) return;
+    const Users = UsersFactory.get(invite.guild.id);
 
     if (marketIsOpen()) {
         await Users.addActivity(
@@ -40,8 +41,9 @@ client.on(Events.InviteCreate, async (invite) => {
     }
 });
 
-client.on(Events.MessageReactionAdd, async (_, user) => {
+client.on(Events.MessageReactionAdd, async (interaction, user) => {
     if (user.bot) return;
+    const Users = UsersFactory.get(interaction.message.guildId);
 
     if (marketIsOpen()) {
         await Users.addActivity(
@@ -55,6 +57,8 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     if (oldState.channel || !newState.channel || newState.member.user.bot)
         return;
 
+    const Users = UsersFactory.get(oldState.guild.id);
+
     if (marketIsOpen()) {
         await Users.addActivity(
             newState.member.user.id,
@@ -66,6 +70,8 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 // COMMAND HANDLING
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
+
+    const Users = UsersFactory.get(message.guildId);
 
     // this needs to come before stocks exists 
     if (!Users.exists(message.author.id)) {
@@ -162,9 +168,10 @@ let stockTicker = cron.schedule(
         setTimeout(
             async () => {
                 try {
+                    // TODO: do for each guildId
                     await updateStockPrices();
                     logToFile("Stock prices updated successfully.");
-                    const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
+                    // const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
                     //if (tickChannel.isTextBased()) {
                     //    await tickChannel.send("Stocks ticked");
                     //}

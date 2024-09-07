@@ -1,12 +1,11 @@
 import { Stocks } from "../../database/db-objects";
-import { Message, userMention, EmbedBuilder, inlineCode } from "discord.js";
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
+import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "createstock" as CommandsCommandId,
     description: `Creates a new stock`,
     usage: `${inlineCode("$createstock [@user]")}`,

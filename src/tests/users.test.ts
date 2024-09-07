@@ -1,6 +1,8 @@
 import { DateTime } from "luxon";
-import { Users, Items, Stocks } from "../database/db-objects";
+import { UsersFactory, Items, Stocks } from "../database/db-objects";
 import { sleep } from "../utilities";
+
+const Users = UsersFactory.get("1234");
 
 const sleepDuration: number = 80;
 

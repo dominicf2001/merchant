@@ -15,7 +15,7 @@ import { Message, Events, ButtonInteraction, inlineCode } from "discord.js";
 const SHOP_ID: string = "shop";
 const SHOP_PAGE_SIZE: number = 5;
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "shop" as CommandsCommandId,
     description: `View the shop`,
     usage: `${inlineCode("$shop")}`,

@@ -7,8 +7,8 @@ import path from "path";
 import fs from "fs";
 
 class Commands extends DataStore<string, Command> {
-    constructor(db: Kysely<Database>) {
-        super(db, "commands", "command_id");
+    constructor(db: Kysely<Database>, guildID: string) {
+        super(db, "commands", "command_id", guildID);
     }
 
     async execute(
@@ -45,6 +45,7 @@ class Commands extends DataStore<string, Command> {
                         commandObj.data.command_id,
                         commandObj.execute,
                     );
+                    // TODO: custom query that on conflict does nothing
                     await this.set(commandObj.data.command_id, commandObj.data);
                 } else {
                     // console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);

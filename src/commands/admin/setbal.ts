@@ -1,4 +1,4 @@
-import { Users } from "../../database/db-objects";
+import { UsersFactory } from "../../database/db-objects";
 import {
     Commands as Command,
     CommandsCommandId,
@@ -6,7 +6,7 @@ import {
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "setbal" as CommandsCommandId,
     description: `Set a users balance`,
     usage: `${inlineCode("$setbal [@user] [#amount]")}`,
@@ -17,6 +17,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const newBalance: number = +findNumericArgs(args)[0];
         const target = message.mentions.users.first() ?? message.author;
 

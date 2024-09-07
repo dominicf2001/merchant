@@ -20,7 +20,7 @@ import {
 const HELP_ID: string = "help";
 const HELP_PAGE_SIZE: number = 5;
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "help" as CommandsCommandId,
     description: `Displays available commands or displays info on a command/item`,
     usage: `${inlineCode("$help")}\n${inlineCode("$help [item/command]")}`,
