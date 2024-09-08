@@ -1,13 +1,15 @@
 import { DataStore, DataStoreFactory, db } from "./DataStore";
-import { Users as User, UsersGuildId, UsersUserId } from "../schemas/public/Users";
+import { UsersUserId, Users as UserCore } from "../schemas/public/Users";
+import { UsersFull as User } from "../schemas/public/UsersFull";
+import { UserStatsGuildId, UserStats as UserStat } from "../schemas/public/UserStats";
 import { UserItems as UserItem } from "../schemas/public/UserItems";
-import { UserStocks as UserStock } from "../schemas/public/UserStocks";
-import { UserActivities as UserActivity } from "../schemas/public/UserActivities";
+import { UserStocks as UserStock, UserStocksGuildId } from "../schemas/public/UserStocks";
+import { UserActivitiesGuildId, UserActivities as UserActivity } from "../schemas/public/UserActivities";
 import { Stocks as Stock } from "../schemas/public/Stocks";
 import { UserCooldowns as UserCooldown } from "../schemas/public/UserCooldowns";
-import { CommandsCommandId } from "../schemas/public/Commands";
+import { CommandsCommandId, CommandsGuildId } from "../schemas/public/Commands";
 import { UserStocksPurchaseDate } from "../schemas/public/UserStocks";
-import { ItemsItemId } from "../schemas/public/Items";
+import { ItemsGuildId, ItemsItemId } from "../schemas/public/Items";
 import { DateTime } from "luxon";
 import Database from "../schemas/Database";
 import { Kysely, Insertable, Updateable, sql } from "kysely";
@@ -19,46 +21,55 @@ import { client } from "src/utilities";
 
 class Users extends DataStore<string, User> {
     constructor(db: Kysely<Database>, guildID: string) {
-        super(db, "users", "user_id", guildID);
+        super(db, "users_full", "user_id", guildID);
     }
 
     async set(
         user_id: string,
-        data: Insertable<User> | Updateable<User> = {},
+        data: Insertable<UserStat> | Updateable<UserStat> = {},
     ): Promise<void> {
-        const newUser: User = {
+        let newUser: Insertable<UserStat> | Updateable<UserStat> = {
             "user_id": user_id as UsersUserId,
-            "guild_id": this.guildID as UsersGuildId,
+            "guild_id": this.guildID as UserStatsGuildId,
             ...data,
-        } as User;
+        };
 
-        if (this.isTesting) {
-            newUser.username = user_id;
-        }
+        let userCore: Insertable<UserCore> | Updateable<UserCore> = {
+            user_id: user_id as UsersUserId,
+            username: this.isTesting ?
+                user_id :
+                (await client.users.fetch(user_id)).username
+        };
 
-        if (!this.cache.has(user_id) && (newUser.username === undefined)) {
+        if (!this.cache.has(user_id)) {
             try {
-                newUser.username = (await client.users.fetch(user_id)).username;
+                userCore = await this.db
+                    .insertInto("users")
+                    .values(userCore)
+                    .onConflict((oc) => oc.column("user_id").doUpdateSet(userCore))
+                    .returningAll()
+                    .executeTakeFirstOrThrow();
             }
             catch (error) {
-                console.error(`User with ID ${user_id} does not exist`);
+                console.error(error);
                 return;
             }
         }
 
         try {
-            const result = (await this.db
-                .insertInto(this.tableName)
+            newUser = await this.db
+                .insertInto("user_stats")
                 .values(newUser)
                 .onConflict((oc) => oc.columns(["user_id", "guild_id"]).doUpdateSet(newUser))
                 .returningAll()
-                .executeTakeFirstOrThrow()) as User;
-
-            this.cache.set(user_id, result);
+                .executeTakeFirstOrThrow();
         } catch (error) {
             console.error(error);
             throw error;
         }
+
+        const fullUser = Object.assign(newUser, userCore) as User;
+        this.cache.set(user_id, fullUser);
     }
 
     async setBalance(user_id: string, amount: number): Promise<void> {
@@ -83,7 +94,7 @@ class Users extends DataStore<string, User> {
 
             const newUserActivity: UserActivity = {
                 user_id: user_id as UsersUserId,
-                guild_id: this.guildID as UsersGuildId,
+                guild_id: this.guildID as UserStatsGuildId,
                 last_activity_date: data.last_activity_date ?? DateTime.now().toUTC().toSQL(),
                 ...data,
             } as UserActivity;
@@ -144,7 +155,7 @@ class Users extends DataStore<string, User> {
             .insertInto("user_activities")
             .values({
                 user_id: user_id as UsersUserId,
-                guild_id: this.guildID as UsersGuildId,
+                guild_id: this.guildID as UserActivitiesGuildId,
                 activity_points_short: amount < 0 ? 0 : amount,
                 activity_points_long: amount < 0 ? 0 : amount,
                 first_activity_date: now,
@@ -185,7 +196,7 @@ class Users extends DataStore<string, User> {
             await db
                 .insertInto("user_stocks")
                 .values({
-                    guild_id: this.guildID as UsersGuildId,
+                    guild_id: this.guildID as UserStocksGuildId,
                     user_id: user_id as UsersUserId,
                     stock_id: stock_id as UsersUserId,
                     purchase_date:
@@ -202,7 +213,7 @@ class Users extends DataStore<string, User> {
                 .selectFrom("user_stocks")
                 .selectAll()
                 .where("user_id", "=", user_id as UsersUserId)
-                .where("guild_id", "=", this.guildID as UsersGuildId)
+                .where("guild_id", "=", this.guildID as UserStocksGuildId)
                 .where("stock_id", "=", stock_id as UsersUserId)
                 .orderBy("purchase_date desc")
                 .execute();
@@ -226,7 +237,7 @@ class Users extends DataStore<string, User> {
                     await db
                         .deleteFrom("user_stocks")
                         .where("user_id", "=", user_id as UsersUserId)
-                        .where("guild_id", "=", this.guildID as UsersGuildId)
+                        .where("guild_id", "=", this.guildID as UserStocksGuildId)
                         .where("stock_id", "=", stock_id as UsersUserId)
                         .where("purchase_date", "=", userStock.purchase_date)
                         .execute();
@@ -238,7 +249,7 @@ class Users extends DataStore<string, User> {
                         .updateTable("user_stocks")
                         .set({ quantity: decrementedQuantity })
                         .where("user_id", "=", user_id as UsersUserId)
-                        .where("guild_id", "=", this.guildID as UsersGuildId)
+                        .where("guild_id", "=", this.guildID as UserStocksGuildId)
                         .where("stock_id", "=", stock_id as UsersUserId)
                         .where("purchase_date", "=", userStock.purchase_date)
                         .execute();
@@ -273,7 +284,7 @@ class Users extends DataStore<string, User> {
             await db
                 .insertInto("user_items")
                 .values({
-                    guild_id: this.guildID as UsersGuildId,
+                    guild_id: this.guildID as ItemsGuildId,
                     user_id: user_id as UsersUserId,
                     item_id: item_id as ItemsItemId,
                     quantity: amount,
@@ -291,7 +302,7 @@ class Users extends DataStore<string, User> {
             const userItem = await db
                 .selectFrom("user_items")
                 .selectAll()
-                .where("guild_id", "=", this.guildID as UsersGuildId)
+                .where("guild_id", "=", this.guildID as ItemsGuildId)
                 .where("user_id", "=", user_id as any)
                 .where("item_id", "=", item_id as any)
                 .executeTakeFirst();
@@ -302,7 +313,7 @@ class Users extends DataStore<string, User> {
                 if (newQuantity <= 0) {
                     await db
                         .deleteFrom("user_items")
-                        .where("guild_id", "=", this.guildID as UsersGuildId)
+                        .where("guild_id", "=", this.guildID as ItemsGuildId)
                         .where("user_id", "=", user_id as any)
                         .where("item_id", "=", item_id as any)
                         .execute();
@@ -311,7 +322,7 @@ class Users extends DataStore<string, User> {
                     await db
                         .updateTable("user_items")
                         .set({ quantity: newQuantity })
-                        .where("guild_id", "=", this.guildID as UsersGuildId)
+                        .where("guild_id", "=", this.guildID as ItemsGuildId)
                         .where("user_id", "=", user_id as any)
                         .where("item_id", "=", item_id as any)
                         .execute();
@@ -329,7 +340,7 @@ class Users extends DataStore<string, User> {
         await this.db
             .insertInto("user_cooldowns")
             .values({
-                guild_id: this.guildID as UsersGuildId,
+                guild_id: this.guildID as CommandsGuildId,
                 user_id: user_id as UsersUserId,
                 command_id: command_id as CommandsCommandId,
                 start_date: DateTime.now().toUTC().toSQL(),
@@ -356,7 +367,7 @@ class Users extends DataStore<string, User> {
             .selectFrom("user_activities")
             .selectAll()
             .where("user_id", "=", user_id as UsersUserId)
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as UserActivitiesGuildId)
             .executeTakeFirst();
         return userActivity;
     }
@@ -370,7 +381,7 @@ class Users extends DataStore<string, User> {
             .selectAll()
             .where("user_id", "=", user_id as UsersUserId)
             .where("item_id", "=", item_id as ItemsItemId)
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as ItemsGuildId)
             .executeTakeFirst()) as UserItem;
 
         return userItem;
@@ -381,7 +392,7 @@ class Users extends DataStore<string, User> {
             .selectFrom("user_items")
             .selectAll()
             .where("user_id", "=", user_id as UsersUserId)
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as ItemsGuildId)
             .execute()) as UserItem[];
         return userItems;
     }
@@ -425,7 +436,7 @@ class Users extends DataStore<string, User> {
             .selectFrom("user_stocks")
             .select("stock_id")
             .where("user_id", "=", user_id as UsersUserId)
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as UserStocksGuildId)
             .distinct()
             .execute()) as UserStock[];
 
@@ -445,7 +456,7 @@ class Users extends DataStore<string, User> {
         let query = this.db
             .selectFrom("user_stocks")
             .selectAll()
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as UserStocksGuildId)
             .where("user_id", "=", user_id as UsersUserId);
 
         query = stock_id
@@ -470,7 +481,7 @@ class Users extends DataStore<string, User> {
             .selectFrom("user_cooldowns")
             .select(["start_date"])
             .where("user_id", "=", user_id as UsersUserId)
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as CommandsGuildId)
             .where("command_id", "=", command_id as CommandsCommandId)
             .executeTakeFirst()) as UserCooldown;
 
@@ -491,7 +502,7 @@ class Users extends DataStore<string, User> {
                 await this.db
                     .deleteFrom("user_cooldowns")
                     .where("user_id", "=", user_id as UsersUserId)
-                    .where("guild_id", "=", this.guildID as UsersGuildId)
+                    .where("guild_id", "=", this.guildID as CommandsGuildId)
                     .where("command_id", "=", command_id as CommandsCommandId)
                     .execute();
                 return 0;
@@ -501,6 +512,14 @@ class Users extends DataStore<string, User> {
         }
 
         return 0; // No cooldown found
+    }
+
+    async delete(user_id: string): Promise<void> {
+        this.cache.delete(user_id);
+        await this.db
+            .deleteFrom("users")
+            .where("user_id", "=", user_id as UsersUserId)
+            .execute();
     }
 
     setInCache(id: string, user: User): void {
@@ -513,9 +532,9 @@ class Users extends DataStore<string, User> {
 
     async refreshCache(): Promise<void> {
         const results: User[] = (await db
-            .selectFrom("users")
+            .selectFrom("users_full")
             .selectAll()
-            .where("guild_id", "=", this.guildID as UsersGuildId)
+            .where("guild_id", "=", this.guildID as UserStatsGuildId)
             .execute()) as User[];
 
         results.forEach((result) => {

@@ -6,20 +6,11 @@ import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 /** Identifier type for public.users */
 export type UsersUserId = string & { __brand: 'UsersUserId' };
 
-/** Identifier type for public.users */
-export type UsersGuildId = string & { __brand: 'UsersGuildId' };
-
 /** Represents the table public.users */
 export default interface UsersTable {
   user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
-  guild_id: ColumnType<UsersGuildId, UsersGuildId, UsersGuildId>;
-
   username: ColumnType<string, string, string>;
-
-  balance: ColumnType<number, number | undefined, number>;
-
-  armor: ColumnType<number, number | undefined, number>;
 }
 
 export type Users = Selectable<UsersTable>;

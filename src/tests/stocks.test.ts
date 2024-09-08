@@ -1,5 +1,5 @@
 import { sleep } from "../utilities";
-import { StocksFactory, UsersFactory, db, getDatastores } from "../database/db-objects";
+import { db, getDatastores } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";

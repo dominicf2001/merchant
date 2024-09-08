@@ -37,8 +37,15 @@ const db = new Kysely<Database>({
         await db.schema
             .createTable("users")
             .addColumn("user_id", "varchar(30)", (col) => col.notNull())
-            .addColumn("guild_id", "varchar(30)", (col) => col.notNull())
             .addColumn("username", "varchar(255)", (col) => col.notNull())
+            .addPrimaryKeyConstraint("users_pk", ["user_id"])
+            .execute();
+
+        // USER STATS
+        await db.schema
+            .createTable("user_stats")
+            .addColumn("user_id", "varchar(30)", (col) => col.notNull())
+            .addColumn("guild_id", "varchar(30)", (col) => col.notNull())
             .addColumn("balance", "integer", (col) =>
                 col
                     .notNull()
@@ -51,7 +58,29 @@ const db = new Kysely<Database>({
                     .defaultTo(0)
                     .check(sql`armor >= 0`),
             )
-            .addPrimaryKeyConstraint("users_pk", ["user_id", "guild_id"])
+            .addPrimaryKeyConstraint("user_stats_pk", ["user_id", "guild_id"])
+            .addForeignKeyConstraint(
+                "user_stats_fk_user",
+                ["user_id"],
+                "users",
+                ["user_id"],
+                (cb) => cb.onDelete("cascade"),
+            )
+            .execute();
+
+        await db.schema.createView("users_full")
+            .orReplace()
+            .as(db
+                .selectFrom("users")
+                .innerJoin("user_stats", "users.user_id", "user_stats.user_id")
+                .select([
+                    "users.user_id",
+                    "user_stats.guild_id",
+                    "users.username",
+                    "user_stats.armor",
+                    "user_stats.balance"
+                ])
+            )
             .execute();
 
         // ITEMS
@@ -96,9 +125,9 @@ const db = new Kysely<Database>({
             ])
             .addForeignKeyConstraint(
                 "stocks_fk_user",
-                ["stock_id", "guild_id"],
+                ["stock_id"],
                 "users",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .execute();
@@ -174,9 +203,9 @@ const db = new Kysely<Database>({
             ])
             .addForeignKeyConstraint(
                 "user_activities_fk_user",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 "users",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .execute();
@@ -196,9 +225,9 @@ const db = new Kysely<Database>({
             .addPrimaryKeyConstraint("user_items_pk", ["user_id", "guild_id", "item_id"])
             .addForeignKeyConstraint(
                 "user_items_fk_user",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 "users",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .addForeignKeyConstraint(
@@ -239,16 +268,16 @@ const db = new Kysely<Database>({
             ])
             .addForeignKeyConstraint(
                 "user_stocks_fk_user",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 "users",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .addForeignKeyConstraint(
                 "user_stocks_fk_stock",
-                ["stock_id", "guild_id"],
+                ["stock_id"],
                 "users",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .execute();
@@ -269,9 +298,9 @@ const db = new Kysely<Database>({
             ])
             .addForeignKeyConstraint(
                 "user_cooldowns_fk_user",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 "users",
-                ["user_id", "guild_id"],
+                ["user_id"],
                 (cb) => cb.onDelete("cascade"),
             )
             .addForeignKeyConstraint(
