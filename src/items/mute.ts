@@ -7,7 +7,7 @@ const durationMs: number = MUTE_DURATION_MIN * 60000;
 
 const data: Partial<Item> = {
     item_id: "mute" as ItemsItemId,
-    price: 100000,
+    price: 10000,
     emoji_code: ":mute:",
     description: `Mutes a user for ${MUTE_DURATION_MIN} minutes`,
     usage: `${inlineCode("$use mute [@user]")}`,

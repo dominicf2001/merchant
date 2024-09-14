@@ -5,7 +5,7 @@ import { UsersFactory } from "../database/db-objects";
 
 const data: Partial<Item> = {
     item_id: "nametag" as ItemsItemId,
-    price: 150000,
+    price: 8000,
     emoji_code: ":label:",
     description: "Sets any user's nickname",
     usage: `${inlineCode("$use nametag [@user]")}`,

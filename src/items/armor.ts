@@ -4,7 +4,7 @@ import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
 const data: Partial<Item> = {
     item_id: "armor" as ItemsItemId,
-    price: 5000,
+    price: 1500,
     emoji_code: ":shield:",
     description:
         "Protects against nametag, dye, and mute (Can only apply one at a time)",
