@@ -3,8 +3,10 @@ import Database from "../schemas/Database";
 import { Collection } from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
-import { DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
+import { client, DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
 import { DateTime } from "luxon";
+
+let getDatastores: typeof import('../db-objects').getDatastores;
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
     v === null ? null : DateTime.fromSQL(v).toUTC().toSQL(),
@@ -40,15 +42,23 @@ export type TableID =
     | "item_id"
     | "stock_id"
     | "command_id"
+    | "guild_id"
 export type BehaviorFunction = (
     message: Message,
     args: string[],
 ) => Promise<void>;
 
-export async function dbWipe(db: Kysely<Database>, datastores: DataStore<any, any>[]) {
+export async function dbWipe(db: Kysely<Database>) {
+    const module = await import('../db-objects');
+    getDatastores = module.getDatastores;
+
     try {
-        for (const dataStore of datastores) {
-            dataStore.clearCache();
+        const guilds = client.guilds.cache;
+        for (const guild of guilds.values()) {
+            const datastores = Object.values(getDatastores(guild.id));
+            for (const ds of datastores) {
+                ds.clearCache();
+            }
         }
 
         const tableNames = await getTableNames(db);
@@ -64,24 +74,25 @@ export async function dbWipe(db: Kysely<Database>, datastores: DataStore<any, an
 }
 
 export abstract class DataStore<K, Data> {
-    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID) {
+    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID, guildID: string) {
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;
+        this.guildID = guildID;
     }
 
     async set(
         id: K,
         data: Insertable<Data> | Updateable<Data> = {},
     ): Promise<void> {
-        const newData: Data = { [this.tableID]: id as any, ...data } as Data;
+        const newData: Data = { [this.tableID]: id as any, guild_id: this.guildID, ...data } as Data;
 
         try {
             const result = (await this.db
                 .insertInto(this.tableName)
                 .values(newData)
                 .onConflict((oc) =>
-                    oc.column(this.tableID).doUpdateSet(newData),
+                    oc.columns([this.tableID, "guild_id"]).doUpdateSet(newData),
                 )
                 .returningAll()
                 .executeTakeFirstOrThrow()) as Data;
@@ -108,6 +119,7 @@ export abstract class DataStore<K, Data> {
             .selectFrom(this.tableName)
             .selectAll()
             .where(this.tableID, "=", id as any)
+            .where("guild_id", "=", this.guildID as any)
             .executeTakeFirst()) as Data;
     }
 
@@ -126,6 +138,7 @@ export abstract class DataStore<K, Data> {
             // cache miss
             return (await this.db
                 .selectFrom(this.tableName)
+                .where("guild_id", "=", this.guildID as any)
                 .selectAll()
                 .execute()) as Data[];
         }
@@ -136,6 +149,7 @@ export abstract class DataStore<K, Data> {
         await this.db
             .deleteFrom(this.tableName as any)
             .where(this.tableID, "=", id as any)
+            .where("guild_id", "=", this.guildID as any)
             .execute();
     }
 
@@ -154,5 +168,24 @@ export abstract class DataStore<K, Data> {
     protected db: Kysely<Database>;
     protected tableName: TableName;
     protected tableID: TableID;
+    protected guildID: string;
+    isTesting: boolean;
 }
 
+export abstract class DataStoreFactory<DS> {
+    constructor(db: Kysely<Database>) {
+        this.db = db;
+    }
+
+    get(guildID: string): DS {
+        if (!this.guildDataStores.has(guildID)) {
+            this.guildDataStores.set(guildID, this.construct(guildID));
+        }
+        return this.guildDataStores.get(guildID);
+    }
+
+    protected abstract construct(guildID: string): DS;
+
+    protected guildDataStores = new Collection<string, DS>;
+    protected db: Kysely<Database>;
+}

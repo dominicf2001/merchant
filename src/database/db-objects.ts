@@ -1,9 +1,16 @@
-import { Users } from "./datastores/Users";
-import { Items } from "./datastores/Items";
-import { Commands } from "./datastores/Commands";
-import { Stocks } from "./datastores/Stocks";
+import { UsersFactory } from "./datastores/Users";
+import { ItemsFactory } from "./datastores/Items";
+import { CommandsFactory } from "./datastores/Commands";
+import { StocksFactory } from "./datastores/Stocks";
 import { db } from "./datastores/DataStore";
 
-export const datastores = [Users, Items, Stocks, Commands];
+export { UsersFactory, ItemsFactory, StocksFactory, CommandsFactory, db };
 
-export { Users, Items, Stocks, Commands, db };
+export function getDatastores(guildId: string) {
+    return {
+        Users: UsersFactory.get(guildId),
+        Stocks: StocksFactory.get(guildId),
+        Items: ItemsFactory.get(guildId),
+        Commands: CommandsFactory.get(guildId),
+    };
+}

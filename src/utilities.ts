@@ -65,6 +65,7 @@ export const client: Client = new Client({
         GatewayIntentBits.GuildPresences,
     ],
 });
+client.login(TOKEN);
 
 export const SMA_UPDATE_HOURS = [OPEN_HOUR + 1, OPEN_HOUR + 7, OPEN_HOUR + 13];
 

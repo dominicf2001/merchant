@@ -3,9 +3,7 @@
 // import { Items as Item, ItemsItemId } from '../database/schemas/public/Items';
 
 // function getRandomNick(){
-//     const words = ['cunt', 'lovely', 'horny', 'spectacular', 'retarded', 'large', 'sympathizer',
-//         'mmm', 'benis', 'sweet', 'drunk', 'fat', 'loser', 'cunny', 'd1ck', 'giant', 'smol', 'goyim', 'obese',
-//         'hairy', 'lover', 'enjoyer', 'giga', 'virgin', 'chad', 'chud', 'vancepilled', 'bluepilled', 'schizo', 'incel'];
+//     words = [];
 //     let newNickname = "";
 
 //     for (var i = 0; i < getRandomInt(1, 6); ++i){

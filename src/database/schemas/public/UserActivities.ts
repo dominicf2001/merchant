@@ -4,9 +4,14 @@
 import type { UsersUserId } from './Users';
 import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
+/** Identifier type for public.user_activities */
+export type UserActivitiesGuildId = string & { __brand: 'UserActivitiesGuildId' };
+
 /** Represents the table public.user_activities */
 export default interface UserActivitiesTable {
   user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
+
+  guild_id: ColumnType<UserActivitiesGuildId, UserActivitiesGuildId, UserActivitiesGuildId>;
 
   activity_points_short: ColumnType<number, number | undefined, number>;
 

@@ -6,9 +6,14 @@ import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 /** Identifier type for public.commands */
 export type CommandsCommandId = string & { __brand: 'CommandsCommandId' };
 
+/** Identifier type for public.commands */
+export type CommandsGuildId = string & { __brand: 'CommandsGuildId' };
+
 /** Represents the table public.commands */
 export default interface CommandsTable {
   command_id: ColumnType<CommandsCommandId, CommandsCommandId, CommandsCommandId>;
+
+  guild_id: ColumnType<CommandsGuildId, CommandsGuildId, CommandsGuildId>;
 
   description: ColumnType<string, string | undefined, string>;
 

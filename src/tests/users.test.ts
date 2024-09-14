@@ -1,13 +1,54 @@
 import { DateTime } from "luxon";
-import { Users, Items, Stocks } from "../database/db-objects";
+import { getDatastores } from "../database/db-objects";
 import { sleep } from "../utilities";
 
+const guildId = "1234";
+
+const { Users, Stocks, Items } = getDatastores(guildId);
+
 const sleepDuration: number = 80;
+
+describe("USER Operations", () => {
+    const userId = "123";
+
+    beforeAll(async () => {
+        for (const ds of Object.values(getDatastores(guildId))) {
+            ds.isTesting = true;
+        }
+
+        await Users.delete(userId);
+        await sleep(sleepDuration);
+    });
+
+    afterEach(async () => {
+        await Users.delete(userId);
+        await sleep(sleepDuration);
+    });
+
+    test("Create and delete a user", async () => {
+        await Users.set(userId);
+        await sleep(sleepDuration);
+
+        let user = await Users.get(userId);
+        expect(user).toBeDefined();
+
+        await Users.delete(userId);
+        await sleep(sleepDuration);
+
+        user = await Users.get(userId);
+
+        expect(user).not.toBeDefined();
+    })
+});
 
 describe("BALANCE, ACTIVITY_POINTS, ARMOR Operations", () => {
     const userId = "123";
 
     beforeAll(async () => {
+        for (const ds of Object.values(getDatastores(guildId))) {
+            ds.isTesting = true;
+        }
+
         await Users.delete(userId);
         await sleep(sleepDuration);
     });

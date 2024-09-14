@@ -1,12 +1,12 @@
 import { Message, EmbedBuilder, inlineCode } from "discord.js";
-import { Users } from "../../database/db-objects";
+import { UsersFactory } from "../../database/db-objects";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "bal" as CommandsCommandId,
     description: `View your balance`,
     usage: `${inlineCode("$bal")}`,
@@ -17,6 +17,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const authorBalance = await Users.getBalance(message.author.id);
 
         const embed = new EmbedBuilder().setColor("Blurple").addFields({

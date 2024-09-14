@@ -1,10 +1,9 @@
 import { Message, inlineCode, EmbedBuilder, AttachmentBuilder } from "discord.js";
-import { findTextArgs } from "../utilities";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
-const data: Item = {
+const data: Partial<Item> = {
     item_id: "megaphone" as ItemsItemId,
-    price: 100000,
+    price: 4000,
     emoji_code: ":mega:",
     description: "Sends your message and/or attachment as an @everyone",
     usage: `${inlineCode("$use megaphone [message/attachment]")}\n${inlineCode("$use megaphone [message] [attachment]")}`,

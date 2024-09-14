@@ -1,4 +1,4 @@
-import { Commands, Items } from "../../database/db-objects";
+import { CommandsFactory, ItemsFactory } from "../../database/db-objects";
 import {
     PaginatedMenuBuilder,
     findTextArgs,
@@ -20,7 +20,7 @@ import {
 const HELP_ID: string = "help";
 const HELP_PAGE_SIZE: number = 5;
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "help" as CommandsCommandId,
     description: `Displays available commands or displays info on a command/item`,
     usage: `${inlineCode("$help")}\n${inlineCode("$help [item/command]")}`,
@@ -32,6 +32,9 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Commands = CommandsFactory.get(message.guildId);
+        const Items = ItemsFactory.get(message.guildId);
+
         if (args.length) {
             const name = findTextArgs(args)[0].toLowerCase();
             const embed = new EmbedBuilder()
@@ -80,6 +83,8 @@ async function sendHelpMenu(
     pageSize: number = 5,
     pageNum: number = 1,
 ): Promise<void> {
+    const Commands = CommandsFactory.get(message.guildId);
+
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
     const commands = await Commands.getAll();

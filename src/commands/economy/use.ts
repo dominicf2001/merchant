@@ -1,4 +1,4 @@
-import { Users, Items } from "../../database/db-objects";
+import { UsersFactory, ItemsFactory } from "../../database/db-objects";
 import { findTextArgs } from "../../utilities";
 import {
     Commands as Command,
@@ -6,7 +6,7 @@ import {
 } from "../../database/schemas/public/Commands";
 import { Message, inlineCode } from "discord.js";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "use" as CommandsCommandId,
     description: `Use an item`,
     usage: `${inlineCode("$use [item]")}\n${inlineCode("$use [item] [@user]")}`,
@@ -17,6 +17,9 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+        const Items = ItemsFactory.get(message.guildId);
+
         let itemName = findTextArgs(args)[0];
 
         if (!itemName) {

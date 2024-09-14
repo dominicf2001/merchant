@@ -6,9 +6,14 @@ import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 /** Identifier type for public.items */
 export type ItemsItemId = string & { __brand: 'ItemsItemId' };
 
+/** Identifier type for public.items */
+export type ItemsGuildId = string & { __brand: 'ItemsGuildId' };
+
 /** Represents the table public.items */
 export default interface ItemsTable {
   item_id: ColumnType<ItemsItemId, ItemsItemId, ItemsItemId>;
+
+  guild_id: ColumnType<ItemsGuildId, ItemsGuildId, ItemsGuildId>;
 
   price: ColumnType<number, number | undefined, number>;
 

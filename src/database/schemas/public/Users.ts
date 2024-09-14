@@ -11,10 +11,6 @@ export default interface UsersTable {
   user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
   username: ColumnType<string, string, string>;
-
-  balance: ColumnType<number, number | undefined, number>;
-
-  armor: ColumnType<number, number | undefined, number>;
 }
 
 export type Users = Selectable<UsersTable>;

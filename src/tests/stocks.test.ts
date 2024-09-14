@@ -1,8 +1,12 @@
 import { sleep } from "../utilities";
-import { Stocks, Users, db } from "../database/db-objects";
+import { db, getDatastores } from "../database/db-objects";
 import { StocksCreatedDate } from "../database/schemas/public/Stocks";
 import { faker } from "@faker-js/faker";
 import { DateTime } from "luxon";
+
+const guildId = "4321";
+
+const { Users, Stocks } = getDatastores(guildId);
 
 const sleepDuration: number = 80;
 
@@ -11,6 +15,10 @@ describe("UPDATING Operations", () => {
     const testUserId = testStockId;
 
     beforeAll(async () => {
+        for (const ds of Object.values(getDatastores(guildId))) {
+            ds.isTesting = true;
+        }
+
         await Users.delete(testUserId);
         await sleep(sleepDuration);
 
@@ -126,6 +134,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 10 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -134,6 +143,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 4 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -142,6 +152,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 15 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -177,6 +188,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -185,6 +197,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -193,6 +206,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -227,6 +241,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -235,6 +250,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -243,6 +259,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -297,6 +314,7 @@ describe("HISTORY Operations", () => {
         const baselineDate = DateTime.now();
 
         const stockDataOne = Array.from({ length: 1440 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockId,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -305,6 +323,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataTwo = Array.from({ length: 900 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdTwo,
             price: faker.number.int(100),
             created_date: baselineDate
@@ -313,6 +332,7 @@ describe("HISTORY Operations", () => {
         }));
 
         const stockDataThree = Array.from({ length: 2000 }, (_, i) => ({
+            guild_id: guildId,
             stock_id: testStockIdThree,
             price: faker.number.int(100),
             created_date: baselineDate

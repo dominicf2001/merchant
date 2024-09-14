@@ -6,12 +6,12 @@ import {
     EmbedBuilder,
 } from "discord.js";
 import { findTextArgs, toUpperCaseString } from "../utilities";
-import { Users } from "../database/db-objects";
+import { UsersFactory } from "../database/db-objects";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
-const data: Item = {
+const data: Partial<Item> = {
     item_id: "dye" as ItemsItemId,
-    price: 100000,
+    price: 5000,
     emoji_code: ":art:",
     description: "Sets the color of any user's name",
     usage: `${inlineCode("$use dye [color] \n----\nView available colors here: https://old.discordjs.dev/#/docs/discord.js/14.11.0/typedef/ColorResolvable")}`,
@@ -20,6 +20,8 @@ const data: Item = {
 export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
+        const Users = UsersFactory.get(message.guildId);
+
         const target = message.mentions.members.first();
         const colorArg: string = findTextArgs(args)[0];
 

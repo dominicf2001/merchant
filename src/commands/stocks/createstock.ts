@@ -1,12 +1,11 @@
-import { Stocks } from "../../database/db-objects";
-import { Message, userMention, EmbedBuilder, inlineCode } from "discord.js";
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
+import { StocksFactory } from "../../database/db-objects";
+import { Message, EmbedBuilder, inlineCode } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 
-const data: Command = {
+const data: Partial<Command> = {
     command_id: "createstock" as CommandsCommandId,
     description: `Creates a new stock`,
     usage: `${inlineCode("$createstock [@user]")}`,
@@ -17,6 +16,8 @@ const data: Command = {
 export default {
     data: data,
     async execute(message: Message, args: string[]): Promise<void> {
+        const Stocks = StocksFactory.get(message.guildId);
+
         const stockUser = message.mentions.members.first();
         if (!stockUser) {
             throw new Error("Please specify a user.");

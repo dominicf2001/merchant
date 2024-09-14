@@ -1,0 +1,1 @@
+/nix/store/1gax5xs6h1b70gk7z274kx4qh04hsn96-postgresql-16.4/bin/postgres "-D" "/home/dominic/devel/merchant/bot/.devenv/state/postgres" "-c" "unix_socket_directories=/run/user/1000/devenv-0ca2c83/postgres" "-c" "listen_addresses=" "-p" "5432"

@@ -1,10 +1,10 @@
 import { EmbedBuilder, Message, inlineCode } from "discord.js";
-import { Users } from "../database/db-objects";
+import { UsersFactory } from "../database/db-objects";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 
-const data: Item = {
+const data: Partial<Item> = {
     item_id: "armor" as ItemsItemId,
-    price: 5000,
+    price: 1500,
     emoji_code: ":shield:",
     description:
         "Protects against nametag, dye, and mute (Can only apply one at a time)",
@@ -15,6 +15,8 @@ export default {
     data: data,
     async use(message: Message, args: string[]): Promise<void> {
         try {
+            const Users = UsersFactory.get(message.guildId);
+
             const authorArmor = await Users.getArmor(message.author.id);
 
             if (authorArmor >= 1) {

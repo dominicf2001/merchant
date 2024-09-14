@@ -5,6 +5,9 @@ import type { UsersUserId } from './Users';
 import type { ColumnType, Selectable, Insertable, Updateable } from 'kysely';
 
 /** Identifier type for public.user_stocks */
+export type UserStocksGuildId = string & { __brand: 'UserStocksGuildId' };
+
+/** Identifier type for public.user_stocks */
 export type UserStocksPurchaseDate = string & { __brand: 'UserStocksPurchaseDate' };
 
 /** Represents the table public.user_stocks */
@@ -12,6 +15,8 @@ export default interface UserStocksTable {
   user_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
 
   stock_id: ColumnType<UsersUserId, UsersUserId, UsersUserId>;
+
+  guild_id: ColumnType<UserStocksGuildId, UserStocksGuildId, UserStocksGuildId>;
 
   purchase_date: ColumnType<UserStocksPurchaseDate, UserStocksPurchaseDate | undefined, UserStocksPurchaseDate>;
 

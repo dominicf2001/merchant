@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 {
-  packages = [ pkgs.nodejs pkgs.libuuid pkgs.discordchatexporter-cli ];
+  packages = with pkgs; [ nodejs libuuid discordchatexporter-cli pm2 ];
 
   env = {
     LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.libuuid ];
@@ -15,4 +15,6 @@
   };
 
   languages.typescript.enable = true;
+
+  languages.go.enable = true;
 }
