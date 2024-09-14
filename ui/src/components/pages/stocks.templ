@@ -1,0 +1,153 @@
+package pages
+
+import (
+	"github.com/dominicf2001/merchant-ui/src/components/shared"
+	"github.com/dominicf2001/merchant-ui/src/services"
+)
+
+type StocksViewModel struct {
+	*services.SimParams
+}
+
+templ Stocks(vm *StocksViewModel) {
+	<style>
+	.input-item {
+		margin-bottom: 1rem;
+		width: 80%;
+	}
+</style>
+	<script>
+	function processSimFormParams(params) {
+		params.clearCache = !!params.clearCache;
+	}
+</script>
+	@shared.Layout() {
+		<div class="flex">
+			<div class="fixed left-0 top-0 h-screen w-72 bg-base-200 shadow-xl overflow-y-auto">
+				<div class="p-4">
+					<div class="space-y-6">
+						<div class="bg-base-100 p-4 rounded-lg shadow">
+							<h3 class="text-lg font-semibold mb-2">Current Simulation</h3>
+							if vm.SimParams.GuildID != "" {
+								<p class="text-sm">Start: <span class="font-medium">{ vm.SimParams.Start }</span></p>
+								<p class="text-sm">End: <span class="font-medium">{ vm.SimParams.End }</span></p>
+							} else {
+								<p class="text-sm italic">No simulation data available</p>
+							}
+						</div>
+						<div class="flex flex-col space-y-4">
+							<button
+								id="newSimBtn"
+								hx-get="/stocks/guildOptions"
+								hx-target="#guildSelect"
+								class="btn btn-primary w-full"
+								_="on htmx:afterRequest send dialogOpen to #newSimModal"
+							>
+								New Simulation
+								<span class="btn-indicator loading loading-spinner loading-sm ml-2"></span>
+							</button>
+							<form
+								hx-get="/stocks/stockGrid"
+								hx-target="#stockContainer"
+								hx-indicator="#loadStocksIndicator"
+								hx-trigger="load, change, stocks:loadStocks"
+								class="flex flex-col space-y-2"
+							>
+								<select id="intervalInput" name="interval" class="select select-bordered w-full">
+									<option value="minute">Minute</option>
+									<option value="hour">Hour</option>
+									<option value="day">Day</option>
+									<option value="month">Month</option>
+								</select>
+								<input
+									min={ vm.Start + "T08:30" }
+									max={ vm.End + "T08:30" }
+									id="startDateInput"
+									type="datetime-local"
+									name="startDate"
+									class="input input-md input-bordered w-full"
+								/>
+								<input
+									min={ vm.Start + "T08:30" }
+									max={ vm.End + "T08:30" }
+									value={ vm.End + "T08:30" }
+									id="endDateInput"
+									type="datetime-local"
+									name="endDate"
+									class="input input-md input-bordered w-full"
+								/>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="ml-64 w-full">
+				<div>
+					<section id="stockContainer">
+						<div
+							id="loadStocksIndicator"
+							class="htmx-indicator h-lvh flex justify-center items-center container mx-auto"
+						>
+							<p class="text-xl">
+								Loading stocks...
+							</p>
+						</div>
+					</section>
+				</div>
+			</div>
+			<dialog
+				_="on dialogOpen me.showModal()
+				   on dialogClose me.close()"
+				id="newSimModal"
+				class="modal"
+			>
+				<form method="dialog" id="modalForm" class="modal-box">
+					<h3 class="font-bold text-lg mb-4">New Simulation</h3>
+					<div class="space-y-4">
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Date Range</span>
+							</label>
+							<div class="flex space-x-2">
+								<input
+									value={ vm.SimParams.Start }
+									type="date"
+									name="start"
+									class="input input-bordered w-full"
+								/>
+								<input value={ vm.SimParams.End } type="date" name="end" class="input input-bordered w-full"/>
+							</div>
+						</div>
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Server</span>
+							</label>
+							<select id="guildSelect" name="guildID" class="select select-bordered w-full"></select>
+						</div>
+						<div class="form-control">
+							<label class="label cursor-pointer justify-start">
+								<input name="clearCache" type="checkbox" class="checkbox checkbox-primary mr-2"/>
+								<span class="label-text">Clear cache</span>
+							</label>
+						</div>
+					</div>
+					<div class="modal-action">
+						<button class="btn">Close</button>
+						<button
+							id="simFormRunBtn"
+							_="on htmx:requestConfig call processSimFormParams(event.details.parameters) 
+							   on htmx:afterRequest send dialogClose to closest <dialog/> then trigger stocks:loadStocks"
+							hx-ext="json-enc"
+							hx-post="/stocks/simForm"
+							hx-swap="none"
+							class="btn btn-primary"
+						>
+							Run
+							<span class="btn-indicator loading loading-spinner loading-sm ml-2"></span>
+						</button>
+					</div>
+				</form>
+			</dialog>
+		</div>
+	}
+}

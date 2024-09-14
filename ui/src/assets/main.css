@@ -1,0 +1,11 @@
+.btn-indicator {
+    display: none;
+}
+
+.htmx-request .btn-indicator {
+    display: inline;
+}
+
+.htmx-request.btn-indicator {
+    display: inline;
+}

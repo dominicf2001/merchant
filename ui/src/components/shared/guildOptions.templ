@@ -1,0 +1,11 @@
+package shared
+
+import "github.com/dominicf2001/merchant-ui/src/services"
+
+templ GuildOptions(guilds []services.Guild, selectedGuildID string) {
+	for _, guild := range guilds {
+		<option if selectedGuildID==guild.ID {
+	selected
+} value={ guild.ID }>{ guild.Name }</option>
+	}
+}
