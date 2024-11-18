@@ -15,3 +15,5 @@ devenv.local.nix
 .pre-commit-config.yaml
 
 src/api/cache/
+
+devenv
