@@ -10,11 +10,11 @@ interface RunInstance {
 
 const runMap = new Map<string, RunInstance>();
 
-const ACTIVITY_DECAY_FACTOR = 0.8;
+const ACTIVITY_DECAY_FACTOR = 0.9;
 const PRICE_MOMENTUM_FACTOR = 0.95;
-const VOLATILITY_DAMPENING = 0.5;
-const MAX_PRICE_CHANGE_PERCENT = 0.05;
-const SHORT_TERM_FLUCTUATION_FACTOR = 0.03;
+const VOLATILITY_DAMPENING = 0.4;
+const MAX_PRICE_CHANGE_PERCENT = 0.08;
+const SHORT_TERM_FLUCTUATION_FACTOR = 0.04;
 
 export async function updateStockPrices(guildId: string, date = DateTime.now()): Promise<void> {
     const Users = UsersFactory.get(guildId);
@@ -78,7 +78,7 @@ export async function updateStockPrices(guildId: string, date = DateTime.now()):
 function calculateStockPrice(EMA: number, EMSD: number, SMA: number, previousPrice: number): number {
     const EMA_WEIGHT = 0.25;
     const EMSD_WEIGHT = 0.15;
-    const SMA_WEIGHT = 2.6;
+    const SMA_WEIGHT = 2.5;
     const RANDOMNESS_FACTOR = 1.5;
 
     const randomAdjustment = (Math.random() - 0.5) * RANDOMNESS_FACTOR;
@@ -139,7 +139,7 @@ export async function updateSMAS(guildId: string, today = DateTime.now()): Promi
                 : Math.ceil((oldSMA * (intervals - 1) + activityPoints) / intervals);
 
             await Users.setActivity(stock.stock_id, {
-                activity_points_long_sma: newSMA,
+                activity_points_long_sma: newSMA < 0 ? 0 : newSMA,
                 activity_points_long: Math.floor(activityPoints * ACTIVITY_DECAY_FACTOR),
             });
         }),

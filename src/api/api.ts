@@ -322,6 +322,6 @@ api.use(router.routes()).use(router.allowedMethods());
 
 client.login(TOKEN);
 
-api.listen("3000", () => {
+api.listen("3000", "0.0.0.0", () => {
     console.log("API listening on port 3000");
 });
