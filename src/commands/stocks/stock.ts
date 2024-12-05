@@ -20,6 +20,7 @@ import {
     SlashCommandBuilder,
     GuildMember,
     User,
+    InteractionReplyOptions,
 } from "discord.js";
 import {
     Commands as Command,
@@ -59,7 +60,7 @@ export default {
         } else {
             let pageNum: number = options.getNumber("page", false) || 1;
             await sendStockList(
-                message,
+                member,
                 STOCK_LIST_ID,
                 STOCK_LIST_PAGE_SIZE,
                 pageNum,
@@ -210,17 +211,17 @@ async function sendStockChart(member: GuildMember, stockUser: User, intervalOpti
         )
         .setImage("attachment://chart.png");
 
-    await message.reply({ embeds: [embed], files: [attachment] });
+    return { embeds: [embed], files: [attachment] };
 }
 
 async function sendStockList(
-    message: Message | ButtonInteraction,
+    member: GuildMember,
     id: string,
     pageSize: number = 5,
     pageNum: number = 1,
-): Promise<void> {
-    const Users = UsersFactory.get(message.guildId);
-    const Stocks = StocksFactory.get(message.guildId);
+): Promise<InteractionReplyOptions> {
+    const Users = UsersFactory.get(member.guild.id);
+    const Stocks = StocksFactory.get(member.guild.id);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
@@ -265,9 +266,7 @@ async function sendStockList(
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
 
-    message instanceof ButtonInteraction
-        ? await message.update({ embeds: [embed], components: [buttons] })
-        : await message.reply({ embeds: [embed], components: [buttons] });
+    return { embeds: [embed], components: [buttons] };
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -296,12 +295,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 ? (pageNum = Math.max(pageNum - 1, 1))
                 : pageNum + 1;
 
-        await sendStockList(
-            interaction,
+        const reply = await sendStockList(
+            interaction.message.member,
             STOCK_LIST_ID,
             STOCK_LIST_PAGE_SIZE,
             pageNum,
         );
+        interaction.editReply(reply);
     } catch (error) {
         console.error(error);
     }

@@ -10,7 +10,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, Events, ButtonInteraction, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { Message, Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
 import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const SHOP_ID: string = "shop";
@@ -33,18 +33,18 @@ export default {
     data: data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const pageNum = options.getNumber("page", false) || 1;
-        await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        return sendShopMenu(member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     },
 };
 
 // TODO: abstract this?
 async function sendShopMenu(
-    message: Message | ButtonInteraction,
+    member: GuildMember,
     id: string,
     pageSize: number = 5,
     pageNum: number = 1,
-): Promise<void> {
-    const Items = ItemsFactory.get(message.guildId);
+): Promise<InteractionReplyOptions> {
+    const Items = ItemsFactory.get(member.guild.id);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
@@ -76,9 +76,7 @@ async function sendShopMenu(
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
 
-    message instanceof ButtonInteraction
-        ? await message.update({ embeds: [embed], components: [buttons] })
-        : await message.reply({ embeds: [embed], components: [buttons] });
+    return { embeds: [embed], components: [buttons] };
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -103,7 +101,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 ? (pageNum = Math.max(pageNum - 1, 1))
                 : pageNum + 1;
 
-        await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        const reply = await sendShopMenu(interaction.message.member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        await interaction.editReply(reply)
     } catch (error) {
         console.error(error);
     }

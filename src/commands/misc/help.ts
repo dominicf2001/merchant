@@ -15,6 +15,7 @@ import {
     ApplicationCommandOptionType,
     APIApplicationCommandOption,
     GuildMember,
+    InteractionReplyOptions,
 } from "discord.js";
 import {
     Commands as Command,
@@ -92,18 +93,18 @@ export default {
             throw new Error("This item or command does not exist.");
         } else {
             const pageNum = options.getNumber("page", false) || 1;
-            await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
+            await sendHelpMenu(member, HELP_ID, HELP_PAGE_SIZE, pageNum);
         }
     },
 };
 
 async function sendHelpMenu(
-    message: Message | ButtonInteraction,
+    member: GuildMember,
     id: string,
     pageSize: number = 5,
     pageNum: number = 1,
-): Promise<void> {
-    const Commands = CommandsFactory.get(message.guildId);
+): Promise<InteractionReplyOptions> {
+    const Commands = CommandsFactory.get(member.guild.id);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
@@ -135,9 +136,7 @@ async function sendHelpMenu(
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
 
-    message instanceof ButtonInteraction
-        ? await message.update({ embeds: [embed], components: [buttons] })
-        : await message.reply({ embeds: [embed], components: [buttons] });
+  return { embeds: [embed], components: [buttons] };
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -162,7 +161,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 ? (pageNum = Math.max(pageNum - 1, 1))
                 : pageNum + 1;
 
-        await sendHelpMenu(interaction, HELP_ID, HELP_PAGE_SIZE, pageNum);
+        const reply = await sendHelpMenu(interaction.message.member, HELP_ID, HELP_PAGE_SIZE, pageNum);
+        interaction.editReply(reply)
     } catch (error) {
         console.error(error);
     }

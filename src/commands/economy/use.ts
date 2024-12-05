@@ -33,7 +33,7 @@ export default {
         }
 
         try {
-            await Items.use(itemName, message, args.slice(1));
+            // await Items.use(itemName, message, args.slice(1));
             await Users.addItem(member.id, itemName, -1);
         }
         catch (error) {

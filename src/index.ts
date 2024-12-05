@@ -141,7 +141,7 @@ client.on(Events.InteractionCreate, async interaction => {
         const member = await interaction.guild.members.fetch(interaction.user)
         const reply = await Commands.execute(command.command_id, member, interaction.options);
         if (reply instanceof EmbedBuilder) await interaction.reply({ embeds: [reply] });
-        else await interaction.reply({ content: reply });
+        else await interaction.reply(reply);
 
         if (command.cooldown_time > 0) {
             await Users.createCooldown(
