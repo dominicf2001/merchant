@@ -9,12 +9,16 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 
 const data: Partial<Command> = {
     command_id: "sell" as CommandsCommandId,
-    description: `sell an item or a stock`,
-    usage: `${inlineCode("$sell [item/@user]")}\n${inlineCode("$sell [item/@user] [#amount/all]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("sell")
+      .setDescription("sell an item or a stock")
+      .addUserOption(o => o.setName("user").setDescription("the stock to sell to"))
+      .addStringOption(o => o.setName("item").setDescription("the item to sell"))
+      .addNumberOption(o => o.setName("amount").setDescription("the amount to sell")),
     cooldown_time: 0,
     is_admin: false,
 };

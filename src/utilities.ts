@@ -14,7 +14,7 @@ import { DateTime } from "luxon";
 import fs from "fs";
 import path from "path";
 
-export const { TOKEN, USER_TOKEN } = JSON.parse(
+export const { TOKEN, APPLICATION_ID, USER_TOKEN } = JSON.parse(
     fs.readFileSync(`${__dirname}/../token.json`, "utf8"),
 );
 

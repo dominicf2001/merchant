@@ -4,12 +4,11 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 
 const data: Partial<Command> = {
     command_id: "inv" as CommandsCommandId,
-    description: `View your inventory`,
-    usage: `${inlineCode("$inv")}`,
+    metadata: new SlashCommandBuilder().setName("inv").setDescription("View your inventory"),
     cooldown_time: 0,
     is_admin: false,
 };

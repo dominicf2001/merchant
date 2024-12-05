@@ -1,5 +1,5 @@
 import { UsersFactory } from "../../database/db-objects";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 import { CURRENCY_EMOJI_CODE, getRandomInt } from "../../utilities";
 import {
     Commands as Command,
@@ -8,8 +8,9 @@ import {
 
 const data: Partial<Command> = {
     command_id: "work" as CommandsCommandId,
-    description: `Make some tendies`,
-    usage: `${inlineCode("$work")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("work")
+      .setDescription("Make some tendies"),
     cooldown_time: 1800000,
     is_admin: false,
 };

@@ -1,4 +1,9 @@
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import {
+    Message,
+    EmbedBuilder,
+    inlineCode,
+    SlashCommandBuilder,
+} from "discord.js";
 import { UsersFactory } from "../../database/db-objects";
 import {
     Commands as Command,
@@ -8,8 +13,9 @@ import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
 
 const data: Partial<Command> = {
     command_id: "bal" as CommandsCommandId,
-    description: `View your balance`,
-    usage: `${inlineCode("$bal")}`,
+    metadata: new SlashCommandBuilder()
+        .setName("bal")
+        .setDescription("View your balance"),
     cooldown_time: 0,
     is_admin: false,
 };

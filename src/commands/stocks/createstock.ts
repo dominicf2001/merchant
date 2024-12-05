@@ -1,5 +1,5 @@
 import { StocksFactory } from "../../database/db-objects";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
@@ -7,8 +7,10 @@ import {
 
 const data: Partial<Command> = {
     command_id: "createstock" as CommandsCommandId,
-    description: `Creates a new stock`,
-    usage: `${inlineCode("$createstock [@user]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("createstock")
+      .setDescription("Creates a new stock")
+      .addUserOption(o => o.setName("user").setDescription("the user to create a stock for")),
     cooldown_time: 0,
     is_admin: true,
 };

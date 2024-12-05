@@ -1,4 +1,8 @@
-import { UsersFactory, ItemsFactory, StocksFactory } from "../../database/db-objects";
+import {
+    UsersFactory,
+    ItemsFactory,
+    StocksFactory,
+} from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
@@ -10,12 +14,20 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import {
+    Message,
+    EmbedBuilder,
+    inlineCode,
+    SlashCommandBuilder,
+} from "discord.js";
 
 const data: Partial<Command> = {
     command_id: "buy" as CommandsCommandId,
-    description: `Buy an item or stock`,
-    usage: `${inlineCode("$buy [item/@user]")}\n${inlineCode("$buy [item/@user] [#amount/all]")}`,
+    metadata: new SlashCommandBuilder().setName("buy")
+      .setDescription("Buy an item or stock")
+      .addUserOption(o => o.setName("user").setDescription("the stock to buy"))
+      .addStringOption(o => o.setName("item").setDescription("the item to buy"))
+      .addNumberOption(o => o.setName("amount").setDescription("the amount to buy")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -63,8 +75,8 @@ async function buyStock(message: Message, args: string[]): Promise<void> {
     const totalBought: number =
         latestStock.price * quantity > authorBalance || args.includes("all")
             ? Math.floor(
-                Math.floor((authorBalance / latestStock.price) * 100) / 100,
-            )
+                  Math.floor((authorBalance / latestStock.price) * 100) / 100,
+              )
             : quantity;
     const totalCost: number = latestStock.price * totalBought;
 
@@ -93,8 +105,10 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
         ? 99999
         : +findNumericArgs(args)[0] || 1;
 
-    if (true){	
-        await message.reply(`Buying items is currently disabled. The economy must stabilize first.`);
+    if (true) {
+        await message.reply(
+            `Buying items is currently disabled. The economy must stabilize first.`,
+        );
         return;
     }
 
@@ -120,9 +134,7 @@ async function buyItem(message: Message, args: string[]): Promise<void> {
     const freeInventorySpace = MAX_INV_SIZE - itemCount;
 
     if (freeInventorySpace <= 0) {
-        throw new Error(
-            `You can only store ${MAX_INV_SIZE} items at a time.`,
-        );
+        throw new Error(`You can only store ${MAX_INV_SIZE} items at a time.`);
     }
     // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
     // buy as many as possible

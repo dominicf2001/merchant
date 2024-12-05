@@ -10,15 +10,16 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, Events, ButtonInteraction, inlineCode } from "discord.js";
+import { Message, Events, ButtonInteraction, inlineCode, SlashCommandBuilder } from "discord.js";
 
 const SHOP_ID: string = "shop";
 const SHOP_PAGE_SIZE: number = 5;
 
 const data: Partial<Command> = {
     command_id: "shop" as CommandsCommandId,
-    description: `View the shop`,
-    usage: `${inlineCode("$shop")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("shop")
+      .setDescription("View the shop"),
     cooldown_time: 0,
     is_admin: false,
 };

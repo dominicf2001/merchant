@@ -1,4 +1,4 @@
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 import { UsersFactory } from "../../database/db-objects";
 import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
 import {
@@ -8,8 +8,9 @@ import {
 
 const data: Partial<Command> = {
     command_id: "top" as CommandsCommandId,
-    description: `See who are the goodest boys`,
-    usage: `${inlineCode("$top")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("top")
+      .setDescription("See who are the goodest boys"),
     cooldown_time: 0,
     is_admin: false,
 };

@@ -8,12 +8,14 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 
 const data: Partial<Command> = {
     command_id: "give" as CommandsCommandId,
-    description: `Share your tendies`,
-    usage: `${inlineCode("$give [@user] [#amount]")}`,
+    metadata: new SlashCommandBuilder().setName("give")
+      .setDescription("Share your tendies")
+      .addUserOption(o => o.setName("user").setDescription("the user to buy from"))
+      .addNumberOption(o => o.setName("amount").setDescription("the amount to buy")),
     cooldown_time: 0,
     is_admin: false,
 };

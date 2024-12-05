@@ -15,7 +15,8 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
+import { makeChoices } from "src/command-utilities";
 
 enum RobType {
     tendies = "tendies",
@@ -28,8 +29,12 @@ function isValidRobType(robType: string): robType is RobType {
 
 const data: Partial<Command> = {
     command_id: "rob" as CommandsCommandId,
-    description: `Rob user of tendies or a random item with a chance of failure + fine`,
-    usage: `${inlineCode("$rob [@user] [tendies/item]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("rob")
+      .setDescription("Rob user of tendies or a random item with a chance of failure + fine")
+      .addStringOption(o => o.setName("type")
+        .setDescription("the thing you want to rob")
+        .addChoices(makeChoices("tendies", "item"))),
     cooldown_time: 1800000,
     is_admin: false,
 };

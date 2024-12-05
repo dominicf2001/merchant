@@ -17,6 +17,7 @@ import {
     inlineCode,
     Events,
     ButtonInteraction,
+    SlashCommandBuilder,
 } from "discord.js";
 import {
     Commands as Command,
@@ -31,8 +32,11 @@ const STOCK_LIST_PAGE_SIZE: number = 5;
 
 const data: Partial<Command> = {
     command_id: "stock" as CommandsCommandId,
-    description: `View the stock list or a stock chart`,
-    usage: `${inlineCode("$stock")}\n${inlineCode("$stock [@user]")}\n${inlineCode("$stock [@user] [now/hour/day/month]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("stock")
+      .setDescription("View the stock list or a stock chart")
+      .addUserOption(o => o.setName("user").setDescription("the stock to view"))
+      .addStringOption(o => o.setName("time").setDescription("the time to view it")),
     cooldown_time: 0,
     is_admin: false,
 };

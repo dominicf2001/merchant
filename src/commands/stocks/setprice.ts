@@ -1,5 +1,5 @@
 import { StocksFactory } from "../../database/db-objects";
-import { Message, userMention, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, userMention, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
 import {
     Commands as Command,
@@ -8,8 +8,11 @@ import {
 
 const data: Partial<Command> = {
     command_id: "setprice" as CommandsCommandId,
-    description: `Set a stock price`,
-    usage: `${inlineCode("$setprice [@user] [#amount]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("setprice")
+      .setDescription("Set a stock price")
+      .addUserOption(o => o.setName("user").setDescription("the stock to set"))
+      .addNumberOption(o => o.setName("amount").setDescription("the price to set it to")),
     cooldown_time: 0,
     is_admin: true,
 };

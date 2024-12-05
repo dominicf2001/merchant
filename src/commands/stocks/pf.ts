@@ -10,14 +10,16 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
 import { DateTime } from "luxon";
 
 const data: Partial<Command> = {
     command_id: "pf" as CommandsCommandId,
-    description: `View your portfolio`,
     cooldown_time: 0,
-    usage: `${inlineCode("$pf")}\n${inlineCode("$pf [@user]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("pf")
+      .setDescription("View your portfolio")
+      .addUserOption(o => o.setName("user").setDescription("the user to view the portfolio of")),
     is_admin: false,
 };
 
@@ -95,7 +97,7 @@ async function sendPurchaseHistoryList(
     const Users = UsersFactory.get(message.guildId);
 
     // TODO: implement paging
-    const pageNum: number = +findNumericArgs(args)[0] ?? 1;
+    const pageNum: number = +findNumericArgs(args)[0];
     const stockUser = message.mentions.users.first();
     const stockId = stockUser.id;
     const userStocks = await Users.getUserStocks(message.author.id, stockId);

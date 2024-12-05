@@ -4,12 +4,15 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, inlineCode } from "discord.js";
+import { Message, SlashCommandBuilder, inlineCode } from "discord.js";
 
 const data: Partial<Command> = {
     command_id: "use" as CommandsCommandId,
-    description: `Use an item`,
-    usage: `${inlineCode("$use [item]")}\n${inlineCode("$use [item] [@user]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("use")
+      .setDescription("Use an item")
+      .addStringOption(o => o.setName("item").setDescription("the item to use"))
+      .addUserOption(o => o.setName("user").setDescription("the user to use the item on")),
     cooldown_time: 0,
     is_admin: false,
 };

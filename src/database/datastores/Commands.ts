@@ -3,8 +3,7 @@ import { Kysely } from "kysely";
 import { Commands as Command } from "../schemas/public/Commands";
 import { Collection, Message } from "discord.js";
 import Database from "../schemas/Database";
-import path from "path";
-import fs from "fs";
+import { loadCommands } from "src/command-utilities";
 
 class Commands extends DataStore<string, Command> {
     constructor(db: Kysely<Database>, guildID: string) {
@@ -29,36 +28,16 @@ class Commands extends DataStore<string, Command> {
     }
 
     async refreshCache(): Promise<void> {
-        const foldersPath: string = path.join(process.cwd(), "src/commands");
-        const commandFolders: string[] = fs.readdirSync(foldersPath);
-
-        for (const folder of commandFolders) {
-            const commandsPath: string = path.join(foldersPath, folder);
-            const commandFiles: string[] = fs
-                .readdirSync(commandsPath)
-                .filter((file) => file.endsWith(".ts"));
-            for (const file of commandFiles) {
-                const filePath: string = path.join(commandsPath, file);
-                const commandObj = (await import(filePath)).default;
-                if (commandObj && "data" in commandObj && "execute" in commandObj) {
-                    this.behaviors.set(
-                        commandObj.data.command_id,
-                        commandObj.execute,
-                    );
-                    // TODO: custom query that on conflict does nothing
-                    await this.set(commandObj.data.command_id, commandObj.data);
-                } else {
-                    // console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-                }
-            }
+        const commands = await loadCommands();
+        for (const commandObj of commands) {
+            this.behaviors.set(commandObj.data.command_id, commandObj.execute);
+            // TODO: custom query that on conflict does nothing
+            await this.set(commandObj.data.command_id, commandObj.data);
         }
     }
 
-    private behaviors = new Collection<
-        string,
-        BehaviorFunction
-    >();
-    protected cache = new Collection<string, Command>;
+    private behaviors = new Collection<string, BehaviorFunction>();
+    protected cache = new Collection<string, Command>();
 }
 
 class CommandsFactory extends DataStoreFactory<Commands> {
