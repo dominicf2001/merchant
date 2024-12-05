@@ -32,11 +32,11 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder()
       .setName("rob")
       .setDescription("Rob user of tendies or a random item with a chance of failure + fine")
-      .addUserOption(o => o.setName("target").setDescription("the user you want to rob"))
       .addStringOption(o => o.setName("type")
         .setDescription("the thing you want to rob")
         .addChoices(makeChoices("tendies", "item"))
-        .setRequired(true)),
+        .setRequired(true))
+      .addUserOption(o => o.setName("target").setDescription("the user you want to rob")),
     cooldown_time: 1800000,
     is_admin: false,
 };

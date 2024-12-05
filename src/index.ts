@@ -22,6 +22,7 @@ import {
 } from "./utilities";
 import { DateTime } from "luxon";
 
+
 client.once(Events.ClientReady, async () => {
     const guilds = client.guilds.cache;
     for (const guild of guilds.values()) {
@@ -116,7 +117,7 @@ client.on(Events.InteractionCreate, async interaction => {
     await interaction.deferReply();
 
     if (command.is_admin && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-        await interaction.reply(
+        await interaction.editReply(
             "You do not have permission to use this command.",
         );
         return;
@@ -129,7 +130,7 @@ client.on(Events.InteractionCreate, async interaction => {
             commandName,
         );
     if (remainingCooldownDuration > 0) {
-        await interaction.reply({
+        await interaction.editReply({
             content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.`,
         });
         return;
@@ -140,8 +141,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
         const member = await interaction.guild.members.fetch(interaction.user)
         const reply = await Commands.execute(command.command_id, member, interaction.options);
-        if (reply instanceof EmbedBuilder) await interaction.reply({ embeds: [reply] });
-        else await interaction.reply(reply);
+        if (reply instanceof EmbedBuilder) await interaction.editReply({ embeds: [reply] });
+        else await interaction.editReply(reply);
 
         if (command.cooldown_time > 0) {
             await Users.createCooldown(
@@ -151,7 +152,7 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     } catch (error) {
         console.error(error);
-        await interaction.reply(error.message);
+        await interaction.editReply(error.message);
     }
   }
 })

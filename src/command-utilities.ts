@@ -1,11 +1,10 @@
-import { ButtonBuilder, CacheType, CommandInteractionOptionResolver, EmbedBuilder } from "discord.js";
+import { ButtonBuilder, CacheType, CommandInteractionOptionResolver, EmbedBuilder, InteractionReplyOptions } from "discord.js";
 import fs from "fs";
 import path from "path";
 
 export type CommandObj = { data: any; execute: any };
 
-export interface ComplexCommandResponse { embeds: EmbedBuilder[], components: ButtonBuilder[] };
-export type CommandResponse = ComplexCommandResponse | EmbedBuilder | string;
+export type CommandResponse = InteractionReplyOptions | EmbedBuilder | string;
 export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">
 
 export const makeChoices = (...choices: string[]) => {

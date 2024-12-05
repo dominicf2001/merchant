@@ -93,7 +93,7 @@ export default {
             throw new Error("This item or command does not exist.");
         } else {
             const pageNum = options.getNumber("page", false) || 1;
-            await sendHelpMenu(member, HELP_ID, HELP_PAGE_SIZE, pageNum);
+            return sendHelpMenu(member, HELP_ID, HELP_PAGE_SIZE, pageNum);
         }
     },
 };
@@ -135,8 +135,7 @@ async function sendHelpMenu(
 
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
-
-  return { embeds: [embed], components: [buttons] };
+    return { embeds: [embed], components: [buttons] };
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -150,9 +149,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         if (![`${HELP_ID}Previous`, `${HELP_ID}Next`].includes(customId))
             return;
 
-        const authorId = interaction.message.mentions.users.first().id;
-        if (interaction.user.id !== authorId) return;
-
         let pageNum = parseInt(
             interaction.message.embeds[0].description.match(/Page (\d+)/)[1],
         );
@@ -162,7 +158,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 : pageNum + 1;
 
         const reply = await sendHelpMenu(interaction.message.member, HELP_ID, HELP_PAGE_SIZE, pageNum);
-        interaction.editReply(reply)
+        await interaction.update({
+          embeds: reply.embeds,
+          components: reply.components,
+        });
     } catch (error) {
         console.error(error);
     }

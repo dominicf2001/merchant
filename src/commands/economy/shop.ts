@@ -23,8 +23,7 @@ const data: Partial<Command> = {
       .setDescription("View the shop")
       .addNumberOption(o => o
         .setName("page")
-        .setDescription("the shop page you want to view")
-        .setRequired(false)),
+        .setDescription("the shop page you want to view")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -90,9 +89,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
             return;
 
-        const authorId = interaction.message.mentions.users.first().id;
-        if (interaction.user.id !== authorId) return;
-
         let pageNum = parseInt(
             interaction.message.embeds[0].description.match(/Page (\d+)/)[1],
         );
@@ -102,7 +98,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 : pageNum + 1;
 
         const reply = await sendShopMenu(interaction.message.member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
-        await interaction.editReply(reply)
+        await interaction.update({
+          embeds: reply.embeds,
+          components: reply.components,
+        });
     } catch (error) {
         console.error(error);
     }
