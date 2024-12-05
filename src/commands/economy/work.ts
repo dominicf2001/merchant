@@ -1,10 +1,11 @@
 import { UsersFactory } from "../../database/db-objects";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
 import { CURRENCY_EMOJI_CODE, getRandomInt } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "work" as CommandsCommandId,
@@ -17,17 +18,15 @@ const data: Partial<Command> = {
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
 
         const tendiesMade = getRandomInt(10, 50);
-        await Users.addBalance(message.author.id, tendiesMade);
+        await Users.addBalance(member.id, tendiesMade);
 
-        const embed = new EmbedBuilder().setColor("Blurple").addFields({
+        return new EmbedBuilder().setColor("Blurple").addFields({
             value: `You make: ${CURRENCY_EMOJI_CODE} ${tendiesMade} tendies!`,
             name: ` `,
         });
-
-        await message.reply({ embeds: [embed] });
     },
 };

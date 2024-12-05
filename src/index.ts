@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import fs from "fs";
-import { Events, PermissionFlagsBits } from "discord.js";
+import { EmbedBuilder, Events, PermissionFlagsBits } from "discord.js";
 import { getDatastores } from "./database/db-objects";
 import { updateSMAS, updateStockPrices } from "./stock-utilities";
 import {
@@ -75,9 +75,9 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    const { Users, Commands, Stocks } = getDatastores(message.guildId);
+    const { Users, Stocks } = getDatastores(message.guildId);
 
-    // this needs to come before stocks exists 
+    // this needs to come before stocks exists
     if (!Users.exists(message.author.id)) {
         await Users.set(message.author.id);
     }
@@ -86,72 +86,75 @@ client.on(Events.MessageCreate, async (message) => {
         await Stocks.set(message.author.id);
     }
 
-    const prefix: string = "$";
-    const isCommand: boolean = message.content.startsWith(prefix);
-
-    // When a command is called
-    if (isCommand) {
-        const args: string[] = message.content
-            .slice(prefix.length)
-            .trim()
-            .split(/ +/);
-        const commandName: string = args.shift().toLowerCase();
-
-        const command = await Commands.get(commandName);
-        if (!command) return;
-
-        if (command.is_admin && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            await message.reply(
-                "You do not have permission to use this command.",
-            );
-            return;
-        }
-
-        // Check for remaining cooldown
-        const remainingCooldownDuration: number =
-            await Users.getRemainingCooldownDuration(
-                message.author.id,
-                commandName,
-            );
-        if (remainingCooldownDuration > 0) {
-            await message.reply({
-                content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.`,
-            });
-            return;
-        }
-
-        try {
-            // If no cooldown, execute command and set cooldown
-            await Commands.execute(command.command_id, message, args);
-            if (command.cooldown_time > 0) {
-                await Users.createCooldown(
-                    message.author.id,
-                    command.command_id,
+    // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
+    if (marketIsOpen()) {
+        const mentionedUsers = message.mentions.users;
+        mentionedUsers.forEach(async (user) => {
+            if (user.id != message.author.id && !user.bot) {
+                await Users.addActivity(
+                    user.id,
+                    MENTIONED_ACTIVITY_VALUE * getRandomInt(1, 2),
                 );
             }
-        } catch (error) {
-            console.error(error);
-            await message.reply(error.message);
-        }
-    } else {
-        // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
-        if (marketIsOpen()) {
-            const mentionedUsers = message.mentions.users;
-            mentionedUsers.forEach(async (user) => {
-                if (user.id != message.author.id && !user.bot) {
-                    await Users.addActivity(
-                        user.id,
-                        MENTIONED_ACTIVITY_VALUE * getRandomInt(1, 2),
-                    );
-                }
-            });
-            await Users.addActivity(
-                message.author.id,
-                MESSAGE_ACTIVITY_VALUE * getRandomInt(1, 2),
-            );
-        }
+        });
+        await Users.addActivity(
+            message.author.id,
+            MESSAGE_ACTIVITY_VALUE * getRandomInt(1, 2),
+        );
     }
 });
+
+client.on(Events.InteractionCreate, async interaction => {
+
+  if (interaction.isChatInputCommand() && interaction.inGuild()) {
+    const { Users, Commands } = getDatastores(interaction.guildId);
+
+    const commandName = interaction.commandName;
+    const command = await Commands.get(commandName)
+    if (!command) return;
+
+    await interaction.deferReply();
+
+    if (command.is_admin && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+        await interaction.reply(
+            "You do not have permission to use this command.",
+        );
+        return;
+    }
+
+    // Check for remaining cooldown
+    const remainingCooldownDuration: number =
+        await Users.getRemainingCooldownDuration(
+            interaction.user.id,
+            commandName,
+        );
+    if (remainingCooldownDuration > 0) {
+        await interaction.reply({
+            content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.`,
+        });
+        return;
+    }
+
+    try {
+        // If no cooldown, execute command and set cooldown
+
+        const member = await interaction.guild.members.fetch(interaction.user)
+        const reply = await Commands.execute(command.command_id, member, interaction.options);
+        if (reply instanceof EmbedBuilder) await interaction.reply({ embeds: [reply] });
+        else await interaction.reply({ content: reply });
+
+        if (command.cooldown_time > 0) {
+            await Users.createCooldown(
+                interaction.user.id,
+                command.command_id,
+            );
+        }
+    } catch (error) {
+        console.error(error);
+        await interaction.reply(error.message);
+    }
+  }
+})
 
 // CRON HANDLING
 function logToFile(message: string): void {

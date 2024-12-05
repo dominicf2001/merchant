@@ -10,8 +10,9 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember, User } from "discord.js";
 import { DateTime } from "luxon";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "pf" as CommandsCommandId,
@@ -19,26 +20,30 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder()
       .setName("pf")
       .setDescription("View your portfolio")
-      .addUserOption(o => o.setName("user").setDescription("the user to view the portfolio of")),
+      .addUserOption(o => o.setName("user").setDescription("the user to view the portfolio of"))
+      .addNumberOption(o => o.setName("page").setDescription("the page of the purchase list to view")),
     is_admin: false,
 };
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        if (args[0]) {
-            await sendPurchaseHistoryList(message, args);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+
+        const target = options.getUser("user", false);
+        if (target) {
+            const page = options.getNumber("page", false);
+            return sendPurchaseHistoryList(member, target, page);
         } else {
-            await sendStockList(message, args);
+            return sendStockList(member);
         }
     },
 };
 
-async function sendStockList(message: Message, args: string[]): Promise<void> {
-    const Users = UsersFactory.get(message.guildId);
-    const Stocks = StocksFactory.get(message.guildId);
+async function sendStockList(member: GuildMember): Promise<CommandResponse> {
+    const Users = UsersFactory.get(member.guild.id);
+    const Stocks = StocksFactory.get(member.guild.id);
 
-    const portfolio = await Users.getPortfolio(message.author.id);
+    const portfolio = await Users.getPortfolio(member.id);
 
     const embed = new EmbedBuilder()
         .setColor("Blurple")
@@ -50,7 +55,7 @@ async function sendStockList(message: Message, args: string[]): Promise<void> {
     let totalChange: number = 0;
     for (const stock of portfolio) {
         const userStocks = await Users.getUserStocks(
-            message.author.id,
+            member.id,
             stock.stock_id,
         );
 
@@ -87,24 +92,18 @@ async function sendStockList(message: Message, args: string[]): Promise<void> {
         `Portfolio :page_with_curl:\nValue: ${CURRENCY_EMOJI_CODE} ${formatNumber(totalValue)} (${arrow} ${formatNumber(totalChange)})`,
     );
 
-    await message.reply({ embeds: [embed] });
+    return embed;
 }
 
-async function sendPurchaseHistoryList(
-    message: Message,
-    args: string[],
-): Promise<void> {
-    const Users = UsersFactory.get(message.guildId);
+async function sendPurchaseHistoryList(member: GuildMember, stockUser: User, page: number = 1): Promise<CommandResponse> {
+    const Users = UsersFactory.get(member.guild.id);
 
     // TODO: implement paging
-    const pageNum: number = +findNumericArgs(args)[0];
-    const stockUser = message.mentions.users.first();
     const stockId = stockUser.id;
-    const userStocks = await Users.getUserStocks(message.author.id, stockId);
+    const userStocks = await Users.getUserStocks(member.id, stockId);
 
     if (!userStocks?.length) {
-        await message.reply("No history.");
-        return;
+        return "No history.";
     }
 
     const embed = new EmbedBuilder()
@@ -123,5 +122,5 @@ async function sendPurchaseHistoryList(
         });
     }
 
-    await message.reply({ embeds: [embed] });
+    return embed;
 }

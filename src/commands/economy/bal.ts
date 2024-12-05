@@ -3,6 +3,7 @@ import {
     EmbedBuilder,
     inlineCode,
     SlashCommandBuilder,
+    GuildMember,
 } from "discord.js";
 import { UsersFactory } from "../../database/db-objects";
 import {
@@ -10,6 +11,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "bal" as CommandsCommandId,
@@ -22,16 +24,12 @@ const data: Partial<Command> = {
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
-
-        const authorBalance = await Users.getBalance(message.author.id);
-
-        const embed = new EmbedBuilder().setColor("Blurple").addFields({
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
+        const authorBalance = await Users.getBalance(member.id);
+        return new EmbedBuilder().setColor("Blurple").addFields({
             value: `${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)}`,
             name: `Balance`,
         });
-
-        await message.reply({ embeds: [embed] });
     },
 };

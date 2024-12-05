@@ -15,8 +15,8 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
-import { makeChoices } from "src/command-utilities";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandOptions, CommandResponse, makeChoices } from "src/command-utilities";
 
 enum RobType {
     tendies = "tendies",
@@ -32,36 +32,33 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder()
       .setName("rob")
       .setDescription("Rob user of tendies or a random item with a chance of failure + fine")
+      .addUserOption(o => o.setName("target").setDescription("the user you want to rob"))
       .addStringOption(o => o.setName("type")
         .setDescription("the thing you want to rob")
-        .addChoices(makeChoices("tendies", "item"))),
+        .addChoices(makeChoices("tendies", "item"))
+        .setRequired(true)),
     cooldown_time: 1800000,
     is_admin: false,
 };
 
 export default {
-    data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
+    data,
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
 
-        const robType: RobType = (findTextArgs(args)[0] ??
-            "tendies") as RobType;
-        const target = message.mentions.users.first();
+        const robType: RobType = options.getString("type", true) as RobType;
+        const target = options.getUser("target", true);
         // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
 
-        if (!target) {
-            throw new Error("Please specify a target.");
-        }
-
-        if (target.id === message.author.id) {
+        if (target.id === member.id) {
             throw new Error("You cannot rob yourself.");
         }
 
         if (!isValidRobType(robType)) {
             throw new Error("Invalid rob type.");
         }
-        let reply = "";
 
+        let reply = "";
         switch (robType) {
             case "tendies":
                 if (getRandomInt(1, 100) >= CURRENCY_ROB_CHANCE) {
@@ -70,19 +67,19 @@ export default {
                         targetBalance * (CURRENCY_ROB_PERCENTAGE / 100),
                     );
 
-                    await Users.addBalance(message.author.id, robAmount);
+                    await Users.addBalance(member.id, robAmount);
                     await Users.addBalance(target.id, -robAmount);
 
                     reply = `You have robbed ${CURRENCY_EMOJI_CODE} ${formatNumber(robAmount)} from: ${inlineCode(target.username)}.`;
                 } else {
                     const authorBalance = await Users.getBalance(
-                        message.author.id,
+                        member.id,
                     );
                     const penaltyAmount: number = Math.ceil(
                         authorBalance * (CURRENCY_FINE_PERCENTAGE / 100),
                     );
 
-                    await Users.addBalance(message.author.id, -penaltyAmount);
+                    await Users.addBalance(member.id, -penaltyAmount);
 
                     reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
                 }
@@ -91,7 +88,7 @@ export default {
                 if (getRandomInt(1, 100) >= ITEM_ROB_CHANCE) {
                     const targetItems = await Users.getItems(target.id);
                     const authorItemCount: number = await Users.getItemCount(
-                        message.author.id,
+                        member.id,
                     );
 
                     if (authorItemCount >= MAX_INV_SIZE) {
@@ -108,29 +105,27 @@ export default {
                         ];
 
                     await Users.addItem(target.id, item.item_id, -1);
-                    await Users.addItem(message.author.id, item.item_id, 1);
+                    await Users.addItem(member.id, item.item_id, 1);
 
                     reply = `You have robbed ${item.item_id} from: ${inlineCode(target.username)}.`;
                 } else {
                     const authorBalance = await Users.getBalance(
-                        message.author.id,
+                        member.id,
                     );
                     const penaltyAmount: number = Math.floor(
                         authorBalance * (ITEM_FINE_PERCENTAGE / 100),
                     );
 
-                    await Users.addBalance(message.author.id, -penaltyAmount);
+                    await Users.addBalance(member.id, -penaltyAmount);
 
                     reply = `You failed at robbing ${inlineCode(target.username)}. You have been fined ${CURRENCY_EMOJI_CODE} ${formatNumber(penaltyAmount)} `;
                 }
                 break;
         }
 
-        const embed = new EmbedBuilder().setColor("Blurple").setFields({
+        return new EmbedBuilder().setColor("Blurple").setFields({
             name: reply,
             value: ` `,
-        });
-
-        await message.reply({ embeds: [embed] });
+        })
     },
 };

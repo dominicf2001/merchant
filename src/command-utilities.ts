@@ -1,11 +1,15 @@
+import { CacheType, CommandInteractionOptionResolver, EmbedBuilder } from "discord.js";
 import fs from "fs";
 import path from "path";
+
+export type CommandObj = { data: any; execute: any };
+export type CommandResponse = EmbedBuilder | string;
+export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">
 
 export const makeChoices = (...choices: string[]) => {
   return choices.map(choice => ({ name: choice, value: choice }))
 }
 
-export type CommandObj = { data: any; execute: any };
 export const loadCommands = async (): Promise<CommandObj[]> => {
     const foldersPath: string = path.join(process.cwd(), "src/commands");
     const commandFolders: string[] = fs.readdirSync(foldersPath);

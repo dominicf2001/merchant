@@ -18,6 +18,8 @@ import {
     Events,
     ButtonInteraction,
     SlashCommandBuilder,
+    GuildMember,
+    User,
 } from "discord.js";
 import {
     Commands as Command,
@@ -26,6 +28,7 @@ import {
 import { DateTime } from "luxon";
 import { ChartConfiguration } from "chart.js";
 import { StockInterval } from "../../database/datastores/Stocks";
+import { CommandOptions, CommandResponse, makeChoices } from "src/command-utilities";
 
 const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;
@@ -36,18 +39,25 @@ const data: Partial<Command> = {
       .setName("stock")
       .setDescription("View the stock list or a stock chart")
       .addUserOption(o => o.setName("user").setDescription("the stock to view"))
-      .addStringOption(o => o.setName("time").setDescription("the time to view it")),
+      .addNumberOption(o => o.setName("page").setDescription("the page to view at"))
+      .addStringOption(o => o
+        .setName("interval")
+        .setDescription("the interval to view at")
+        .addChoices(makeChoices("minute", "hour", "day", "month"))),
     cooldown_time: 0,
     is_admin: false,
 };
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        if (message.mentions.users.first()) {
-            await sendStockChart(message, args);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+
+        const user = options.getUser("user", false)
+        if (user) {
+            const interval = options.getString("interval", false)
+            return sendStockChart(member, user, interval);
         } else {
-            let pageNum: number = +findNumericArgs(args)[0] || 1;
+            let pageNum: number = options.getNumber("page", false) || 1;
             await sendStockList(
                 message,
                 STOCK_LIST_ID,
@@ -58,15 +68,12 @@ export default {
     },
 };
 
-async function sendStockChart(message: Message, args: string[]): Promise<void> {
-    const Stocks = StocksFactory.get(message.guildId);
+async function sendStockChart(member: GuildMember, stockUser: User, intervalOption: string | undefined): Promise<CommandResponse> {
+    const Stocks = StocksFactory.get(member.guild.id);
 
-    const stockUser = message.mentions.users.first();
     const validIntervals: StockInterval[] = ["minute", "hour", "day", "month"];
-    const intervalArg = findTextArgs(args)[0] ?? "minute";
-    const interval: StockInterval | undefined = validIntervals.find(
-        (vi) => vi === intervalArg,
-    );
+    const intervalArg = intervalOption ?? "minute";
+    const interval: StockInterval | undefined = validIntervals.find((vi) => vi === intervalArg);
 
     if (!interval) {
         throw new Error("Invalid interval.");

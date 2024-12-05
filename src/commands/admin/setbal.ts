@@ -3,8 +3,9 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, CacheType, ChatInputCommandInteraction, GuildMember } from "discord.js";
 import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "setbal" as CommandsCommandId,
@@ -19,27 +20,16 @@ const data: Partial<Command> = {
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
 
-        const newBalance: number = +findNumericArgs(args)[0];
-        const target = message.mentions.users.first() ?? message.author;
-
-        if (!newBalance === undefined) {
-            throw new Error("You must specify a balance.");
-        }
-
-        if (!target) {
-            throw new Error("You must specify a target.");
-        }
-
+        const newBalance: number = options.getNumber("amount", true);
+        const target = options.getUser("user", true);
         await Users.setBalance(target.id, newBalance);
 
-        const embed = new EmbedBuilder().setColor("Blurple").setFields({
+        return new EmbedBuilder().setColor("Blurple").setFields({
             name: `${inlineCode(target.username)}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
             value: ` `,
         });
-
-        await message.reply({ embeds: [embed] });
     },
 };

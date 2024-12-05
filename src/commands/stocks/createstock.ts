@@ -1,40 +1,37 @@
 import { StocksFactory } from "../../database/db-objects";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "createstock" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
       .setName("createstock")
       .setDescription("Creates a new stock")
-      .addUserOption(o => o.setName("user").setDescription("the user to create a stock for")),
+      .addUserOption(o => o.setName("user").setDescription("the user to create a stock for").setRequired(true)),
     cooldown_time: 0,
     is_admin: true,
 };
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Stocks = StocksFactory.get(message.guildId);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Stocks = StocksFactory.get(member.guild.id);
 
-        const stockUser = message.mentions.members.first();
-        if (!stockUser) {
-            throw new Error("Please specify a user.");
-        }
-
+        const stockUser = options.getUser("user", true);
         const stock = await Stocks.get(stockUser.id);
         if (stock) {
             throw new Error("This stock already exists!");
         } else {
             await Stocks.updateStockPrice(stockUser.id, 1);
             const embed = new EmbedBuilder().setColor("Blurple").setFields({
-                name: `${inlineCode(stockUser.user.username)}'s stock has been created`,
+                name: `${inlineCode(stockUser.username)}'s stock has been created`,
                 value: ` `,
             });
-            await message.reply({ embeds: [embed] });
+            return embed;
         }
 
     },

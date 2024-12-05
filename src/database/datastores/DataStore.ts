@@ -1,10 +1,11 @@
 import { Kysely, PostgresDialect, Updateable, Insertable } from "kysely";
 import Database from "../schemas/Database";
-import { Collection } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, Collection, GuildMember } from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
 import { client, DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
 import { DateTime } from "luxon";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 let getDatastores: typeof import('../db-objects').getDatastores;
 
@@ -43,10 +44,7 @@ export type TableID =
     | "stock_id"
     | "command_id"
     | "guild_id"
-export type BehaviorFunction = (
-    message: Message,
-    args: string[],
-) => Promise<void>;
+export type BehaviorFunction = (member: GuildMember, options: CommandOptions) => Promise<CommandResponse>;
 
 export async function dbWipe(db: Kysely<Database>) {
     const module = await import('../db-objects');

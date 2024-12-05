@@ -10,7 +10,8 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, Events, ButtonInteraction, inlineCode, SlashCommandBuilder } from "discord.js";
+import { Message, Events, ButtonInteraction, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const SHOP_ID: string = "shop";
 const SHOP_PAGE_SIZE: number = 5;
@@ -19,15 +20,19 @@ const data: Partial<Command> = {
     command_id: "shop" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
       .setName("shop")
-      .setDescription("View the shop"),
+      .setDescription("View the shop")
+      .addNumberOption(o => o
+        .setName("page")
+        .setDescription("the shop page you want to view")
+        .setRequired(false)),
     cooldown_time: 0,
     is_admin: false,
 };
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const pageNum = +findNumericArgs(args)[0] || 1;
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const pageNum = options.getNumber("page", false) || 1;
         await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     },
 };

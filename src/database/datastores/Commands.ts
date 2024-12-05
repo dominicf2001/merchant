@@ -1,22 +1,18 @@
 import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Kysely } from "kysely";
 import { Commands as Command } from "../schemas/public/Commands";
-import { Collection, Message } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, Collection, GuildMember, Message } from "discord.js";
 import Database from "../schemas/Database";
-import { loadCommands } from "src/command-utilities";
+import { CommandOptions, CommandResponse, loadCommands } from "src/command-utilities";
 
 class Commands extends DataStore<string, Command> {
     constructor(db: Kysely<Database>, guildID: string) {
         super(db, "commands", "command_id", guildID);
     }
 
-    async execute(
-        command_id: string,
-        message: Message,
-        args: string[],
-    ): Promise<void> {
+    async execute(command_id: string, member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const execute: BehaviorFunction = this.behaviors.get(command_id);
-        await execute(message, args);
+        return await execute(member, options);
     }
 
     setInCache(id: string, command: Command): void {

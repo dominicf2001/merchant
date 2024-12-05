@@ -1,10 +1,11 @@
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder } from "discord.js";
+import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
 import { UsersFactory } from "../../database/db-objects";
 import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "top" as CommandsCommandId,
@@ -17,8 +18,8 @@ const data: Partial<Command> = {
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
 
         const allUsers = await Users.getAll();
 
@@ -47,6 +48,6 @@ export default {
             });
         }
 
-        await message.reply({ embeds: [embed] });
+        return embed;
     },
 };

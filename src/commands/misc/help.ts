@@ -14,11 +14,13 @@ import {
     SlashCommandBuilder,
     ApplicationCommandOptionType,
     APIApplicationCommandOption,
+    GuildMember,
 } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
+import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const HELP_ID: string = "help";
 const HELP_PAGE_SIZE: number = 5;
@@ -28,7 +30,8 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder()
       .setName("help")
       .setDescription("Displays available commands or displays info on a command/item")
-      .addStringOption(o => o.setName("search").setDescription("The item or command you need help on")),
+      .addStringOption(o => o.setName("search").setDescription("the item or command you need help on"))
+      .addNumberOption(o => o.setName("page").setDescription("the page of the help menu")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -49,17 +52,17 @@ const buildUsageTag = (metadata: SlashCommandBuilder) => {
 // TODO: implement paging
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Commands = CommandsFactory.get(message.guildId);
-        const Items = ItemsFactory.get(message.guildId);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Commands = CommandsFactory.get(member.guild.id);
+        const Items = ItemsFactory.get(member.guild.id);
 
-        if (args.length) {
-            const name = findTextArgs(args)[0].toLowerCase();
+        const search = options.getString("search", false);
+        if (search) {
             const embed = new EmbedBuilder()
                 .setColor("Blurple")
-                .setTitle(`${name}`);
+                .setTitle(`${search}`);
 
-            const command = await Commands.get(name);
+            const command = await Commands.get(search);
             const metadata = command.metadata as SlashCommandBuilder;
 
             if (command) {
@@ -72,11 +75,10 @@ export default {
                     value: ` `,
                 });
                 embed.setDescription(`${metadata.description}`);
-                await message.reply({ embeds: [embed] });
-                return;
+                return embed;
             }
 
-            const item = await Items.get(name);
+            const item = await Items.get(search);
 
             if (item) {
                 embed.addFields({
@@ -84,13 +86,12 @@ export default {
                     value: ` `,
                 });
                 embed.setDescription(`${item.description}`);
-                await message.reply({ embeds: [embed] });
-                return;
+                return embed;
             }
 
             throw new Error("This item or command does not exist.");
         } else {
-            const pageNum = +findNumericArgs(args)[0] || 1;
+            const pageNum = options.getNumber("page", false) || 1;
             await sendHelpMenu(message, HELP_ID, HELP_PAGE_SIZE, pageNum);
         }
     },
