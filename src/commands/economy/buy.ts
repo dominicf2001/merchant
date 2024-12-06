@@ -6,8 +6,6 @@ import {
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
-    findNumericArgs,
-    findTextArgs,
     MAX_INV_SIZE,
 } from "../../utilities";
 import {
@@ -15,7 +13,6 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import {
-    Message,
     EmbedBuilder,
     inlineCode,
     SlashCommandBuilder,
@@ -29,7 +26,7 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder().setName("buy")
       .setDescription("Buy an item or stock")
       .addNumberOption(o => o.setName("amount").setDescription("the amount to buy").setRequired(true))
-      .addUserOption(o => o.setName("user").setDescription("the stock to buy"))
+      .addUserOption(o => o.setName("stock").setDescription("the stock to buy"))
       .addStringOption(o => o.setName("item").setDescription("the item to buy")),
     cooldown_time: 0,
     is_admin: false,
@@ -40,7 +37,7 @@ export default {
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
       const amount = options.getNumber("amount", true);
 
-      const user = options.getUser("user", false);
+      const user = options.getUser("stock", false);
       if (user) return buyStock(member, amount, user);
 
       const item = options.getString("item", false);

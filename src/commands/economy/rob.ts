@@ -15,7 +15,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
 import { CommandOptions, CommandResponse, makeChoices } from "src/command-utilities";
 
 enum RobType {
@@ -36,7 +36,9 @@ const data: Partial<Command> = {
         .setDescription("the thing you want to rob")
         .addChoices(makeChoices("tendies", "item"))
         .setRequired(true))
-      .addUserOption(o => o.setName("target").setDescription("the user you want to rob")),
+      .addUserOption(o => o.setName("target")
+        .setDescription("the user you want to rob")
+        .setRequired(true)),
     cooldown_time: 1800000,
     is_admin: false,
 };

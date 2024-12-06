@@ -3,8 +3,8 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, CacheType, ChatInputCommandInteraction, GuildMember } from "discord.js";
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
+import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CURRENCY_EMOJI_CODE } from "../../utilities";
 import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {

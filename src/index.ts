@@ -139,7 +139,7 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
         // If no cooldown, execute command and set cooldown
 
-        const member = await interaction.guild.members.fetch(interaction.user)
+        const member = interaction.guild.members.cache.get(interaction.user.id) 
         const reply = await Commands.execute(command.command_id, member, interaction.options);
         if (reply instanceof EmbedBuilder) await interaction.editReply({ embeds: [reply] });
         else await interaction.editReply(reply);

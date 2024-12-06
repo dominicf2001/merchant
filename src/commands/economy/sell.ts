@@ -17,7 +17,7 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder()
       .setName("sell")
       .setDescription("sell an item or a stock")
-      .addUserOption(o => o.setName("user").setDescription("the stock to sell to"))
+      .addUserOption(o => o.setName("stock").setDescription("the stock to sell"))
       .addStringOption(o => o.setName("item").setDescription("the item to sell"))
       .addNumberOption(o => o.setName("amount").setDescription("the amount to sell")),
     cooldown_time: 0,
@@ -29,7 +29,7 @@ export default {
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
       const amount = options.getNumber("amount", true);
 
-      const user = options.getUser("user", false);
+      const user = options.getUser("stock", false);
       if (user) return sellStock(member, amount, user);
 
       const item = options.getString("item", false);

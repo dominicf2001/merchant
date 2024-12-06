@@ -1,7 +1,5 @@
 import {
-    Message,
     EmbedBuilder,
-    inlineCode,
     SlashCommandBuilder,
     GuildMember,
 } from "discord.js";

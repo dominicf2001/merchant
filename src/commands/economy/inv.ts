@@ -4,7 +4,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, SlashCommandBuilder, GuildMember } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder, GuildMember } from "discord.js";
 import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {

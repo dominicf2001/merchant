@@ -1,6 +1,5 @@
 import { UsersFactory } from "../../database/db-objects";
 import {
-    findNumericArgs,
     CURRENCY_EMOJI_CODE,
     formatNumber,
 } from "../../utilities";

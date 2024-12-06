@@ -17,9 +17,7 @@ export default interface ItemsTable {
 
   price: ColumnType<number, number | undefined, number>;
 
-  description: ColumnType<string, string | undefined, string>;
-
-  usage: ColumnType<string, string | undefined, string>;
+  metadata: ColumnType<unknown, unknown | undefined, unknown>;
 
   emoji_code: ColumnType<string, string | undefined, string>;
 }

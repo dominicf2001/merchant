@@ -1,4 +1,4 @@
-import { ButtonBuilder, CacheType, CommandInteractionOptionResolver, EmbedBuilder, InteractionReplyOptions } from "discord.js";
+import { APIApplicationCommandOption, ApplicationCommandOptionType, ButtonBuilder, CacheType, CommandInteractionOptionResolver, EmbedBuilder, inlineCode, InteractionReplyOptions, SlashCommandBuilder } from "discord.js";
 import fs from "fs";
 import path from "path";
 
@@ -6,6 +6,19 @@ export type CommandObj = { data: any; execute: any };
 
 export type CommandResponse = InteractionReplyOptions | EmbedBuilder | string;
 export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">
+
+export const buildUsageTag = (metadata: SlashCommandBuilder) => {
+    const options = metadata.options.map(option => {
+      const data = option as unknown as APIApplicationCommandOption;
+      let prefix = "";
+      switch (data.type) {
+        case ApplicationCommandOptionType.User: prefix = "@"; break;
+        case ApplicationCommandOptionType.Number: prefix = "#"; break;
+      }
+      return data.required ? `[${prefix}${data.name}]` : `(${prefix}${data.name})`;
+    })
+    return inlineCode([ `/${metadata.name}`, ...options ].join(" "))
+  }
 
 export const makeChoices = (...choices: string[]) => {
   return choices.map(choice => ({ name: choice, value: choice }))

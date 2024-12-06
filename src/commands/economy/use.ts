@@ -1,21 +1,16 @@
 import { UsersFactory, ItemsFactory } from "../../database/db-objects";
-import { findTextArgs } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { GuildMember, Message, SlashCommandBuilder, inlineCode } from "discord.js";
+import { GuildMember, SlashCommandBuilder } from "discord.js";
 import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "use" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
       .setName("use")
-      .setDescription("Use an item")
-      .addStringOption(o => o
-        .setName("item")
-        .setDescription("the item to use")
-        .setRequired(true)),
+      .setDescription("Use an item"),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -33,7 +28,7 @@ export default {
         }
 
         try {
-            // await Items.use(itemName, message, args.slice(1));
+            await Items.use(itemName, member, options);
             await Users.addItem(member.id, itemName, -1);
         }
         catch (error) {

@@ -1,27 +1,22 @@
 import { CommandsFactory, ItemsFactory } from "../../database/db-objects";
 import {
     PaginatedMenuBuilder,
-    findTextArgs,
-    findNumericArgs,
     client,
 } from "../../utilities";
 import {
-    Message,
     Events,
-    ButtonInteraction,
     EmbedBuilder,
-    inlineCode,
     SlashCommandBuilder,
-    ApplicationCommandOptionType,
     APIApplicationCommandOption,
     GuildMember,
     InteractionReplyOptions,
+    SlashCommandSubcommandBuilder,
 } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { buildUsageTag, CommandOptions, CommandResponse } from "src/command-utilities";
 
 const HELP_ID: string = "help";
 const HELP_PAGE_SIZE: number = 5;
@@ -37,19 +32,6 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-const buildUsageTag = (metadata: SlashCommandBuilder) => {
-  const options = metadata.options.map(option => {
-    const data = option as unknown as APIApplicationCommandOption;
-    let prefix = "";
-    switch (data.type) {
-      case ApplicationCommandOptionType.User: prefix = "@"; break;
-      case ApplicationCommandOptionType.Number: prefix = "#"; break;
-    }
-    return data.required ? `[${prefix}${data.name}]` : `(${prefix}${data.name})`;
-  })
-  return inlineCode(`${metadata.name} ${options.join(" ")}`)
-}
-
 // TODO: implement paging
 export default {
     data: data,
@@ -64,29 +46,31 @@ export default {
                 .setTitle(`${search}`);
 
             const command = await Commands.get(search);
-            const metadata = command.metadata as SlashCommandBuilder;
-
             if (command) {
-                const adminSpecifier: string = command.is_admin
-                    ? " (admin)"
-                    : "";
-
-                embed.addFields({
-                    name: `${command.command_id}${adminSpecifier}`,
-                    value: ` `,
+                const { description, options } = command.metadata as SlashCommandBuilder;
+                const adminSpecifier: string = command.is_admin ? " (admin)" : "";
+                options.forEach(option => {
+                    const data = option as unknown as APIApplicationCommandOption;
+                    embed.addFields({
+                        name: `${data.name} ${data.required ? "(required)" : ""}`,
+                        value: data.description,
+                    });
                 });
-                embed.setDescription(`${metadata.description}`);
+                embed.setDescription(`${description} ${adminSpecifier}`);
                 return embed;
             }
 
             const item = await Items.get(search);
-
             if (item) {
-                embed.addFields({
-                    name: `${item.item_id}`,
-                    value: ` `,
+                const { description, options } = item.metadata as SlashCommandSubcommandBuilder;
+                options.forEach(option => {
+                    const data = option as unknown as APIApplicationCommandOption;
+                    embed.addFields({
+                        name: `${data.name} ${data.required ? "(required)" : ""}`,
+                        value: data.description,
+                    });
                 });
-                embed.setDescription(`${item.description}`);
+                embed.setDescription(`${description}`);
                 return embed;
             }
 
@@ -121,7 +105,7 @@ async function sendHelpMenu(
         .setColor("Blurple")
         .setTitle("Commands")
         .setDescription(
-            `${inlineCode("$help [command/item]")} for more info on a command/item's usage`,
+            `${buildUsageTag(data.metadata as SlashCommandBuilder)} for more info on a command/item's usage`,
         );
 
     slicedCommands.forEach((command) => {

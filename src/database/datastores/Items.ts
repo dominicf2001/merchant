@@ -1,10 +1,11 @@
 import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Items as Item } from "../schemas/public/Items";
 import { Kysely } from "kysely";
-import { Collection, Message } from "discord.js";
+import { Collection, GuildMember } from "discord.js";
 import Database from "../schemas/Database";
 import path from "path";
 import fs from "fs";
+import { CommandOptions } from "src/command-utilities";
 
 class Items extends DataStore<string, Item> {
     constructor(db: Kysely<Database>, guildID: string) {
@@ -13,11 +14,11 @@ class Items extends DataStore<string, Item> {
 
     async use(
         item_id: string,
-        message: Message,
-        args: string[],
+        member: GuildMember,
+        options: CommandOptions,
     ): Promise<void> {
         const use: BehaviorFunction = this.behaviors.get(item_id);
-        await use(message, args);
+        await use(member, options);
     }
 
     getFromCache(id: string): Item | undefined {
