@@ -4,8 +4,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
-import { CURRENCY_EMOJI_CODE } from "../../utilities";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse, CURRENCY_EMOJI_CODE } from "../../utilities";
 
 const data: Partial<Command> = {
     command_id: "setbal" as CommandsCommandId,

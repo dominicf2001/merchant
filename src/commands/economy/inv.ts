@@ -1,11 +1,10 @@
 import { UsersFactory, ItemsFactory } from "../../database/db-objects";
-import { formatNumber, MAX_INV_SIZE } from "../../utilities";
+import { CommandOptions, CommandResponse, formatNumber, MAX_INV_SIZE } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { EmbedBuilder, SlashCommandBuilder, GuildMember } from "discord.js";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "inv" as CommandsCommandId,

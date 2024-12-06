@@ -1,5 +1,7 @@
 import { UsersFactory } from "../../database/db-objects";
 import {
+    CommandOptions,
+    CommandResponse,
     CURRENCY_EMOJI_CODE,
     formatNumber,
 } from "../../utilities";
@@ -7,8 +9,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
 
 const data: Partial<Command> = {
     command_id: "give" as CommandsCommandId,

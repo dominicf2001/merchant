@@ -9,6 +9,13 @@ import {
     normalizeArray,
     Client,
     GatewayIntentBits,
+    APIApplicationCommandOption, 
+    ApplicationCommandOptionType, 
+    CacheType, 
+    CommandInteractionOptionResolver, 
+    inlineCode, 
+    InteractionReplyOptions, 
+    SlashCommandBuilder
 } from "discord.js";
 import { DateTime } from "luxon";
 import fs from "fs";
@@ -136,6 +143,51 @@ export function findNumericArgs(args: string[]): string[] {
 
 export function findMentionArgs(args: string[]): string[] {
     return args.filter((arg) => isAMention(arg));
+}
+
+type KeysWithBoolean<T> = { [K in keyof T]: boolean }
+export async function loadObjectsFromFolder <T>(folder: string, data: KeysWithBoolean<T>): Promise<T[]> {
+    const foldersPath: string = path.join(process.cwd(), folder);
+    const folders: string[] = fs.readdirSync(foldersPath);
+
+    const objects = [];
+    for (const folder of folders) {
+        const objectPath: string = path.join(foldersPath, folder);
+        const files: string[] = fs
+            .readdirSync(objectPath)
+            .filter((file) => file.endsWith(".ts"));
+        for (const file of files) {
+            const filePath: string = path.join(objectPath, file);
+            const object = (await import(filePath)).default;
+            if (object && Object.keys(data).every(key => key in object))
+                objects.push(object as typeof data);
+            // } else {
+            //     // console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+            // }
+        }
+    }
+
+    return objects;
+};
+
+export type CommandResponse = InteractionReplyOptions | EmbedBuilder | string;
+export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">
+
+export function buildUsageTag(metadata: SlashCommandBuilder) {
+    const options = metadata.options.map(option => {
+      const data = option as unknown as APIApplicationCommandOption;
+      let prefix = "";
+      switch (data.type) {
+        case ApplicationCommandOptionType.User: prefix = "@"; break;
+        case ApplicationCommandOptionType.Number: prefix = "#"; break;
+      }
+      return data.required ? `[${prefix}${data.name}]` : `(${prefix}${data.name})`;
+    })
+    return inlineCode([ `/${metadata.name}`, ...options ].join(" "))
+  }
+
+export function makeChoices (...choices: string[]) {
+  return choices.map(choice => ({ name: choice, value: choice }))
 }
 
 export class PaginatedMenuBuilder {

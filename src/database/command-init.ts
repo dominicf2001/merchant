@@ -1,6 +1,5 @@
 import { REST, Routes } from "discord.js";
-import { loadCommands } from "src/command-utilities";
-import { APPLICATION_ID, TOKEN } from "src/utilities";
+import { APPLICATION_ID, loadObjectsFromFolder, TOKEN } from "src/utilities";
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(TOKEN);
@@ -8,9 +7,9 @@ const rest = new REST().setToken(TOKEN);
 (async () => {
     try {
         // We can't really use CommandFactory since it's built upon a guildId, so we need to load the commands ourselves
-        const commands = await loadCommands();
+        const commands = await loadObjectsFromFolder<{ data: any }>("src/commands", { data: true });
 
-        const data = await rest.put(
+        await rest.put(
             Routes.applicationCommands(APPLICATION_ID),
             { body: commands.map((command) => command.data.metadata) },
         );

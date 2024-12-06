@@ -1,10 +1,10 @@
 import { StocksFactory } from "../../database/db-objects";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse } from "src/utilities";
 
 const data: Partial<Command> = {
     command_id: "createstock" as CommandsCommandId,

@@ -1,9 +1,9 @@
 import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Kysely } from "kysely";
 import { Commands as Command } from "../schemas/public/Commands";
-import { CacheType, ChatInputCommandInteraction, Collection, GuildMember, Message } from "discord.js";
+import { Collection, GuildMember } from "discord.js";
 import Database from "../schemas/Database";
-import { CommandOptions, CommandResponse, loadCommands } from "src/command-utilities";
+import { CommandOptions, CommandResponse, loadObjectsFromFolder } from "src/utilities";
 
 class Commands extends DataStore<string, Command> {
     constructor(db: Kysely<Database>, guildID: string) {
@@ -24,7 +24,7 @@ class Commands extends DataStore<string, Command> {
     }
 
     async refreshCache(): Promise<void> {
-        const commands = await loadCommands();
+        const commands = await loadObjectsFromFolder<{ data: any, execute: any }>("src/commands", { data: true, execute: true });
         for (const commandObj of commands) {
             this.behaviors.set(commandObj.data.command_id, commandObj.execute);
             // TODO: custom query that on conflict does nothing

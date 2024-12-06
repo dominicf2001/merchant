@@ -8,8 +8,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse, CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
 
 const data: Partial<Command> = {
     command_id: "bal" as CommandsCommandId,

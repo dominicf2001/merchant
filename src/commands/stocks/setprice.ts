@@ -1,11 +1,10 @@
 import { StocksFactory } from "../../database/db-objects";
-import { Message, userMention, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
+import { userMention, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandOptions, CommandResponse, CURRENCY_EMOJI_CODE } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "setprice" as CommandsCommandId,

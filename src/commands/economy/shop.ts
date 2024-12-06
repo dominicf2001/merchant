@@ -2,16 +2,16 @@ import { ItemsFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
-    findNumericArgs,
     PaginatedMenuBuilder,
     client,
+    CommandOptions, 
+    CommandResponse
 } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import {  Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
 
 const SHOP_ID: string = "shop";
 const SHOP_PAGE_SIZE: number = 5;
@@ -66,9 +66,10 @@ async function sendShopMenu(
         );
 
     slicedItems.forEach((item) => {
+        const metadata = item.metadata as unknown as SlashCommandBuilder
         paginatedMenu.addFields({
             name: `${item.emoji_code} ${item.item_id} - ${CURRENCY_EMOJI_CODE} - ${formatNumber(item.price)}`,
-            value: `${item.description}`,
+            value: `${metadata.description}`,
         });
     });
 

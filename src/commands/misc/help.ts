@@ -1,6 +1,9 @@
 import { CommandsFactory, ItemsFactory } from "../../database/db-objects";
 import {
+    CommandOptions,
+    CommandResponse,
     PaginatedMenuBuilder,
+    buildUsageTag,
     client,
 } from "../../utilities";
 import {
@@ -16,7 +19,6 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { buildUsageTag, CommandOptions, CommandResponse } from "src/command-utilities";
 
 const HELP_ID: string = "help";
 const HELP_PAGE_SIZE: number = 5;

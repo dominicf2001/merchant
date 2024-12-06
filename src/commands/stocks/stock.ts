@@ -9,6 +9,9 @@ import {
     findTextArgs,
     PaginatedMenuBuilder,
     client,
+    CommandOptions,
+    CommandResponse,
+    makeChoices,
 } from "../../utilities";
 import {
     Message,
@@ -29,7 +32,6 @@ import {
 import { DateTime } from "luxon";
 import { ChartConfiguration } from "chart.js";
 import { StockInterval } from "../../database/datastores/Stocks";
-import { CommandOptions, CommandResponse, makeChoices } from "src/command-utilities";
 
 const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;

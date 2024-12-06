@@ -1,11 +1,10 @@
 import { UsersFactory } from "../../database/db-objects";
-import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
-import { CURRENCY_EMOJI_CODE, getRandomInt } from "../../utilities";
+import { EmbedBuilder, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandOptions, CommandResponse, CURRENCY_EMOJI_CODE, getRandomInt } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "work" as CommandsCommandId,

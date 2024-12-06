@@ -4,6 +4,8 @@ import {
     StocksFactory,
 } from "../../database/db-objects";
 import {
+    CommandOptions,
+    CommandResponse,
     CURRENCY_EMOJI_CODE,
     formatNumber,
     MAX_INV_SIZE,
@@ -19,7 +21,6 @@ import {
     GuildMember,
     User,
 } from "discord.js";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
 
 const data: Partial<Command> = {
     command_id: "buy" as CommandsCommandId,
