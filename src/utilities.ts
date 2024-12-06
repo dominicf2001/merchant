@@ -145,35 +145,6 @@ export function findMentionArgs(args: string[]): string[] {
     return args.filter((arg) => isAMention(arg));
 }
 
-type KeysWithBoolean<T> = { [K in keyof T]: boolean }
-export async function loadObjectsFromFolder <T>(folder: string, data: KeysWithBoolean<T>): Promise<T[]> {
-    const foldersPath: string = path.join(process.cwd(), folder);
-    const folders: string[] = fs.readdirSync(foldersPath);
-
-    const objects = [];
-    const files = []
-    for (const folder of folders) {
-        const paths: string = path.join(foldersPath, folder);
-        if (fs.statSync(paths).isDirectory()) {
-            const subPaths = fs
-                .readdirSync(paths)
-                .filter((file) => file.endsWith(".ts"))
-                .map(p => path.join(paths, p));
-            files.push(...subPaths)
-        } else {
-            files.push(paths)
-        }
-    }
-
-    for (const file of files) {
-        const object = (await import(file)).default;
-        if (object && Object.keys(data).every(key => key in object))
-            objects.push(object as typeof data);
-    }
-
-    return objects;
-};
-
 export type CommandResponse = InteractionReplyOptions | EmbedBuilder | string;
 export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">
 
