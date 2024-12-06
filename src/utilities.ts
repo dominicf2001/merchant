@@ -18,7 +18,7 @@ import {
     SlashCommandBuilder
 } from "discord.js";
 import { DateTime } from "luxon";
-import fs from "fs";
+import fs, { stat } from "fs";
 import path from "path";
 
 export const { TOKEN, APPLICATION_ID, USER_TOKEN } = JSON.parse(
@@ -151,20 +151,24 @@ export async function loadObjectsFromFolder <T>(folder: string, data: KeysWithBo
     const folders: string[] = fs.readdirSync(foldersPath);
 
     const objects = [];
+    const files = []
     for (const folder of folders) {
-        const objectPath: string = path.join(foldersPath, folder);
-        const files: string[] = fs
-            .readdirSync(objectPath)
-            .filter((file) => file.endsWith(".ts"));
-        for (const file of files) {
-            const filePath: string = path.join(objectPath, file);
-            const object = (await import(filePath)).default;
-            if (object && Object.keys(data).every(key => key in object))
-                objects.push(object as typeof data);
-            // } else {
-            //     // console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-            // }
+        const paths: string = path.join(foldersPath, folder);
+        if (fs.statSync(paths).isDirectory()) {
+            const subPaths = fs
+                .readdirSync(paths)
+                .filter((file) => file.endsWith(".ts"))
+                .map(p => path.join(paths, p));
+            files.push(...subPaths)
+        } else {
+            files.push(paths)
         }
+    }
+
+    for (const file of files) {
+        const object = (await import(file)).default;
+        if (object && Object.keys(data).every(key => key in object))
+            objects.push(object as typeof data);
     }
 
     return objects;

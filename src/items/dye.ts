@@ -7,10 +7,10 @@ import {
     GuildMember,
     SlashCommandSubcommandBuilder,
 } from "discord.js";
-import { findTextArgs, toUpperCaseString } from "../utilities";
+import { toUpperCaseString, CommandOptions, CommandResponse, makeChoices } from "../utilities";
 import { UsersFactory } from "../database/db-objects";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { CommandOptions, CommandResponse, makeChoices } from "src/command-utilities";
+import { ItemObj } from "src/database/datastores/Items";
 
 const data: Partial<Item> = {
     item_id: "dye" as ItemsItemId,
@@ -19,19 +19,18 @@ const data: Partial<Item> = {
     metadata: new SlashCommandSubcommandBuilder()
         .setName("dye")
         .setDescription("Sets the color of any user's name")
-        .addUserOption(o => o
-            .setName("target")
-            .setDescription("the target user"))
         .addStringOption(o => o
             .setName("color")
             .setDescription("the color to set")
-            .setChoices(makeChoices(...Object.keys(Colors)))
-            .setRequired(true)
-        )
+            .addChoices(makeChoices(...Object.keys(Colors).slice(0, 25)))
+            .setRequired(true))
+        .addUserOption(o => o
+            .setName("target")
+            .setDescription("the target user"))
 };
 
-export default {
-    data: data,
+export default <ItemObj>{
+    data,
     async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const Users = UsersFactory.get(member.guild.id);
 

@@ -5,6 +5,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { EmbedBuilder, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const data: Partial<Command> = {
     command_id: "inv" as CommandsCommandId,
@@ -15,8 +16,8 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-export default {
-    data: data,
+export default <CommandObj>{
+    data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse>  {
         const Users = UsersFactory.get(member.guild.id);
         const Items = ItemsFactory.get(member.guild.id);

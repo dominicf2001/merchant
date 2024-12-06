@@ -9,6 +9,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { CommandOptions, CommandResponse, CURRENCY_EMOJI_CODE, formatNumber } from "../../utilities";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const data: Partial<Command> = {
     command_id: "bal" as CommandsCommandId,
@@ -19,8 +20,8 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-export default {
-    data: data,
+export default <CommandObj>{
+    data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const Users = UsersFactory.get(member.guild.id);
         const authorBalance = await Users.getBalance(member.id);

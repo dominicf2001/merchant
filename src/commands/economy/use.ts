@@ -1,14 +1,19 @@
+import { ITEMS } from "src/database/datastores/Items";
 import { UsersFactory, ItemsFactory } from "../../database/db-objects";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { GuildMember, SlashCommandBuilder } from "discord.js";
-import { CommandOptions, CommandResponse } from "src/utilities";
+import { GuildMember, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
+import { CommandOptions, CommandResponse, loadObjectsFromFolder } from "src/utilities";
 
 let metadata = new SlashCommandBuilder()
-    .setName("use")
-    .setDescription("Use an item")
+            .setName("use")
+            .setDescription("Use an item");
+
+for (const subcommand of ITEMS) {
+    metadata = metadata.addSubcommand(_ => subcommand.data.metadata as SlashCommandSubcommandBuilder) as SlashCommandBuilder
+}
 
 const data: Partial<Command> = {
     command_id: "use" as CommandsCommandId,

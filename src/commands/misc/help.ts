@@ -19,6 +19,7 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const HELP_ID: string = "help";
 const HELP_PAGE_SIZE: number = 5;
@@ -35,8 +36,8 @@ const data: Partial<Command> = {
 };
 
 // TODO: implement paging
-export default {
-    data: data,
+export default <CommandObj>{
+    data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const Commands = CommandsFactory.get(member.guild.id);
         const Items = ItemsFactory.get(member.guild.id);

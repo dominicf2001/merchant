@@ -1,8 +1,8 @@
 import { Message, inlineCode, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 import { UsersFactory } from "../database/db-objects";
-import { MUTE_DURATION_MIN } from "../utilities";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse, MUTE_DURATION_MIN } from "../utilities";
+import { ItemObj } from "src/database/datastores/Items";
 
 const durationMs: number = MUTE_DURATION_MIN * 60000;
 
@@ -19,8 +19,8 @@ const data: Partial<Item> = {
             .setRequired(true))
 };
 
-export default {
-    data: data,
+export default <ItemObj>{
+    data,
     async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const Users = UsersFactory.get(member.guild.id);
 

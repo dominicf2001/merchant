@@ -3,7 +3,16 @@ import { Items as Item } from "../schemas/public/Items";
 import { Kysely } from "kysely";
 import { Collection, GuildMember } from "discord.js";
 import Database from "../schemas/Database";
-import { CommandOptions, loadObjectsFromFolder } from "src/utilities";
+import { CommandOptions } from "src/utilities";
+
+import armor from "src/items/armor";
+import dye from "src/items/dye";
+import megaphone from "src/items/megaphone";
+import mute from "src/items/mute";
+import nametag from "src/items/nametag";
+import unmute from "src/items/unmute";
+
+export const ITEMS = [ armor, dye, megaphone, mute, nametag, unmute ];
 
 class Items extends DataStore<string, Item> {
     constructor(db: Kysely<Database>, guildID: string) {
@@ -24,11 +33,10 @@ class Items extends DataStore<string, Item> {
     }
 
     async refreshCache(): Promise<void> {
-        const items = await loadObjectsFromFolder<{ data: any, use: any }>("src/items", { data: true, use: true });
-        for (const item of items) {
-            this.behaviors.set(item.data.command_id, item.use);
+        for (const item of ITEMS) {
+            this.behaviors.set(item.data.item_id, item.use);
             // TODO: custom query that on conflict does nothing
-            await this.set(item.data.command_id, item.data);
+            await this.set(item.data.item_id, item.data);
         }
     }
 
@@ -40,6 +48,11 @@ class ItemsFactory extends DataStoreFactory<Items> {
     protected construct(guildID: string): Items {
         return new Items(db, guildID);
     }
+}
+
+export interface ItemObj { 
+    data: Partial<Item>, 
+    use: BehaviorFunction
 }
 
 const itemsFactory = new ItemsFactory(db);

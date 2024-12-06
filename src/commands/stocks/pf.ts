@@ -14,6 +14,7 @@ import {
 } from "../../database/schemas/public/Commands";
 import { Message, EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember, User } from "discord.js";
 import { DateTime } from "luxon";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const data: Partial<Command> = {
     command_id: "pf" as CommandsCommandId,
@@ -26,8 +27,8 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-export default {
-    data: data,
+export default <CommandObj>{
+    data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
 
         const target = options.getUser("user", false);

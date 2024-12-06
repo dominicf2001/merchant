@@ -15,8 +15,6 @@ import {
     MESSAGE_ACTIVITY_VALUE,
     MENTIONED_ACTIVITY_VALUE,
     INVITE_ACTIVITY_VALUE,
-    TOKEN,
-    TICK_CHANNEL_ID,
     client,
     SMA_UPDATE_HOURS,
 } from "./utilities";

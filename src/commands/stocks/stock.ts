@@ -32,6 +32,7 @@ import {
 import { DateTime } from "luxon";
 import { ChartConfiguration } from "chart.js";
 import { StockInterval } from "../../database/datastores/Stocks";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;
@@ -51,8 +52,8 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-export default {
-    data: data,
+export default <CommandObj>{
+    data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
 
         const user = options.getUser("user", false)

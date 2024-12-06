@@ -12,6 +12,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import {  Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const SHOP_ID: string = "shop";
 const SHOP_PAGE_SIZE: number = 5;
@@ -28,8 +29,8 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-export default {
-    data: data,
+export default <CommandObj>{
+    data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const pageNum = options.getNumber("page", false) || 1;
         return sendShopMenu(member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);

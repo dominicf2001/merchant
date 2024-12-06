@@ -1,7 +1,8 @@
 import { EmbedBuilder, GuildMember, inlineCode, SlashCommandSubcommandBuilder } from "discord.js";
 import { UsersFactory } from "../database/db-objects";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse } from "src/utilities";
+import { ItemObj } from "src/database/datastores/Items";
 
 const data: Partial<Item> = {
     item_id: "armor" as ItemsItemId,
@@ -12,9 +13,9 @@ const data: Partial<Item> = {
         .setDescription("Protects against nametag, dye, and mute (Can only apply one at a time)")
 };
 
-export default {
-    data: data,
-    async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+export default <ItemObj>{
+    data,
+    async use(member: GuildMember, _: CommandOptions): Promise<CommandResponse> {
         try {
             const Users = UsersFactory.get(member.guild.id);
 

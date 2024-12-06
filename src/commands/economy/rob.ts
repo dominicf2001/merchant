@@ -18,6 +18,7 @@ import {
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
 import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandObj } from "src/database/datastores/Commands";
 
 enum RobType {
     tendies = "tendies",
@@ -44,7 +45,7 @@ const data: Partial<Command> = {
     is_admin: false,
 };
 
-export default {
+export default <CommandObj>{
     data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const Users = UsersFactory.get(member.guild.id);

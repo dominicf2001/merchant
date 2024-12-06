@@ -1,6 +1,7 @@
 import { Message, inlineCode, EmbedBuilder, AttachmentBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse } from "src/utilities";
+import { ItemObj } from "src/database/datastores/Items";
 
 const data: Partial<Item> = {
     item_id: "megaphone" as ItemsItemId,
@@ -16,8 +17,8 @@ const data: Partial<Item> = {
         // .addAttachmentOption()
 };
 
-export default {
-    data: data,
+export default <ItemObj>{
+    data,
     async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         // TODO: fix attachments
         const msgToSend = options.getString("message", true);
