@@ -26,10 +26,10 @@ import { CommandObj } from "src/database/datastores/Commands";
 const data: Partial<Command> = {
     command_id: "buy" as CommandsCommandId,
     metadata: new SlashCommandBuilder().setName("buy")
-      .setDescription("Buy an item or stock")
-      .addNumberOption(o => o.setName("amount").setDescription("the amount to buy").setRequired(true))
-      .addUserOption(o => o.setName("stock").setDescription("the stock to buy"))
-      .addStringOption(o => o.setName("item").setDescription("the item to buy")),
+        .setDescription("Buy an item or stock")
+        .addNumberOption(o => o.setName("amount").setDescription("the amount to buy").setRequired(true))
+        .addUserOption(o => o.setName("stock").setDescription("the stock to buy"))
+        .addStringOption(o => o.setName("item").setDescription("the item to buy")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -37,15 +37,15 @@ const data: Partial<Command> = {
 export default <CommandObj>{
     data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
-      const amount = options.getNumber("amount", true);
+        const amount = options.getNumber("amount", true);
 
-      const user = options.getUser("stock", false);
-      if (user) return buyStock(member, amount, user);
+        const user = options.getUser("stock", false);
+        if (user) return buyStock(member, amount, user);
 
-      const item = options.getString("item", false);
-      if (item) return buyItem(member, amount, item);
+        const item = options.getString("item", false);
+        if (item) return buyItem(member, amount, item);
 
-      throw new Error("You must either specify a stock or an item to buy.")
+        throw new Error("You must either specify a stock or an item to buy.")
     },
 };
 
@@ -58,7 +58,7 @@ async function buyStock(member: GuildMember, quantity: number, stockUser: User):
     }
 
     if (!Number.isInteger(quantity)) {
-      throw new Error(`You can only purchase a whole number of stock.`);
+        throw new Error(`You can only purchase a whole number of stock.`);
     }
 
     if (member.id === stockUser.id) {
@@ -75,8 +75,8 @@ async function buyStock(member: GuildMember, quantity: number, stockUser: User):
     const totalBought: number =
         latestStock.price * quantity > authorBalance //|| args.includes("all")
             ? Math.floor(
-                  Math.floor((authorBalance / latestStock.price) * 100) / 100,
-              )
+                Math.floor((authorBalance / latestStock.price) * 100) / 100,
+            )
             : quantity;
     const totalCost: number = latestStock.price * totalBought;
 
@@ -94,10 +94,6 @@ async function buyItem(member: GuildMember, quantity: number, itemName: string):
     const Users = UsersFactory.get(member.guild.id);
     const Items = ItemsFactory.get(member.guild.id);
 
-    if (true) {
-        return `Buying items is currently disabled. The economy must stabilize first.`;
-    }
-
     if (!itemName) {
         throw new Error(`Please specify an item or stock.`);
     }
@@ -112,7 +108,7 @@ async function buyItem(member: GuildMember, quantity: number, itemName: string):
     }
 
     if (!Number.isInteger(quantity)) {
-      throw new Error(`You can only purchase a whole number of items.`);
+        throw new Error(`You can only purchase a whole number of items.`);
     }
 
     const itemCount: number = await Users.getItemCount(member.id);
