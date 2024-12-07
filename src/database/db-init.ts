@@ -94,10 +94,7 @@ const db = new Kysely<Database>({
                     .defaultTo(0)
                     .check(sql`price >= 0`),
             )
-            .addColumn("description", "varchar", (col) =>
-                col.notNull().defaultTo(""),
-            )
-            .addColumn("usage", "varchar", (col) => col.notNull().defaultTo(""))
+            .addColumn("metadata", "json", (col) => col.notNull().defaultTo("{}"))
             .addColumn("emoji_code", "varchar(30)", (col) =>
                 col.notNull().defaultTo(":black_small_square:"),
             )
@@ -143,10 +140,7 @@ const db = new Kysely<Database>({
             .createTable("commands")
             .addColumn("command_id", "varchar(30)", (col) => col.notNull())
             .addColumn("guild_id", "varchar(30)", (col) => col.notNull())
-            .addColumn("description", "varchar", (col) =>
-                col.notNull().defaultTo(""),
-            )
-            .addColumn("usage", "varchar", (col) => col.notNull().defaultTo(""))
+            .addColumn("metadata", "json", (col) => col.notNull().defaultTo("{}"))
             .addColumn("cooldown_time", "integer", (col) =>
                 col.notNull().defaultTo(0),
             )
@@ -317,4 +311,3 @@ const db = new Kysely<Database>({
         console.error("An error occurred:", error);
     }
 })();
-

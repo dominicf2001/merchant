@@ -2,43 +2,49 @@ import { ItemsFactory } from "../../database/db-objects";
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
-    findNumericArgs,
     PaginatedMenuBuilder,
     client,
+    CommandOptions, 
+    CommandResponse
 } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, Events, ButtonInteraction, inlineCode } from "discord.js";
+import {  Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const SHOP_ID: string = "shop";
 const SHOP_PAGE_SIZE: number = 5;
 
 const data: Partial<Command> = {
     command_id: "shop" as CommandsCommandId,
-    description: `View the shop`,
-    usage: `${inlineCode("$shop")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("shop")
+      .setDescription("View the shop")
+      .addNumberOption(o => o
+        .setName("page")
+        .setDescription("the shop page you want to view")),
     cooldown_time: 0,
     is_admin: false,
 };
 
-export default {
-    data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const pageNum = +findNumericArgs(args)[0] || 1;
-        await sendShopMenu(message, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+export default <CommandObj>{
+    data,
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const pageNum = options.getNumber("page", false) || 1;
+        return sendShopMenu(member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
     },
 };
 
 // TODO: abstract this?
 async function sendShopMenu(
-    message: Message | ButtonInteraction,
+    member: GuildMember,
     id: string,
     pageSize: number = 5,
     pageNum: number = 1,
-): Promise<void> {
-    const Items = ItemsFactory.get(message.guildId);
+): Promise<InteractionReplyOptions> {
+    const Items = ItemsFactory.get(member.guild.id);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
@@ -61,18 +67,17 @@ async function sendShopMenu(
         );
 
     slicedItems.forEach((item) => {
+        const metadata = item.metadata as unknown as SlashCommandBuilder
         paginatedMenu.addFields({
             name: `${item.emoji_code} ${item.item_id} - ${CURRENCY_EMOJI_CODE} - ${formatNumber(item.price)}`,
-            value: `${item.description}`,
+            value: `${metadata.description}`,
         });
     });
 
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
 
-    message instanceof ButtonInteraction
-        ? await message.update({ embeds: [embed], components: [buttons] })
-        : await message.reply({ embeds: [embed], components: [buttons] });
+    return { embeds: [embed], components: [buttons] };
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -86,9 +91,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         if (![`${SHOP_ID}Previous`, `${SHOP_ID}Next`].includes(customId))
             return;
 
-        const authorId = interaction.message.mentions.users.first().id;
-        if (interaction.user.id !== authorId) return;
-
         let pageNum = parseInt(
             interaction.message.embeds[0].description.match(/Page (\d+)/)[1],
         );
@@ -97,7 +99,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 ? (pageNum = Math.max(pageNum - 1, 1))
                 : pageNum + 1;
 
-        await sendShopMenu(interaction, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        const reply = await sendShopMenu(interaction.message.member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
+        await interaction.update({
+          embeds: reply.embeds,
+          components: reply.components,
+        });
     } catch (error) {
         console.error(error);
     }

@@ -9,6 +9,9 @@ import {
     findTextArgs,
     PaginatedMenuBuilder,
     client,
+    CommandOptions,
+    CommandResponse,
+    makeChoices,
 } from "../../utilities";
 import {
     Message,
@@ -17,6 +20,10 @@ import {
     inlineCode,
     Events,
     ButtonInteraction,
+    SlashCommandBuilder,
+    GuildMember,
+    User,
+    InteractionReplyOptions,
 } from "discord.js";
 import {
     Commands as Command,
@@ -25,27 +32,38 @@ import {
 import { DateTime } from "luxon";
 import { ChartConfiguration } from "chart.js";
 import { StockInterval } from "../../database/datastores/Stocks";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const STOCK_LIST_ID: string = "stock";
 const STOCK_LIST_PAGE_SIZE: number = 5;
 
 const data: Partial<Command> = {
     command_id: "stock" as CommandsCommandId,
-    description: `View the stock list or a stock chart`,
-    usage: `${inlineCode("$stock")}\n${inlineCode("$stock [@user]")}\n${inlineCode("$stock [@user] [now/hour/day/month]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("stock")
+      .setDescription("View the stock list or a stock chart")
+      .addUserOption(o => o.setName("user").setDescription("the stock to view"))
+      .addNumberOption(o => o.setName("page").setDescription("the page to view at"))
+      .addStringOption(o => o
+        .setName("interval")
+        .setDescription("the interval to view at")
+        .addChoices(makeChoices("minute", "hour", "day", "month"))),
     cooldown_time: 0,
     is_admin: false,
 };
 
-export default {
-    data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        if (message.mentions.users.first()) {
-            await sendStockChart(message, args);
+export default <CommandObj>{
+    data,
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+
+        const user = options.getUser("user", false)
+        if (user) {
+            const interval = options.getString("interval", false)
+            return sendStockChart(member, user, interval);
         } else {
-            let pageNum: number = +findNumericArgs(args)[0] || 1;
+            let pageNum: number = options.getNumber("page", false) || 1;
             await sendStockList(
-                message,
+                member,
                 STOCK_LIST_ID,
                 STOCK_LIST_PAGE_SIZE,
                 pageNum,
@@ -54,15 +72,12 @@ export default {
     },
 };
 
-async function sendStockChart(message: Message, args: string[]): Promise<void> {
-    const Stocks = StocksFactory.get(message.guildId);
+async function sendStockChart(member: GuildMember, stockUser: User, intervalOption: string | undefined): Promise<CommandResponse> {
+    const Stocks = StocksFactory.get(member.guild.id);
 
-    const stockUser = message.mentions.users.first();
     const validIntervals: StockInterval[] = ["minute", "hour", "day", "month"];
-    const intervalArg = findTextArgs(args)[0] ?? "minute";
-    const interval: StockInterval | undefined = validIntervals.find(
-        (vi) => vi === intervalArg,
-    );
+    const intervalArg = intervalOption ?? "minute";
+    const interval: StockInterval | undefined = validIntervals.find((vi) => vi === intervalArg);
 
     if (!interval) {
         throw new Error("Invalid interval.");
@@ -199,17 +214,17 @@ async function sendStockChart(message: Message, args: string[]): Promise<void> {
         )
         .setImage("attachment://chart.png");
 
-    await message.reply({ embeds: [embed], files: [attachment] });
+    return { embeds: [embed], files: [attachment] };
 }
 
 async function sendStockList(
-    message: Message | ButtonInteraction,
+    member: GuildMember,
     id: string,
     pageSize: number = 5,
     pageNum: number = 1,
-): Promise<void> {
-    const Users = UsersFactory.get(message.guildId);
-    const Stocks = StocksFactory.get(message.guildId);
+): Promise<InteractionReplyOptions> {
+    const Users = UsersFactory.get(member.guild.id);
+    const Stocks = StocksFactory.get(member.guild.id);
 
     const startIndex: number = (pageNum - 1) * pageSize;
     const endIndex: number = startIndex + pageSize;
@@ -253,10 +268,7 @@ async function sendStockList(
 
     const embed = paginatedMenu.createEmbed();
     const buttons = paginatedMenu.createButtons();
-
-    message instanceof ButtonInteraction
-        ? await message.update({ embeds: [embed], components: [buttons] })
-        : await message.reply({ embeds: [embed], components: [buttons] });
+    return { embeds: [embed], components: [buttons] };
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -267,15 +279,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         const { customId } = interaction;
 
-        if (
-            ![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(
-                customId,
-            )
-        )
+        if (![`${STOCK_LIST_ID}Previous`, `${STOCK_LIST_ID}Next`].includes(customId))
             return;
-
-        const authorId = interaction.message.mentions.users.first().id;
-        if (interaction.user.id !== authorId) return;
 
         let pageNum = parseInt(
             interaction.message.embeds[0].description.match(/Page (\d+)/)[1],
@@ -285,12 +290,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 ? (pageNum = Math.max(pageNum - 1, 1))
                 : pageNum + 1;
 
-        await sendStockList(
-            interaction,
+        // TODO: there has to be a better way to do this
+        const reply = await sendStockList(
+            interaction.message.member,
             STOCK_LIST_ID,
             STOCK_LIST_PAGE_SIZE,
             pageNum,
         );
+        await interaction.update({
+          embeds: reply.embeds,
+          components: reply.components,
+        });
     } catch (error) {
         console.error(error);
     }

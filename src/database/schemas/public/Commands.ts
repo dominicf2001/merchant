@@ -15,9 +15,7 @@ export default interface CommandsTable {
 
   guild_id: ColumnType<CommandsGuildId, CommandsGuildId, CommandsGuildId>;
 
-  description: ColumnType<string, string | undefined, string>;
-
-  usage: ColumnType<string, string | undefined, string>;
+  metadata: ColumnType<unknown, unknown | undefined, unknown>;
 
   cooldown_time: ColumnType<number, number | undefined, number>;
 

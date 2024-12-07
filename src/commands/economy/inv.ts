@@ -1,29 +1,31 @@
 import { UsersFactory, ItemsFactory } from "../../database/db-objects";
-import { formatNumber, MAX_INV_SIZE } from "../../utilities";
+import { CommandOptions, CommandResponse, formatNumber, MAX_INV_SIZE } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const data: Partial<Command> = {
     command_id: "inv" as CommandsCommandId,
-    description: `View your inventory`,
-    usage: `${inlineCode("$inv")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("inv")
+      .setDescription("View your inventory"),
     cooldown_time: 0,
     is_admin: false,
 };
 
-export default {
-    data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
-        const Items = ItemsFactory.get(message.guildId);
+export default <CommandObj>{
+    data,
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse>  {
+        const Users = UsersFactory.get(member.guild.id);
+        const Items = ItemsFactory.get(member.guild.id);
 
         const [items, armor, itemCount] = await Promise.all([
-            Users.getItems(message.author.id),
-            Users.getArmor(message.author.id),
-            Users.getItemCount(message.author.id),
+            Users.getItems(member.id),
+            Users.getArmor(member.id),
+            Users.getItemCount(member.id),
         ]);
 
         const embed = new EmbedBuilder()
@@ -47,6 +49,6 @@ export default {
             });
         });
 
-        await message.reply({ embeds: [embed] });
+        return embed;
     },
 };

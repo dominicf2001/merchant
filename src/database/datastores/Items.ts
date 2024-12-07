@@ -1,23 +1,27 @@
 import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Items as Item } from "../schemas/public/Items";
 import { Kysely } from "kysely";
-import { Collection, Message } from "discord.js";
+import { Collection, GuildMember } from "discord.js";
 import Database from "../schemas/Database";
-import path from "path";
-import fs from "fs";
+import { CommandOptions } from "src/utilities";
+
+import armor from "src/items/armor";
+import dye from "src/items/dye";
+import megaphone from "src/items/megaphone";
+import mute from "src/items/mute";
+import nametag from "src/items/nametag";
+import unmute from "src/items/unmute";
+
+export const ITEMS = [ armor, dye, megaphone, mute, nametag, unmute ];
 
 class Items extends DataStore<string, Item> {
     constructor(db: Kysely<Database>, guildID: string) {
         super(db, "items", "item_id", guildID);
     }
 
-    async use(
-        item_id: string,
-        message: Message,
-        args: string[],
-    ): Promise<void> {
+    async use(item_id: string, member: GuildMember, options: CommandOptions): Promise<void> {
         const use: BehaviorFunction = this.behaviors.get(item_id);
-        await use(message, args);
+        await use(member, options);
     }
 
     getFromCache(id: string): Item | undefined {
@@ -29,27 +33,14 @@ class Items extends DataStore<string, Item> {
     }
 
     async refreshCache(): Promise<void> {
-        const itemsPath = path.join(process.cwd(), "src/items");
-        const itemFiles = fs
-            .readdirSync(itemsPath)
-            .filter((file) => file.endsWith(".ts"));
-        for (const file of itemFiles) {
-            const filePath = path.join(itemsPath, file);
-            const itemObj = (await import(filePath)).default;
-            if (itemObj && "data" in itemObj && "use" in itemObj) {
-                this.behaviors.set(itemObj.data.item_id, itemObj.use);
-                // TODO: custom query that on conflict does nothing
-                await this.set(itemObj.data.item_id, itemObj.data);
-            } else {
-                // console.log(`[WARNING] The item at ${filePath} is missing a required "data" or "use" property.`);
-            }
+        for (const item of ITEMS) {
+            this.behaviors.set(item.data.item_id, item.use);
+            // TODO: custom query that on conflict does nothing
+            await this.set(item.data.item_id, item.data);
         }
     }
 
-    private behaviors: Collection<string, BehaviorFunction> = new Collection<
-        string,
-        BehaviorFunction
-    >();
+    private behaviors: Collection<string, BehaviorFunction> = new Collection<string, BehaviorFunction>();
     protected cache = new Collection<string, Item>;
 }
 
@@ -57,6 +48,11 @@ class ItemsFactory extends DataStoreFactory<Items> {
     protected construct(guildID: string): Items {
         return new Items(db, guildID);
     }
+}
+
+export interface ItemObj { 
+    data: Partial<Item>, 
+    use: BehaviorFunction
 }
 
 const itemsFactory = new ItemsFactory(db);

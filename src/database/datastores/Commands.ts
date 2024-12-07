@@ -1,23 +1,37 @@
 import { DataStore, db, BehaviorFunction, DataStoreFactory } from "./DataStore";
 import { Kysely } from "kysely";
 import { Commands as Command } from "../schemas/public/Commands";
-import { Collection, Message } from "discord.js";
+import { Collection, GuildMember } from "discord.js";
 import Database from "../schemas/Database";
-import path from "path";
-import fs from "fs";
+import { CommandOptions, CommandResponse } from "src/utilities";
+
+import buy from "src/commands/economy/buy";
+import bal from "src/commands/economy/bal";
+import give from "src/commands/economy/give";
+import inv from "src/commands/economy/inv";
+import rob from "src/commands/economy/rob";
+import sell from "src/commands/economy/sell";
+import shop from "src/commands/economy/shop";
+import use from "src/commands/economy/use";
+import work from "src/commands/economy/work";
+import setbal from "src/commands/admin/setbal";
+import help from "src/commands/misc/help";
+import createstock from "src/commands/stocks/createstock";
+import pf from "src/commands/stocks/pf";
+import setprice from "src/commands/stocks/setprice";
+import stock from "src/commands/stocks/stock";
+import top from "src/commands/economy/top";
+
+export const COMMANDS = [ buy, bal, give, inv, rob, sell, shop, top, use, work, setbal, help, createstock, pf, setprice, stock ]
 
 class Commands extends DataStore<string, Command> {
     constructor(db: Kysely<Database>, guildID: string) {
         super(db, "commands", "command_id", guildID);
     }
 
-    async execute(
-        command_id: string,
-        message: Message,
-        args: string[],
-    ): Promise<void> {
+    async execute(command_id: string, member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
         const execute: BehaviorFunction = this.behaviors.get(command_id);
-        await execute(message, args);
+        return await execute(member, options);
     }
 
     setInCache(id: string, command: Command): void {
@@ -29,42 +43,26 @@ class Commands extends DataStore<string, Command> {
     }
 
     async refreshCache(): Promise<void> {
-        const foldersPath: string = path.join(process.cwd(), "src/commands");
-        const commandFolders: string[] = fs.readdirSync(foldersPath);
-
-        for (const folder of commandFolders) {
-            const commandsPath: string = path.join(foldersPath, folder);
-            const commandFiles: string[] = fs
-                .readdirSync(commandsPath)
-                .filter((file) => file.endsWith(".ts"));
-            for (const file of commandFiles) {
-                const filePath: string = path.join(commandsPath, file);
-                const commandObj = (await import(filePath)).default;
-                if (commandObj && "data" in commandObj && "execute" in commandObj) {
-                    this.behaviors.set(
-                        commandObj.data.command_id,
-                        commandObj.execute,
-                    );
-                    // TODO: custom query that on conflict does nothing
-                    await this.set(commandObj.data.command_id, commandObj.data);
-                } else {
-                    // console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-                }
-            }
+        for (const commandObj of COMMANDS) {
+            this.behaviors.set(commandObj.data.command_id, commandObj.execute);
+            // TODO: custom query that on conflict does nothing
+            await this.set(commandObj.data.command_id, commandObj.data);
         }
     }
 
-    private behaviors = new Collection<
-        string,
-        BehaviorFunction
-    >();
-    protected cache = new Collection<string, Command>;
+    private behaviors = new Collection<string, BehaviorFunction>();
+    protected cache = new Collection<string, Command>();
 }
 
 class CommandsFactory extends DataStoreFactory<Commands> {
     protected construct(guildID: string): Commands {
         return new Commands(db, guildID);
     }
+}
+
+export interface CommandObj { 
+    data: Partial<Command>, 
+    execute: BehaviorFunction
 }
 
 const commandsFactory = new CommandsFactory(db);

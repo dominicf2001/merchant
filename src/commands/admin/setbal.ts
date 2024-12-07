@@ -3,40 +3,33 @@ import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, EmbedBuilder, inlineCode } from "discord.js";
-import { CURRENCY_EMOJI_CODE, findNumericArgs } from "../../utilities";
+import { EmbedBuilder, inlineCode, SlashCommandBuilder, GuildMember } from "discord.js";
+import { CommandOptions, CommandResponse, CURRENCY_EMOJI_CODE } from "../../utilities";
+import { CommandObj } from "src/database/datastores/Commands";
 
 const data: Partial<Command> = {
     command_id: "setbal" as CommandsCommandId,
-    description: `Set a users balance`,
-    usage: `${inlineCode("$setbal [@user] [#amount]")}`,
+    metadata: new SlashCommandBuilder()
+      .setName("setbal")
+      .setDescription("Set a users balance")
+      .addUserOption(o => o.setName("user").setDescription("the user").setRequired(true))
+      .addNumberOption(o => o.setName("amount").setDescription("the amount").setRequired(true)),
     cooldown_time: 0,
     is_admin: true,
 };
 
-export default {
-    data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
+export default <CommandObj>{
+    data,
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
 
-        const newBalance: number = +findNumericArgs(args)[0];
-        const target = message.mentions.users.first() ?? message.author;
-
-        if (!newBalance === undefined) {
-            throw new Error("You must specify a balance.");
-        }
-
-        if (!target) {
-            throw new Error("You must specify a target.");
-        }
-
+        const newBalance: number = options.getNumber("amount", true);
+        const target = options.getUser("user", true);
         await Users.setBalance(target.id, newBalance);
 
-        const embed = new EmbedBuilder().setColor("Blurple").setFields({
+        return new EmbedBuilder().setColor("Blurple").setFields({
             name: `${inlineCode(target.username)}'s balance set to: ${CURRENCY_EMOJI_CODE} ${newBalance}`,
             value: ` `,
         });
-
-        await message.reply({ embeds: [embed] });
     },
 };

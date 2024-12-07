@@ -1,43 +1,45 @@
+import { ITEMS } from "src/database/datastores/Items";
 import { UsersFactory, ItemsFactory } from "../../database/db-objects";
-import { findTextArgs } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import { Message, inlineCode } from "discord.js";
+import { GuildMember, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
+import { CommandOptions, CommandResponse, loadObjectsFromFolder } from "src/utilities";
+
+let metadata = new SlashCommandBuilder()
+            .setName("use")
+            .setDescription("Use an item");
+
+for (const subcommand of ITEMS) {
+    metadata = metadata.addSubcommand(_ => subcommand.data.metadata as SlashCommandSubcommandBuilder) as SlashCommandBuilder
+}
 
 const data: Partial<Command> = {
     command_id: "use" as CommandsCommandId,
-    description: `Use an item`,
-    usage: `${inlineCode("$use [item]")}\n${inlineCode("$use [item] [@user]")}`,
+    metadata,
     cooldown_time: 0,
     is_admin: false,
 };
 
 export default {
     data: data,
-    async execute(message: Message, args: string[]): Promise<void> {
-        const Users = UsersFactory.get(message.guildId);
-        const Items = ItemsFactory.get(message.guildId);
+    async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+        const Users = UsersFactory.get(member.guild.id);
+        const Items = ItemsFactory.get(member.guild.id);
 
-        let itemName = findTextArgs(args)[0];
-
-        if (!itemName) {
-            throw new Error("Please specify an item.");
-        }
-
-        const item = await Users.getItem(message.author.id, itemName);
-
+        const itemName = options.getSubcommand(true);
+        const item = await Users.getItem(member.id, itemName);
         if (!item) {
             throw new Error("You do not have this item!");
         }
 
         try {
-            await Items.use(itemName, message, args.slice(1));
-            await Users.addItem(message.author.id, itemName, -1);
+            await Items.use(itemName, member, options);
+            await Users.addItem(member.id, itemName, -1);
         }
         catch (error) {
-            await message.reply(error.message);
+            return error.message;
         }
     },
 };
