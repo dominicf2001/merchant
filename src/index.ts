@@ -105,54 +105,54 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.InteractionCreate, async interaction => {
 
-  if (interaction.isChatInputCommand() && interaction.inGuild()) {
-    const { Users, Commands } = getDatastores(interaction.guildId);
+    if (interaction.isChatInputCommand() && interaction.inGuild()) {
+        const { Users, Commands } = getDatastores(interaction.guildId);
 
-    const commandName = interaction.commandName;
-    const command = await Commands.get(commandName)
-    if (!command) return;
+        const commandName = interaction.commandName;
+        const command = await Commands.get(commandName)
+        if (!command) return;
 
-    await interaction.deferReply();
+        await interaction.deferReply();
 
-    if (command.is_admin && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-        await interaction.editReply(
-            "You do not have permission to use this command.",
-        );
-        return;
-    }
-
-    // Check for remaining cooldown
-    const remainingCooldownDuration: number =
-        await Users.getRemainingCooldownDuration(
-            interaction.user.id,
-            commandName,
-        );
-    if (remainingCooldownDuration > 0) {
-        await interaction.editReply({
-            content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.`,
-        });
-        return;
-    }
-
-    try {
-        // If no cooldown, execute command and set cooldown
-
-        const member = interaction.guild.members.cache.get(interaction.user.id) 
-        const reply = await Commands.execute(command.command_id, member, interaction.options);
-        if (reply instanceof EmbedBuilder) await interaction.editReply({ embeds: [reply] });
-        else await interaction.editReply(reply);
-
-        if (command.cooldown_time > 0) {
-            await Users.createCooldown(
-                interaction.user.id,
-                command.command_id,
+        if (command.is_admin && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+            await interaction.editReply(
+                "You do not have permission to use this command.",
             );
+            return;
         }
-    } catch (error) {
-        console.error(error);
-        await interaction.editReply(error.message);
+
+        // Check for remaining cooldown
+        const remainingCooldownDuration: number =
+            await Users.getRemainingCooldownDuration(
+                interaction.user.id,
+                commandName,
+            );
+        if (remainingCooldownDuration > 0) {
+            await interaction.editReply({
+                content: `Please wait, you are on a cooldown for \`${command.command_id}\`. You can use it again in \`${secondsToHms(remainingCooldownDuration / 1000)}\`.`,
+            });
+            return;
+        }
+
+        try {
+            // If no cooldown, execute command and set cooldown
+
+            const member = interaction.guild.members.cache.get(interaction.user.id)
+            const reply = await Commands.execute(command.command_id, member, interaction.options);
+            if (reply instanceof EmbedBuilder) await interaction.editReply({ embeds: [reply] });
+            else await interaction.editReply(reply);
+
+            if (command.cooldown_time > 0) {
+                await Users.createCooldown(
+                    interaction.user.id,
+                    command.command_id,
+                );
+            }
+        } catch (error) {
+            console.error(error);
+            await interaction.editReply(error.message);
+        }
     }
-  }
 })
 
 // CRON HANDLING

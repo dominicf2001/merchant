@@ -5,8 +5,6 @@ import {
     STOCKDOWN_EMOJI_CODE,
     STOCKUP_EMOJI_CODE,
     formatNumber,
-    findNumericArgs,
-    findTextArgs,
     PaginatedMenuBuilder,
     client,
     CommandOptions,
@@ -14,12 +12,10 @@ import {
     makeChoices,
 } from "../../utilities";
 import {
-    Message,
     EmbedBuilder,
     AttachmentBuilder,
     inlineCode,
     Events,
-    ButtonInteraction,
     SlashCommandBuilder,
     GuildMember,
     User,
@@ -40,14 +36,14 @@ const STOCK_LIST_PAGE_SIZE: number = 5;
 const data: Partial<Command> = {
     command_id: "stock" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
-      .setName("stock")
-      .setDescription("View the stock list or a stock chart")
-      .addUserOption(o => o.setName("user").setDescription("the stock to view"))
-      .addNumberOption(o => o.setName("page").setDescription("the page to view at"))
-      .addStringOption(o => o
-        .setName("interval")
-        .setDescription("the interval to view at")
-        .addChoices(makeChoices("minute", "hour", "day", "month"))),
+        .setName("stock")
+        .setDescription("View the stock list or a stock chart")
+        .addUserOption(o => o.setName("user").setDescription("the stock to view"))
+        .addNumberOption(o => o.setName("page").setDescription("the page to view at"))
+        .addStringOption(o => o
+            .setName("interval")
+            .setDescription("the interval to view at")
+            .addChoices(makeChoices("minute", "hour", "day", "month"))),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -62,7 +58,7 @@ export default <CommandObj>{
             return sendStockChart(member, user, interval);
         } else {
             let pageNum: number = options.getNumber("page", false) || 1;
-            await sendStockList(
+            return sendStockList(
                 member,
                 STOCK_LIST_ID,
                 STOCK_LIST_PAGE_SIZE,
@@ -298,8 +294,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
             pageNum,
         );
         await interaction.update({
-          embeds: reply.embeds,
-          components: reply.components,
+            embeds: reply.embeds,
+            components: reply.components,
         });
     } catch (error) {
         console.error(error);

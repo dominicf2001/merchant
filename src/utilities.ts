@@ -9,12 +9,12 @@ import {
     normalizeArray,
     Client,
     GatewayIntentBits,
-    APIApplicationCommandOption, 
-    ApplicationCommandOptionType, 
-    CacheType, 
-    CommandInteractionOptionResolver, 
-    inlineCode, 
-    InteractionReplyOptions, 
+    APIApplicationCommandOption,
+    ApplicationCommandOptionType,
+    CacheType,
+    CommandInteractionOptionResolver,
+    inlineCode,
+    InteractionReplyOptions,
     SlashCommandBuilder
 } from "discord.js";
 import { DateTime } from "luxon";
@@ -150,19 +150,19 @@ export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "
 
 export function buildUsageTag(metadata: SlashCommandBuilder) {
     const options = metadata.options.map(option => {
-      const data = option as unknown as APIApplicationCommandOption;
-      let prefix = "";
-      switch (data.type) {
-        case ApplicationCommandOptionType.User: prefix = "@"; break;
-        case ApplicationCommandOptionType.Number: prefix = "#"; break;
-      }
-      return data.required ? `[${prefix}${data.name}]` : `(${prefix}${data.name})`;
+        const data = option as unknown as APIApplicationCommandOption;
+        let prefix = "";
+        switch (data.type) {
+            case ApplicationCommandOptionType.User: prefix = "@"; break;
+            case ApplicationCommandOptionType.Number: prefix = "#"; break;
+        }
+        return data.required ? `[${prefix}${data.name}]` : `(${prefix}${data.name})`;
     })
-    return inlineCode([ `/${metadata.name}`, ...options ].join(" "))
-  }
+    return inlineCode([`/${metadata.name}`, ...options].join(" "))
+}
 
-export function makeChoices (...choices: string[]) {
-  return choices.map(choice => ({ name: choice, value: choice }))
+export function makeChoices(...choices: string[]) {
+    return choices.map(choice => ({ name: choice, value: choice }))
 }
 
 export class PaginatedMenuBuilder {
