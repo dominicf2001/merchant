@@ -104,11 +104,18 @@ router.get("/guilds", async (ctx) => {
 });
 
 // gets stocks starting a startDate within specified range
-router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
-    // TODO: accept an object instead of url params. Include guildId
-    const Users = UsersFactory.get("123"); // TODO: replace 
-    const Stocks = StocksFactory.get("123"); // TODO: replace 
+router.get("/stock/:guildID/:range/:endDate/:startDate?", async (ctx) => {
+    console.log("TEEST");
     try {
+        const guildID = ctx.params.guildID
+        if (!guildID) {
+            ctx.throw("Missing guild ID", StatusCodes.BAD_REQUEST);
+            return;
+        }
+
+        const Users = UsersFactory.get(guildID);
+        const Stocks = StocksFactory.get(guildID);
+
         if (!ctx.params.endDate) {
             ctx.throw("Missing end date", StatusCodes.BAD_REQUEST);
             return;
@@ -123,6 +130,11 @@ router.get("/stock/:range/:endDate/:startDate?", async (ctx) => {
         const startDate: DateTime | null = ctx.params.startDate
             ? DateTime.fromISO(ctx.params.startDate)
             : null;
+
+        if (!endDate.isValid || !startDate.isValid) {
+            ctx.throw(`Malformed start or end date`, StatusCodes.BAD_REQUEST);
+            return;
+        }
 
         const range = ctx.params.range;
 
@@ -201,9 +213,6 @@ router.get("/sim", async (ctx) => {
 // runs a simulation
 router.post("/sim", async (ctx) => {
     try {
-        const Users = UsersFactory.get("123"); // TODO: replace 
-        const Stocks = StocksFactory.get("123"); // TODO: replace 
-
         console.log("Clearing database...");
         await dbWipe(db);
 
@@ -211,6 +220,9 @@ router.post("/sim", async (ctx) => {
         const start = reqBody.start ?? "2000-01-01T00:00";
         const end = reqBody.end ?? DateTime.fromJSDate(new Date()).toSQLDate();
         const guildID = reqBody.guildID;
+
+        const Users = UsersFactory.get(guildID);
+        const Stocks = StocksFactory.get(guildID);
 
         const outPath = path.join(SIM_OUT_PATH, guildID);
 
@@ -255,6 +267,11 @@ router.post("/sim", async (ctx) => {
         const minuteIncrement = 5;
         const startDate = DateTime.fromISO(start);
         const endDate = DateTime.fromISO(end);
+
+        if (!endDate.isValid || !startDate.isValid) {
+            ctx.throw(`Malformed start or end date`, StatusCodes.BAD_REQUEST);
+            return;
+        }
 
         let nextTickDate = startDate.plus({ minutes: minuteIncrement });
         let msgIndex = 0;

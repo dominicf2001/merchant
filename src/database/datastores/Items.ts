@@ -3,7 +3,7 @@ import { Items as Item } from "../schemas/public/Items";
 import { Kysely } from "kysely";
 import { Collection, GuildMember } from "discord.js";
 import Database from "../schemas/Database";
-import { CommandOptions } from "src/utilities";
+import { CommandOptions, ItemResponse } from "src/utilities";
 
 import armor from "src/items/armor";
 import dye from "src/items/dye";
@@ -12,16 +12,16 @@ import mute from "src/items/mute";
 import nametag from "src/items/nametag";
 import unmute from "src/items/unmute";
 
-export const ITEMS = [ armor, dye, megaphone, mute, nametag, unmute ];
+export const ITEMS = [armor, dye, megaphone, mute, nametag, unmute];
 
 class Items extends DataStore<string, Item> {
     constructor(db: Kysely<Database>, guildID: string) {
         super(db, "items", "item_id", guildID);
     }
 
-    async use(item_id: string, member: GuildMember, options: CommandOptions): Promise<void> {
+    async use(item_id: string, member: GuildMember, options: CommandOptions): Promise<ItemResponse> {
         const use: BehaviorFunction = this.behaviors.get(item_id);
-        await use(member, options);
+        return await use(member, options);
     }
 
     getFromCache(id: string): Item | undefined {
@@ -50,8 +50,8 @@ class ItemsFactory extends DataStoreFactory<Items> {
     }
 }
 
-export interface ItemObj { 
-    data: Partial<Item>, 
+export interface ItemObj {
+    data: Partial<Item>,
     use: BehaviorFunction
 }
 

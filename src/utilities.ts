@@ -145,6 +145,7 @@ export function findMentionArgs(args: string[]): string[] {
     return args.filter((arg) => isAMention(arg));
 }
 
+export type ItemResponse = { reply: CommandResponse, success: boolean }
 export type CommandResponse = InteractionReplyOptions | EmbedBuilder | string;
 export type CommandOptions = Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">
 

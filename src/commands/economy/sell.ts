@@ -2,7 +2,7 @@ import { UsersFactory, ItemsFactory, StocksFactory } from "../../database/db-obj
 import {
     CURRENCY_EMOJI_CODE,
     formatNumber,
-    CommandOptions, 
+    CommandOptions,
     CommandResponse
 } from "../../utilities";
 import {
@@ -15,11 +15,11 @@ import { CommandObj } from "src/database/datastores/Commands";
 const data: Partial<Command> = {
     command_id: "sell" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
-      .setName("sell")
-      .setDescription("sell an item or a stock")
-      .addUserOption(o => o.setName("stock").setDescription("the stock to sell"))
-      .addStringOption(o => o.setName("item").setDescription("the item to sell"))
-      .addNumberOption(o => o.setName("amount").setDescription("the amount to sell")),
+        .setName("sell")
+        .setDescription("sell an item or a stock")
+        .addUserOption(o => o.setName("stock").setDescription("the stock to sell"))
+        .addStringOption(o => o.setName("item").setDescription("the item to sell"))
+        .addNumberOption(o => o.setName("amount").setDescription("the amount to sell")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -27,15 +27,15 @@ const data: Partial<Command> = {
 export default <CommandObj>{
     data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
-      const amount = options.getNumber("amount", true);
+        const amount = options.getNumber("amount", true);
 
-      const user = options.getUser("stock", false);
-      if (user) return sellStock(member, amount, user);
+        const user = options.getUser("stock", false);
+        if (user) return sellStock(member, amount, user);
 
-      const item = options.getString("item", false);
-      if (item) return sellItem(member, amount, item);
+        const item = options.getString("item", false);
+        if (item) return sellItem(member, amount, item);
 
-      throw new Error("You must either specify a stock or an item to sell.")
+        return { content: "You must either specify a stock or an item to sell." };
     },
 };
 
@@ -45,25 +45,25 @@ async function sellStock(member: GuildMember, quantity: number, stockUser: User)
 
     const latestStock = await Stocks.get(stockUser.id);
     if (!latestStock) {
-        throw new Error(`That stock does not exist.`);
+        return { content: `That stock does not exist.` };
     }
 
     if (member.id === stockUser.id) {
-        throw new Error(`You cannot own your own stock.`);
+        return { content: `You cannot own your own stock.` };
     }
 
     if (!Number.isInteger(quantity)) {
-        throw new Error(`You can only sell a whole number of shares.`);
+        return { content: `You can only sell a whole number of shares.` };
     }
 
     if (quantity <= 0) {
-        throw new Error(`You can only sell one or more shares.`);
+        return { content: `You can only sell one or more shares.` };
     }
 
     let userStocks = await Users.getUserStocks(member.id, stockUser.id);
 
     if (!userStocks.length) {
-        throw new Error(`You do not own any shares of this stock.`);
+        return { content: `You do not own any shares of this stock.` };
     }
     const totalSold: number = -(await Users.addStock(
         member.id,
@@ -88,21 +88,21 @@ async function sellItem(member: GuildMember, quantity: number, itemName: string)
     itemName = itemName.toLowerCase()
     const item = await Items.get(itemName);
     if (!item) {
-        throw new Error(`That item does not exist.`);
+        return { content: `That item does not exist.` };
     }
 
     if (!Number.isInteger(quantity)) {
-        throw new Error(`You can only sell a whole number of items.`);
+        return { content: `You can only sell a whole number of items.` };
     }
 
     if (quantity <= 0) {
-        throw new Error(`You can only sell one or more items.`);
+        return { content: `You can only sell one or more items.` };
     }
 
     const userItem = await Users.getItem(member.id, itemName);
 
     if (!userItem) {
-        throw new Error(`You do not have this item.`);
+        return { content: `You do not have this item.` };
     }
 
     const totalSold: number = -(await Users.addItem(

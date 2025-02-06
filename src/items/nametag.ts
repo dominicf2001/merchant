@@ -1,5 +1,5 @@
 import { inlineCode, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
-import { CommandOptions, CommandResponse } from "../utilities";
+import { CommandOptions, ItemResponse } from "../utilities";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 import { UsersFactory } from "../database/db-objects";
 import { ItemObj } from "src/database/datastores/Items";
@@ -23,7 +23,7 @@ const data: Partial<Item> = {
 
 export default <ItemObj>{
     data,
-    async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+    async use(member: GuildMember, options: CommandOptions): Promise<ItemResponse> {
         const Users = UsersFactory.get(member.guild.id);
 
         const newNickname = options.getString("nickname", true);
@@ -31,40 +31,49 @@ export default <ItemObj>{
         const targetUser = options.getUser("target", true);
         const target = await member.guild.members.fetch(targetUser);
         if (!target) {
-            throw new Error("Failed to grab that target.");
+            return { reply: { content: "Failed to grab that target." }, success: false };
         }
 
         if (!target.moderatable) {
-            throw new Error("This user is immune to nametags.");
+            return { reply: { content: "This user is immune to nametags." }, success: false };
         }
 
         if (!newNickname.length) {
-            throw new Error("Please specify a nickname.");
+            return { reply: { content: "Please specify a nickname." }, success: false };
         }
 
         if (newNickname.length > 32) {
-            throw new Error("This name is too long.");
+            return { reply: { content: "This name is too long." }, success: false };
         }
 
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor && member.id !== target.id) {
             await Users.addArmor(target.id, -1);
-            return new EmbedBuilder().setColor("Blurple").setFields({
-                name: `Blocked by :shield: armor!`,
-                value: `This user is now exposed`,
-            });
+            return {
+                reply: new EmbedBuilder().setColor("Blurple").setFields({
+                    name: `Blocked by :shield: armor!`,
+                    value: `This user is now exposed`,
+                }),
+                success: true
+            };
         }
 
         try {
             await target.setNickname(newNickname);
 
-            return new EmbedBuilder().setColor("Blurple").setFields({
-                name: `${inlineCode(target.user.username)}'s nickname has been changed`,
-                value: ` `,
-            });
+            return {
+                reply: new EmbedBuilder().setColor("Blurple").setFields({
+                    name: `${inlineCode(target.user.username)}'s nickname has been changed`,
+                    value: ` `,
+                }),
+                success: true
+            };
         } catch (error) {
             // TODO: make an explicit permissions check?
-            throw new Error("Could not use nametag. Please try again");
+            return {
+                reply: { content: "Could not use nametag. Please try again" },
+                success: false
+            };
         }
     },
 };

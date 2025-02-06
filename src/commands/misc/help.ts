@@ -27,10 +27,10 @@ const HELP_PAGE_SIZE: number = 5;
 const data: Partial<Command> = {
     command_id: "help" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
-      .setName("help")
-      .setDescription("Displays available commands or displays info on a command/item")
-      .addStringOption(o => o.setName("search").setDescription("the item or command you need help on"))
-      .addNumberOption(o => o.setName("page").setDescription("the page of the help menu")),
+        .setName("help")
+        .setDescription("Displays available commands or displays info on a command/item")
+        .addStringOption(o => o.setName("search").setDescription("the item or command you need help on"))
+        .addNumberOption(o => o.setName("page").setDescription("the page of the help menu")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -77,7 +77,7 @@ export default <CommandObj>{
                 return embed;
             }
 
-            throw new Error("This item or command does not exist.");
+            return { content: "This item or command does not exist." };
         } else {
             const pageNum = options.getNumber("page", false) || 1;
             return sendHelpMenu(member, HELP_ID, HELP_PAGE_SIZE, pageNum);
@@ -146,8 +146,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         const reply = await sendHelpMenu(interaction.message.member, HELP_ID, HELP_PAGE_SIZE, pageNum);
         await interaction.update({
-          embeds: reply.embeds,
-          components: reply.components,
+            embeds: reply.embeds,
+            components: reply.components,
         });
     } catch (error) {
         console.error(error);

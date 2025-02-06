@@ -45,7 +45,7 @@ export default <CommandObj>{
         const item = options.getString("item", false);
         if (item) return buyItem(member, amount, item);
 
-        throw new Error("You must either specify a stock or an item to buy.")
+        return { content: "You must either specify a stock or an item to buy." };
     },
 };
 
@@ -54,30 +54,26 @@ async function buyStock(member: GuildMember, quantity: number, stockUser: User):
     const Stocks = StocksFactory.get(member.guild.id);
 
     if (quantity <= 0) {
-        throw new Error(`You can only purchase one or more shares.`);
+        return { content: "You can only purchase one or more shares." };
     }
 
     if (!Number.isInteger(quantity)) {
-        throw new Error(`You can only purchase a whole number of stock.`);
+        return { content: "You can only purchase a whole number of stock." };
     }
 
     if (member.id === stockUser.id) {
-        throw new Error(`You cannot own your own stock.`);
+        return { content: "You cannot own your own stock." };
     }
 
     const latestStock = await Stocks.get(stockUser.id);
     if (!latestStock) {
-        throw new Error(`That stock does not exist.`);
+        return { content: "That stock does not exist." };
     }
 
     const authorBalance: number = await Users.getBalance(member.id);
-    // buy as many as possible
-    const totalBought: number =
-        latestStock.price * quantity > authorBalance //|| args.includes("all")
-            ? Math.floor(
-                Math.floor((authorBalance / latestStock.price) * 100) / 100,
-            )
-            : quantity;
+    const totalBought: number = latestStock.price * quantity > authorBalance
+        ? Math.floor((authorBalance / latestStock.price) * 100) / 100
+        : quantity;
     const totalCost: number = latestStock.price * totalBought;
 
     await Users.addStock(member.id, stockUser.id, totalBought);
@@ -95,41 +91,37 @@ async function buyItem(member: GuildMember, quantity: number, itemName: string):
     const Items = ItemsFactory.get(member.guild.id);
 
     if (!itemName) {
-        throw new Error(`Please specify an item or stock.`);
+        return { content: "Please specify an item or stock." };
     }
 
     const item = await Items.get(itemName);
     if (!item) {
-        throw new Error(`That item doesn't exist.`);
+        return { content: "That item doesn't exist." };
     }
 
     if (quantity <= 0) {
-        throw new Error(`You can only purchase one or more items.`);
+        return { content: "You can only purchase one or more items." };
     }
 
     if (!Number.isInteger(quantity)) {
-        throw new Error(`You can only purchase a whole number of items.`);
+        return { content: "You can only purchase a whole number of items." };
     }
 
     const itemCount: number = await Users.getItemCount(member.id);
     const freeInventorySpace = MAX_INV_SIZE - itemCount;
 
     if (freeInventorySpace <= 0) {
-        throw new Error(`You can only store ${MAX_INV_SIZE} items at a time.`);
+        return { content: `You can only store ${MAX_INV_SIZE} items at a time.` };
     }
-    // if (user.role < item.role) return message.reply(`Your role is too low to buy this item.`);
-    // buy as many as possible
+
     const authorBalance: number = await Users.getBalance(member.id);
-    let totalBought: number =
-        item.price * quantity > authorBalance //|| args.includes("all")
-            ? Math.floor(Math.floor((authorBalance / item.price) * 100) / 100)
-            : quantity;
-    // Dont exceed max inventory size
-    totalBought =
-        totalBought > freeInventorySpace ? freeInventorySpace : totalBought;
+    let totalBought: number = item.price * quantity > authorBalance
+        ? Math.floor((authorBalance / item.price) * 100) / 100
+        : quantity;
+    totalBought = totalBought > freeInventorySpace ? freeInventorySpace : totalBought;
 
     if (!totalBought) {
-        throw new Error(`You are too poor to purchase this item.`);
+        return { content: "You are too poor to purchase this item." };
     }
 
     const totalCost: number = item.price * totalBought;

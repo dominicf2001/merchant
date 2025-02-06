@@ -1,7 +1,7 @@
 import { Message, inlineCode, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
 import { UsersFactory } from "../database/db-objects";
-import { CommandOptions, CommandResponse, MUTE_DURATION_MIN } from "../utilities";
+import { ItemResponse, CommandOptions, MUTE_DURATION_MIN } from "../utilities";
 import { ItemObj } from "src/database/datastores/Items";
 
 const durationMs: number = MUTE_DURATION_MIN * 60000;
@@ -21,42 +21,51 @@ const data: Partial<Item> = {
 
 export default <ItemObj>{
     data,
-    async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+    async use(member: GuildMember, options: CommandOptions): Promise<ItemResponse> {
         const Users = UsersFactory.get(member.guild.id);
 
         const targetUser = options.getUser("target", true);
         const target = await member.guild.members.fetch(targetUser);
         if (!target) {
-            throw new Error("Failed to grab that target.");
+            return { reply: { content: "Failed to grab that target." }, success: false };
         }
 
         if (!target.moderatable) {
-            throw new Error("This user is immune to mutes.");
+            return { reply: { content: "This user is immune to mutes." }, success: false };
         }
 
         if (target.isCommunicationDisabled().valueOf()) {
-            throw new Error(`<@${target.id}> is already muted.`);
+            return { reply: { content: `<@${target.id}> is already muted.` }, success: false };
         }
 
         const targetArmor = await Users.getArmor(target.id);
         if (targetArmor) {
             await Users.addArmor(target.id, -1);
 
-            return new EmbedBuilder().setColor("Blurple").setFields({
-                name: `Blocked by :shield: armor!`,
-                value: `This user is now exposed`,
-            });
+            return {
+                reply: new EmbedBuilder().setColor("Blurple").setFields({
+                    name: `Blocked by :shield: armor!`,
+                    value: `This user is now exposed`,
+                }),
+                success: true
+            };
         }
 
         try {
             await target.timeout(durationMs);
-            return new EmbedBuilder().setColor("Blurple").setFields({
-                name: `${inlineCode(target.user.username)} has been muted for ${MUTE_DURATION_MIN} minutes`,
-                value: ` `,
-            });
+            return {
+                reply: new EmbedBuilder().setColor("Blurple").setFields({
+                    name: `${inlineCode(target.user.username)} has been muted for ${MUTE_DURATION_MIN} minutes`,
+                    value: ` `,
+                }),
+                success: true
+            };
         } catch (error) {
             console.error(error);
-            throw new Error(`Could not use mute. Please try again.`);
+            return {
+                reply: { content: `Could not use mute. Please try again.` },
+                success: false
+            }
         }
     },
 };

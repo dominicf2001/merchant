@@ -1,6 +1,6 @@
 import { Message, inlineCode, EmbedBuilder, AttachmentBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { CommandOptions, CommandResponse } from "src/utilities";
+import { CommandOptions, ItemResponse } from "src/utilities";
 import { ItemObj } from "src/database/datastores/Items";
 
 const data: Partial<Item> = {
@@ -14,12 +14,12 @@ const data: Partial<Item> = {
             .setName("message")
             .setDescription("the message to send")
             .setRequired(true))
-        // .addAttachmentOption()
+    // .addAttachmentOption()
 };
 
 export default <ItemObj>{
     data,
-    async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
+    async use(member: GuildMember, options: CommandOptions): Promise<ItemResponse> {
         // TODO: fix attachments
         const msgToSend = options.getString("message", true);
         const embed = new EmbedBuilder()
@@ -28,8 +28,11 @@ export default <ItemObj>{
             .setFooter({ text: `Sent by ${member.user.tag}`, iconURL: member.displayAvatarURL() });
 
         return {
-            content: "@everyone",
-            embeds: [embed],
+            reply: {
+                content: "@everyone",
+                embeds: [embed],
+            },
+            success: true
         };
     },
 };

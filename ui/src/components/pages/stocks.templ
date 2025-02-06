@@ -39,7 +39,7 @@ templ Stocks(vm *StocksViewModel) {
 							<button
 								id="newSimBtn"
 								hx-get="/stocks/guildOptions"
-								hx-target="#guildSelect"
+								hx-target="#guildSimSelect"
 								class="btn btn-primary w-full"
 								_="on htmx:afterRequest send dialogOpen to #newSimModal"
 							>
@@ -53,6 +53,13 @@ templ Stocks(vm *StocksViewModel) {
 								hx-trigger="load, change, stocks:loadStocks"
 								class="flex flex-col space-y-2"
 							>
+								<select
+									hx-target="this"
+									hx-get="/stocks/guildOptions"
+									hx-trigger="load"
+									name="guildID"
+									class="select select-bordered w-full"
+								></select>
 								<select id="intervalInput" name="interval" class="select select-bordered w-full">
 									<option value="minute">Minute</option>
 									<option value="hour">Hour</option>
@@ -122,7 +129,7 @@ templ Stocks(vm *StocksViewModel) {
 							<label class="label">
 								<span class="label-text">Server</span>
 							</label>
-							<select id="guildSelect" name="guildID" class="select select-bordered w-full"></select>
+							<select id="guildSimSelect" name="guildID" class="select select-bordered w-full"></select>
 						</div>
 						<div class="form-control">
 							<label class="label cursor-pointer justify-start">

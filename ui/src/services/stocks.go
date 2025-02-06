@@ -38,6 +38,13 @@ type Guild struct {
 	ID   string `json:"id"`
 }
 
+type StockQuery struct {
+	GuildID  string
+	Start    string
+	End      string
+	Interval string
+}
+
 type SimParams struct {
 	GuildID    string `json:"guildID"`
 	Start      string `json:"start"`
@@ -50,12 +57,18 @@ func NewStocksService() *StocksService {
 	return &StocksService{}
 }
 
-func (s *StocksService) GetStocks(interval string, startDate string, endDate string) ([]Stock, error) {
-	if !IsStockInterval(interval) {
-		return nil, fmt.Errorf("Invalid range parameter: %s", interval)
+func (s *StocksService) GetStocks(query StockQuery) ([]Stock, error) {
+	if !IsStockInterval(query.Interval) {
+		return nil, fmt.Errorf("Invalid range parameter: %s", query.Interval)
 	}
 
-	res, err := http.Get(fmt.Sprintf("%s/stock/%s/%s/%s", util.ApiUrl, interval, endDate, startDate))
+	if query.GuildID == "" {
+		return []Stock{}, nil
+	}
+
+	url := fmt.Sprintf("%s/stock/%s/%s/%s/%s", util.ApiUrl, query.GuildID, query.Interval, query.End, query.Start)
+	println(url)
+	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting stocks: %w", err)
 	}

@@ -10,9 +10,9 @@ import { CommandObj } from "src/database/datastores/Commands";
 const data: Partial<Command> = {
     command_id: "createstock" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
-      .setName("createstock")
-      .setDescription("Creates a new stock")
-      .addUserOption(o => o.setName("user").setDescription("the user to create a stock for").setRequired(true)),
+        .setName("createstock")
+        .setDescription("Creates a new stock")
+        .addUserOption(o => o.setName("user").setDescription("the user to create a stock for").setRequired(true)),
     cooldown_time: 0,
     is_admin: true,
 };
@@ -25,7 +25,7 @@ export default <CommandObj>{
         const stockUser = options.getUser("user", true);
         const stock = await Stocks.get(stockUser.id);
         if (stock) {
-            throw new Error("This stock already exists!");
+            return { content: "This stock already exists!" };
         } else {
             await Stocks.updateStockPrice(stockUser.id, 1);
             const embed = new EmbedBuilder().setColor("Blurple").setFields({

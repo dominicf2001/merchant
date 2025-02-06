@@ -76,12 +76,12 @@ async function sendStockChart(member: GuildMember, stockUser: User, intervalOpti
     const interval: StockInterval | undefined = validIntervals.find((vi) => vi === intervalArg);
 
     if (!interval) {
-        throw new Error("Invalid interval.");
+        return { content: "Invalid interval." };
     }
 
     const latestStock = await Stocks.get(stockUser.id);
     if (!latestStock) {
-        throw new Error("This stock does not exist.");
+        return { content: "This stock does not exist." };
     }
 
     const stockHistory = (await Stocks.getStockHistory(stockUser.id, interval)).reverse();

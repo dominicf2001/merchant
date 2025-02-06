@@ -1,6 +1,6 @@
 import { Message, inlineCode, EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { CommandOptions, CommandResponse } from "src/utilities";
+import { CommandOptions, ItemResponse } from "src/utilities";
 import { ItemObj } from "src/database/datastores/Items";
 
 const data: Partial<Item> = {
@@ -18,26 +18,32 @@ const data: Partial<Item> = {
 
 export default <ItemObj>{
     data,
-    async use(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
-        
+    async use(member: GuildMember, options: CommandOptions): Promise<ItemResponse> {
+
         const targetUser = options.getUser("target", true);
         const target = await member.guild.members.fetch(targetUser);
         if (!target) {
-            throw new Error("Failed to grab that target.");
+            return { reply: { content: "Failed to grab that target." }, success: false };
         }
 
         if (!target.isCommunicationDisabled().valueOf()) {
-            throw new Error(`<@${target.id}> has not been muted.`);
+            return { reply: { content: `<@${target.id}> has not been muted.` }, success: false };
         }
 
         try {
             await target.timeout(null);
-            return new EmbedBuilder().setColor("Blurple").setFields({
-                name: `${inlineCode(target.user.username)} has been unmuted`,
-                value: ` `,
-            });
+            return {
+                reply: new EmbedBuilder().setColor("Blurple").setFields({
+                    name: `${inlineCode(target.user.username)} has been unmuted`,
+                    value: ` `,
+                }),
+                success: true
+            };
         } catch (error) {
-            throw new Error(`Could not use unmute. Please try again.`);
+            return {
+                reply: { content: `Could not use unmute. Please try again.` },
+                success: false
+            };
         }
     },
 };

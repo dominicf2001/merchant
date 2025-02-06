@@ -37,6 +37,7 @@ func StocksRouter(stocksService *services.StocksService) http.Handler {
 			return
 		}
 
+		guildID := r.URL.Query().Get("guildID")
 		interval := r.URL.Query().Get("interval")
 		startDate := r.URL.Query().Get("startDate")
 		endDate := r.URL.Query().Get("endDate")
@@ -53,7 +54,12 @@ func StocksRouter(stocksService *services.StocksService) http.Handler {
 			endDate = time.Now().Format("2006-01-02")
 		}
 
-		stocks, err := stocksService.GetStocks(interval, startDate, endDate)
+		stocks, err := stocksService.GetStocks(services.StockQuery{
+			Start:    startDate,
+			End:      endDate,
+			Interval: interval,
+			GuildID:  guildID,
+		})
 		if err != nil {
 			log.Fatal(err)
 		}

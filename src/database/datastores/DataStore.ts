@@ -36,7 +36,9 @@ export const db = new Kysely<Database>({
 
 export type TableName = keyof Database;
 
-export const getTableNames = async (db: Kysely<Database>) => (await db.introspection.getTables()).map(table => table.name as TableName);
+export const getTableNames = async (db: Kysely<Database>) => (await db.introspection.getTables())
+    .filter(table => !table.isView)
+    .map(table => table.name as TableName);
 
 export type TableID =
     | "user_id"

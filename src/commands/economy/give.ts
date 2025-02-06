@@ -15,9 +15,9 @@ import { CommandObj } from "src/database/datastores/Commands";
 const data: Partial<Command> = {
     command_id: "give" as CommandsCommandId,
     metadata: new SlashCommandBuilder().setName("give")
-      .setDescription("Share your tendies")
-      .addUserOption(o => o.setName("target").setDescription("the user to give tendies to").setRequired(true))
-      .addNumberOption(o => o.setName("amount").setDescription("the amount to give").setRequired(true)),
+        .setDescription("Share your tendies")
+        .addUserOption(o => o.setName("target").setDescription("the user to give tendies to").setRequired(true))
+        .addNumberOption(o => o.setName("amount").setDescription("the amount to give").setRequired(true)),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -32,17 +32,17 @@ export default <CommandObj>{
         let authorBalance: number = await Users.getBalance(member.id);
 
         if (transferAmount <= 0) {
-            throw new Error(`Specify more than zero tendies.`);
+            return { content: `Specify more than zero tendies.` };
         }
 
         if (!Number.isInteger(transferAmount)) {
-            throw new Error(`You can only give a whole number of tendies.`);
+            return { content: `You can only give a whole number of tendies.` };
         }
 
         if (transferAmount > authorBalance) {
-            throw new Error(
-                `You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`,
-            );
+            return {
+                content: `You only have ${CURRENCY_EMOJI_CODE} ${formatNumber(authorBalance)} tendies.`,
+            };
         }
 
         await Users.addBalance(member.id, -transferAmount);

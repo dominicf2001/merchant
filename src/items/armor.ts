@@ -1,7 +1,7 @@
 import { EmbedBuilder, GuildMember, inlineCode, SlashCommandSubcommandBuilder } from "discord.js";
 import { UsersFactory } from "../database/db-objects";
 import { Items as Item, ItemsItemId } from "../database/schemas/public/Items";
-import { CommandOptions, CommandResponse } from "src/utilities";
+import { CommandOptions, CommandResponse, ItemResponse } from "src/utilities";
 import { ItemObj } from "src/database/datastores/Items";
 
 const data: Partial<Item> = {
@@ -15,14 +15,14 @@ const data: Partial<Item> = {
 
 export default <ItemObj>{
     data,
-    async use(member: GuildMember, _: CommandOptions): Promise<CommandResponse> {
+    async use(member: GuildMember, _: CommandOptions): Promise<ItemResponse> {
         try {
             const Users = UsersFactory.get(member.guild.id);
 
             const authorArmor = await Users.getArmor(member.id);
 
             if (authorArmor >= 1) {
-                throw new Error("You can only apply one armor at a time.");
+                return { reply: { content: "You can only apply one armor at a time." }, success: false };
             }
 
             await Users.addArmor(member.id, 1);
@@ -32,10 +32,9 @@ export default <ItemObj>{
                 value: " ",
             });
 
-            return embed;
+            return { reply: embed, success: true };
         } catch (error) {
             console.error(error);
-            throw error;
         }
     },
 };

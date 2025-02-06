@@ -32,15 +32,15 @@ function isValidRobType(robType: string): robType is RobType {
 const data: Partial<Command> = {
     command_id: "rob" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
-      .setName("rob")
-      .setDescription("Rob user of tendies or a random item with a chance of failure + fine")
-      .addStringOption(o => o.setName("type")
-        .setDescription("the thing you want to rob")
-        .addChoices(makeChoices("tendies", "item"))
-        .setRequired(true))
-      .addUserOption(o => o.setName("target")
-        .setDescription("the user you want to rob")
-        .setRequired(true)),
+        .setName("rob")
+        .setDescription("Rob user of tendies or a random item with a chance of failure + fine")
+        .addStringOption(o => o.setName("type")
+            .setDescription("the thing you want to rob")
+            .addChoices(makeChoices("tendies", "item"))
+            .setRequired(true))
+        .addUserOption(o => o.setName("target")
+            .setDescription("the user you want to rob")
+            .setRequired(true)),
     cooldown_time: 1800000,
     is_admin: false,
 };
@@ -55,11 +55,11 @@ export default <CommandObj>{
         // if (author.role < 1) throw new Error(`Your role is too low to use this command. Minimum role is: ${inlineCode("Fakecel")}`);
 
         if (target.id === member.id) {
-            throw new Error("You cannot rob yourself.");
+            return { content: "You cannot rob yourself." };
         }
 
         if (!isValidRobType(robType)) {
-            throw new Error("Invalid rob type.");
+            return { content: "Invalid rob type." };
         }
 
         let reply = "";
@@ -96,11 +96,11 @@ export default <CommandObj>{
                     );
 
                     if (authorItemCount >= MAX_INV_SIZE) {
-                        throw new Error("Your inventory is full.");
+                        return { content: "Your inventory is full." };
                     }
 
                     if (!targetItems.length) {
-                        throw new Error("This user has no items.");
+                        return { content: "This user has no items." };
                     }
 
                     const item =

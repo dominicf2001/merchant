@@ -17,6 +17,7 @@ import {
     INVITE_ACTIVITY_VALUE,
     client,
     SMA_UPDATE_HOURS,
+    CommandResponse,
 } from "./utilities";
 import { DateTime } from "luxon";
 
@@ -138,7 +139,7 @@ client.on(Events.InteractionCreate, async interaction => {
             // If no cooldown, execute command and set cooldown
 
             const member = interaction.guild.members.cache.get(interaction.user.id)
-            const reply = await Commands.execute(command.command_id, member, interaction.options);
+            const reply: CommandResponse = await Commands.execute(command.command_id, member, interaction.options);
             if (reply instanceof EmbedBuilder) await interaction.editReply({ embeds: [reply] });
             else await interaction.editReply(reply);
 
@@ -150,7 +151,6 @@ client.on(Events.InteractionCreate, async interaction => {
             }
         } catch (error) {
             console.error(error);
-            await interaction.editReply(error.message);
         }
     }
 })
