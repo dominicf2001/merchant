@@ -1,13 +1,18 @@
 import { Kysely, PostgresDialect, Updateable, Insertable } from "kysely";
 import Database from "../schemas/Database";
-import { CacheType, ChatInputCommandInteraction, Collection, GuildMember } from "discord.js";
+import {
+    CacheType,
+    ChatInputCommandInteraction,
+    Collection,
+    GuildMember,
+} from "discord.js";
 import { Pool, types } from "pg";
 import { Message } from "discord.js";
 import { client, DB_HOST, DB_NAME, DB_PORT, DB_USER } from "../../utilities";
 import { DateTime } from "luxon";
-import { CommandOptions, CommandResponse } from "src/command-utilities";
+import { CommandOptions, CommandResponse } from "src/utilities";
 
-let getDatastores: typeof import('../db-objects').getDatastores;
+let getDatastores: typeof import("../db-objects").getDatastores;
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) =>
     v === null ? null : DateTime.fromSQL(v).toUTC().toSQL(),
@@ -36,20 +41,24 @@ export const db = new Kysely<Database>({
 
 export type TableName = keyof Database;
 
-export const getTableNames = async (db: Kysely<Database>) => (await db.introspection.getTables())
-    .filter(table => !table.isView)
-    .map(table => table.name as TableName);
+export const getTableNames = async (db: Kysely<Database>) =>
+    (await db.introspection.getTables())
+        .filter((table) => !table.isView)
+        .map((table) => table.name as TableName);
 
 export type TableID =
     | "user_id"
     | "item_id"
     | "stock_id"
     | "command_id"
-    | "guild_id"
-export type BehaviorFunction = (member: GuildMember, options: CommandOptions) => Promise<CommandResponse>;
+    | "guild_id";
+export type BehaviorFunction = (
+    member: GuildMember,
+    options: CommandOptions,
+) => Promise<CommandResponse>;
 
 export async function dbWipe(db: Kysely<Database>) {
-    const module = await import('../db-objects');
+    const module = await import("../db-objects");
     getDatastores = module.getDatastores;
 
     try {
@@ -67,14 +76,19 @@ export async function dbWipe(db: Kysely<Database>) {
             console.log(`All data wiped from table: ${table}`);
         }
 
-        console.log('All data wiped successfully from all tables.');
+        console.log("All data wiped successfully from all tables.");
     } catch (error) {
-        console.error('An error occurred while wiping the database:', error);
+        console.error("An error occurred while wiping the database:", error);
     }
 }
 
 export abstract class DataStore<K, Data> {
-    constructor(db: Kysely<Database>, tableName: TableName, tableID: TableID, guildID: string) {
+    constructor(
+        db: Kysely<Database>,
+        tableName: TableName,
+        tableID: TableID,
+        guildID: string,
+    ) {
         this.db = db;
         this.tableName = tableName;
         this.tableID = tableID;
@@ -84,8 +98,12 @@ export abstract class DataStore<K, Data> {
     async set(
         id: K,
         data: Insertable<Data> | Updateable<Data> = {},
-    ): Promise<void> {
-        const newData: Data = { [this.tableID]: id as any, guild_id: this.guildID, ...data } as Data;
+    ): Promise<void | boolean> {
+        const newData: Data = {
+            [this.tableID]: id as any,
+            guild_id: this.guildID,
+            ...data,
+        } as Data;
 
         try {
             const result = (await this.db
@@ -162,7 +180,7 @@ export abstract class DataStore<K, Data> {
     abstract setInCache(id: K, data: Partial<Data>): void;
     clearCache() {
         this.cache.clear();
-    };
+    }
 
     protected abstract cache: Collection<K, NonNullable<any>>;
     protected db: Kysely<Database>;
@@ -186,6 +204,6 @@ export abstract class DataStoreFactory<DS> {
 
     protected abstract construct(guildID: string): DS;
 
-    protected guildDataStores = new Collection<string, DS>;
+    protected guildDataStores = new Collection<string, DS>();
     protected db: Kysely<Database>;
 }

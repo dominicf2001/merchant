@@ -22,51 +22,9 @@ import { updateSMAS, updateStockPrices } from "../stock-utilities";
 import { isStockInterval } from "../database/datastores/Stocks";
 import path from "path";
 import { dbWipe } from "../database/datastores/DataStore";
+import { SimParams, Guild, Message, SimState } from "./types";
 
 const execAsync = promisify(exec);
-
-// TODO: centralize types
-interface Message {
-    id: string;
-    type: string;
-    timestamp: string;
-    timestampEdited: null;
-    callEndedTimestamp: null;
-    isPinned: boolean;
-    content: string;
-    author: Author;
-    mentions: Author[];
-}
-
-interface Author {
-    id: string;
-    name: string;
-    discriminator: string;
-    nickname: string;
-    color: string;
-    isBot: boolean;
-    roles: Role[];
-    avatarUrl: string;
-}
-
-interface Role {
-    id: string;
-    name: string;
-    color: string;
-    position: number;
-}
-
-interface Guild {
-    id: string;
-    name: string;
-}
-
-interface SimParams {
-    guildID: string;
-    start: string;
-    end: string;
-    clearCache: boolean;
-}
 
 const SIM_DATA_PATH = "./built/api/sim-data.json";
 const SIM_OUT_PATH = "./built/api/cache/";
@@ -82,9 +40,12 @@ async function getSimData(): Promise<SimParams | undefined> {
     }
 }
 
+let currentSim: SimState | undefined;
+
 // gets available guilds
 let guilds: Guild[] = [];
 router.get("/guilds", async (ctx) => {
+    console.log("IN GUILDs");
     if (!guilds.length) {
         const { stdout } = await execAsync(
             `discordchatexporter-cli guilds -t ${USER_TOKEN}`,
@@ -105,9 +66,8 @@ router.get("/guilds", async (ctx) => {
 
 // gets stocks starting a startDate within specified range
 router.get("/stock/:guildID/:range/:endDate/:startDate?", async (ctx) => {
-    console.log("TEEST");
     try {
-        const guildID = ctx.params.guildID
+        const guildID = ctx.params.guildID;
         if (!guildID) {
             ctx.throw("Missing guild ID", StatusCodes.BAD_REQUEST);
             return;
@@ -193,7 +153,7 @@ router.get("/stock/:guildID/:range/:endDate/:startDate?", async (ctx) => {
     }
 });
 
-// gets last simulation in
+// gets last simulation params 
 router.get("/sim", async (ctx) => {
     try {
         const simData = await getSimData();
@@ -212,6 +172,8 @@ router.get("/sim", async (ctx) => {
 
 // runs a simulation
 router.post("/sim", async (ctx) => {
+    const MINUTE_INCREMENT = 5;
+
     try {
         console.log("Clearing database...");
         await dbWipe(db);
@@ -264,41 +226,59 @@ router.post("/sim", async (ctx) => {
             );
 
         console.log("Simulating...");
-        const minuteIncrement = 5;
-        const startDate = DateTime.fromISO(start);
-        const endDate = DateTime.fromISO(end);
 
-        if (!endDate.isValid || !startDate.isValid) {
+        currentSim = {
+            start: DateTime.fromISO(start),
+            end: DateTime.fromISO(end),
+            nextTick: DateTime.fromISO(start).plus({ minutes: MINUTE_INCREMENT }),
+            progress: 0
+        }
+
+        if (!currentSim.start.isValid || !currentSim.end.isValid) {
             ctx.throw(`Malformed start or end date`, StatusCodes.BAD_REQUEST);
             return;
         }
 
-        let nextTickDate = startDate.plus({ minutes: minuteIncrement });
         let msgIndex = 0;
-        while (nextTickDate < endDate) {
+        const durationToTraverse = currentSim.start.diff(currentSim.end);
+        while (currentSim.nextTick < currentSim.end) {
+            const durationTraversed = currentSim.start.diff(currentSim.nextTick);
+
+            currentSim.progress = Math.round((durationTraversed.toMillis() / durationToTraverse.toMillis() * 100));
+            Bun.stdout.write(`\r${currentSim.progress}/100   `);
+
             while (
                 messages[msgIndex] &&
-                DateTime.fromISO(messages[msgIndex].timestamp) < nextTickDate
+                DateTime.fromISO(messages[msgIndex].timestamp) < currentSim.nextTick
             ) {
                 const currMsg = messages[msgIndex];
 
-                if (marketIsOpen(nextTickDate)) {
+                if (marketIsOpen(currentSim.nextTick)) {
                     const authorId = currMsg.author.id;
                     const user = await Users.get(authorId);
                     if (!user) {
-                        await Users.set(authorId);
-                        await Stocks.updateStockPrice(authorId, 1, startDate);
+                        var userSetSuccess = await Users.set(authorId);
+                        if (!userSetSuccess) {
+                            ++msgIndex;
+                            continue;
+                        }
+
+                        await Stocks.updateStockPrice(authorId, 1, currentSim.start);
                     }
 
                     for (const mentionedUser of currMsg.mentions) {
+                        const mentionedUserExists = !!(await Users.get(
+                            mentionedUser.id,
+                        ));
                         if (
+                            mentionedUserExists &&
                             mentionedUser.id !== authorId &&
                             !mentionedUser.isBot
                         ) {
                             await Users.addActivity(
                                 mentionedUser.id,
                                 MENTIONED_ACTIVITY_VALUE * getRandomInt(1, 2),
-                                startDate,
+                                currentSim.start,
                             );
                         }
                     }
@@ -306,25 +286,27 @@ router.post("/sim", async (ctx) => {
                     await Users.addActivity(
                         authorId,
                         MESSAGE_ACTIVITY_VALUE * getRandomInt(1, 2),
-                        startDate,
+                        currentSim.start,
                     );
                 }
 
                 ++msgIndex;
             }
 
-            if (marketIsOpen(nextTickDate)) {
-                if (SMA_UPDATE_HOURS.includes(nextTickDate.hour)) {
-                    await updateSMAS(guildID, nextTickDate);
+            if (marketIsOpen(currentSim.nextTick)) {
+                if (SMA_UPDATE_HOURS.includes(currentSim.nextTick.hour)) {
+                    await updateSMAS(guildID, currentSim.nextTick);
                 }
 
-                await updateStockPrices(guildID, nextTickDate);
+                await updateStockPrices(guildID, currentSim.nextTick);
             }
-            nextTickDate = nextTickDate.plus({ minutes: minuteIncrement });
+            currentSim.nextTick = currentSim.nextTick.plus({ minutes: MINUTE_INCREMENT });
         }
 
         // store simulation param data
         await writeFile(SIM_DATA_PATH, JSON.stringify(reqBody));
+
+        currentSim = undefined;
 
         ctx.status = StatusCodes.OK;
         console.log("Complete...");

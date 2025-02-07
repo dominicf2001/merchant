@@ -58,13 +58,13 @@ class Stocks extends DataStore<string, Stock> {
 
     async updateStockPrice(
         stock_id: string,
-        amount: number,
+        price: number,
         date: DateTime = DateTime.now(),
     ): Promise<void> {
-        if (amount < 0) amount = 0;
+        if (price < 0) price = 1;
 
         await this.set(stock_id, {
-            price: amount,
+            price: price,
             created_date: date.toUTC().toSQL() as StocksCreatedDate
         });
     }

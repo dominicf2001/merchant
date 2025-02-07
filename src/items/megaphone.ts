@@ -31,6 +31,7 @@ export default <ItemObj>{
             reply: {
                 content: "@everyone",
                 embeds: [embed],
+                allowedMentions: { parse: ["everyone"] }
             },
             success: true
         };

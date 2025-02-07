@@ -18,6 +18,7 @@ import { StocksFactory } from "./Stocks";
 import { CommandsFactory } from "./Commands";
 import { Collection } from "discord.js";
 import { client } from "src/utilities";
+import { console } from "inspector";
 
 class Users extends DataStore<string, User> {
     constructor(db: Kysely<Database>, guildID: string) {
@@ -27,18 +28,30 @@ class Users extends DataStore<string, User> {
     async set(
         user_id: string,
         data: Insertable<UserStat> | Updateable<UserStat> = {},
-    ): Promise<void> {
+    ): Promise<boolean> {
         let newUser: Insertable<UserStat> | Updateable<UserStat> = {
             "user_id": user_id as UsersUserId,
             "guild_id": this.guildID as UserStatsGuildId,
             ...data,
         };
 
+        let username = "";
+        if (this.isTesting) {
+            username = user_id
+        }
+        else {
+            try {
+                username = (await client.users.fetch(user_id)).username
+            }
+            catch (error) {
+                console.error(`Could not get ${user_id}'s username`);
+                return false;
+            }
+        }
+
         let userCore: Insertable<UserCore> | Updateable<UserCore> = {
             user_id: user_id as UsersUserId,
-            username: this.isTesting ?
-                user_id :
-                (await client.users.fetch(user_id)).username
+            username: username
         };
 
         if (!this.cache.has(user_id)) {
@@ -52,7 +65,7 @@ class Users extends DataStore<string, User> {
             }
             catch (error) {
                 console.error(error);
-                return;
+                return false;
             }
         }
 
@@ -65,11 +78,13 @@ class Users extends DataStore<string, User> {
                 .executeTakeFirstOrThrow();
         } catch (error) {
             console.error(error);
-            throw error;
+            return false;
         }
 
         const fullUser = Object.assign(newUser, userCore) as User;
         this.cache.set(user_id, fullUser);
+
+        return true;
     }
 
     async setBalance(user_id: string, amount: number): Promise<void> {
