@@ -69,6 +69,22 @@ func StocksRouter(stocksService *services.StocksService) http.Handler {
 		shared.StockGrid(stocks).Render(r.Context(), w)
 	})
 
+	r.Get("/simProgress", func(w http.ResponseWriter, r *http.Request) {
+		println("TEST")
+		progress, err := stocksService.GetSimProgress()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// TODO: turn into middleware
+		if !util.IsHTMX(r) {
+			http.NotFound(w, r)
+			return
+		}
+
+		shared.SimProgress(progress).Render(r.Context(), w)
+	})
+
 	r.Get("/guildOptions", func(w http.ResponseWriter, r *http.Request) {
 		lastSimParams, err := stocksService.GetLastSimParams()
 		if err != nil {

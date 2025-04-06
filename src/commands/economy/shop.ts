@@ -4,14 +4,14 @@ import {
     formatNumber,
     PaginatedMenuBuilder,
     client,
-    CommandOptions, 
+    CommandOptions,
     CommandResponse
 } from "../../utilities";
 import {
     Commands as Command,
     CommandsCommandId,
 } from "../../database/schemas/public/Commands";
-import {  Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
+import { Events, inlineCode, SlashCommandBuilder, GuildMember, InteractionReplyOptions } from "discord.js";
 import { CommandObj } from "src/database/datastores/Commands";
 
 const SHOP_ID: string = "shop";
@@ -20,11 +20,11 @@ const SHOP_PAGE_SIZE: number = 5;
 const data: Partial<Command> = {
     command_id: "shop" as CommandsCommandId,
     metadata: new SlashCommandBuilder()
-      .setName("shop")
-      .setDescription("View the shop")
-      .addNumberOption(o => o
-        .setName("page")
-        .setDescription("the shop page you want to view")),
+        .setName("shop")
+        .setDescription("View the shop")
+        .addNumberOption(o => o
+            .setName("page")
+            .setDescription("the shop page you want to view")),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -63,7 +63,7 @@ async function sendShopMenu(
         .setColor("Blurple")
         .setTitle("Shop")
         .setDescription(
-            `To view additional info on an item, see ${inlineCode("$help [item]")}.`,
+            `To view additional info on an item, see ${inlineCode("/help [item]")}.`,
         );
 
     slicedItems.forEach((item) => {
@@ -101,8 +101,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         const reply = await sendShopMenu(interaction.message.member, SHOP_ID, SHOP_PAGE_SIZE, pageNum);
         await interaction.update({
-          embeds: reply.embeds,
-          components: reply.components,
+            embeds: reply.embeds,
+            components: reply.components,
         });
     } catch (error) {
         console.error(error);

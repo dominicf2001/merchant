@@ -226,7 +226,7 @@ async function sendStockList(
     const endIndex: number = startIndex + pageSize;
 
     const stocks = await Stocks.getAll();
-    const slicedStocks = stocks.slice(startIndex, endIndex);
+    const slicedStocks = stocks.sort((a, b) => b.price - a.price).slice(startIndex, endIndex);
 
     // getting the 'minute' stock history pulls from a cache
     const histories = await Promise.all(
@@ -243,7 +243,7 @@ async function sendStockList(
         .setColor("Blurple")
         .setTitle("Stocks :chart_with_upwards_trend:")
         .setDescription(
-            `To view additional info: ${inlineCode("$stock @user")}.`,
+            `To view additional info: ${inlineCode("/stock @user")}.`,
         );
 
     let i = 0;

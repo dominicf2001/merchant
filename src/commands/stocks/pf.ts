@@ -20,10 +20,10 @@ const data: Partial<Command> = {
     command_id: "pf" as CommandsCommandId,
     cooldown_time: 0,
     metadata: new SlashCommandBuilder()
-      .setName("pf")
-      .setDescription("View your portfolio")
-      .addUserOption(o => o.setName("user").setDescription("the user to view the portfolio of"))
-      .addNumberOption(o => o.setName("page").setDescription("the page of the purchase list to view")),
+        .setName("pf")
+        .setDescription("View your portfolio")
+        .addUserOption(o => o.setName("user").setDescription("the user to view the portfolio of"))
+        .addNumberOption(o => o.setName("page").setDescription("the page of the purchase list to view")),
     is_admin: false,
 };
 
@@ -50,7 +50,7 @@ async function sendStockList(member: GuildMember): Promise<CommandResponse> {
     const embed = new EmbedBuilder()
         .setColor("Blurple")
         .setDescription(
-            `To view additional info: ${inlineCode("$pf [@user] [page #]")}`,
+            `To view additional info: ${inlineCode("/pf [@user] [page #]")}`,
         );
 
     let totalValue: number = 0;

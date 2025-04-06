@@ -1,0 +1,6 @@
+<div class=\"
+\">
+<span>Exporting...</span>
+<span>Simulating</span> <progress class=\"progress w-56\" value=\"
+\" max=\"100\"></progress>
+</div>

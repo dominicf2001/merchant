@@ -154,6 +154,13 @@ router.get("/stock/:guildID/:range/:endDate/:startDate?", async (ctx) => {
 });
 
 // gets last simulation params 
+router.get("/sim/progress", async (ctx) => {
+    ctx.body = currentSim ?
+        currentSim.progress :
+        -1;
+});
+
+// gets last simulation 
 router.get("/sim", async (ctx) => {
     try {
         const simData = await getSimData();
@@ -189,6 +196,13 @@ router.post("/sim", async (ctx) => {
         const outPath = path.join(SIM_OUT_PATH, guildID);
 
         const simData = await getSimData();
+
+        currentSim = {
+            start: DateTime.fromISO(start),
+            end: DateTime.fromISO(end),
+            nextTick: DateTime.fromISO(start).plus({ minutes: MINUTE_INCREMENT }),
+            progress: 0,
+        }
 
         const simParamsChanged =
             !simData ||
@@ -227,16 +241,8 @@ router.post("/sim", async (ctx) => {
 
         console.log("Simulating...");
 
-        currentSim = {
-            start: DateTime.fromISO(start),
-            end: DateTime.fromISO(end),
-            nextTick: DateTime.fromISO(start).plus({ minutes: MINUTE_INCREMENT }),
-            progress: 0
-        }
-
         if (!currentSim.start.isValid || !currentSim.end.isValid) {
-            ctx.throw(`Malformed start or end date`, StatusCodes.BAD_REQUEST);
-            return;
+            return ctx.throw(`Malformed start or end date`, StatusCodes.BAD_REQUEST);
         }
 
         let msgIndex = 0;

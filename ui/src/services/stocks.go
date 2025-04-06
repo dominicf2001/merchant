@@ -115,6 +115,21 @@ func (s *StocksService) RunSim(simData SimParams) error {
 	return nil
 }
 
+func (s *StocksService) GetSimProgress() (int, error) {
+	res, err := http.Get(fmt.Sprintf("%s/sim/progress", util.ApiUrl))
+	if err != nil {
+		return -1, fmt.Errorf("Error getting sim progress: %w", err)
+	}
+
+	var progress int
+	err = json.NewDecoder(res.Body).Decode(&progress)
+	if err != nil {
+		return -1, fmt.Errorf("Error decoding sim progress response: %w", err)
+	}
+
+	return progress, nil
+}
+
 func (s *StocksService) GetLastSimParams() (*SimParams, error) {
 	res, err := http.Get(fmt.Sprintf("%s/sim", util.ApiUrl))
 
