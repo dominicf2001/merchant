@@ -71,10 +71,14 @@ async function buyStock(member: GuildMember, quantity: number, stockUser: User):
     }
 
     const authorBalance: number = await Users.getBalance(member.id);
-    const totalBought: number = latestStock.price * quantity > authorBalance
-        ? Math.floor((authorBalance / latestStock.price) * 100) / 100
+    let totalBought: number = latestStock.price * quantity > authorBalance
+        ? Math.floor(authorBalance / latestStock.price)
         : quantity;
     const totalCost: number = latestStock.price * totalBought;
+
+    if (totalBought === 0) {
+        return { content: "You are too poor to purchase any stock." };
+    }
 
     await Users.addStock(member.id, stockUser.id, totalBought);
     await Users.addBalance(member.id, -totalCost);
@@ -116,7 +120,7 @@ async function buyItem(member: GuildMember, quantity: number, itemName: string):
 
     const authorBalance: number = await Users.getBalance(member.id);
     let totalBought: number = item.price * quantity > authorBalance
-        ? Math.floor((authorBalance / item.price) * 100) / 100
+        ? Math.floor(authorBalance / item.price)
         : quantity;
     totalBought = totalBought > freeInventorySpace ? freeInventorySpace : totalBought;
 

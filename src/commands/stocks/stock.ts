@@ -84,7 +84,7 @@ async function sendStockChart(member: GuildMember, stockUser: User, intervalOpti
         return { content: "This stock does not exist." };
     }
 
-    const stockHistory = (await Stocks.getStockHistory(stockUser.id, interval)).reverse();
+    const stockHistory = (await Stocks.getStockHistory(stockUser.id, interval)).slice().reverse();
     const initialPrice = stockHistory.length > 0 ? stockHistory[0].price : 0;
     const priceBounds = stockHistory.reduce(
         ({ highest, lowest }, h) => {

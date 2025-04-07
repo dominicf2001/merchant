@@ -15,6 +15,7 @@ import {
     MESSAGE_ACTIVITY_VALUE,
     MENTIONED_ACTIVITY_VALUE,
     INVITE_ACTIVITY_VALUE,
+    TICK_CHANNEL_ID,
     client,
     SMA_UPDATE_HOURS,
     CommandResponse,
@@ -83,7 +84,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     if (!Stocks.exists(message.author.id)) {
-        await Stocks.set(message.author.id);
+        await Stocks.set(message.author.id, { price: 50 });
     }
 
     // HANDLE USER ACTIVITY POINTS UPDATING, author and mentions
@@ -179,10 +180,10 @@ let stockTicker = cron.schedule(
                         await updateStockPrices(guild.id);
                     }
                     logToFile("Stock prices updated successfully.");
-                    // const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
-                    //if (tickChannel.isTextBased()) {
-                    //    await tickChannel.send("Stocks ticked");
-                    //}
+                    const tickChannel = await client.channels.fetch(TICK_CHANNEL_ID);
+                    if (tickChannel.isTextBased()) {
+                        await tickChannel.send("Stocks ticked");
+                    }
                 } catch (error) {
                     logToFile(`Stock price update failed: ${error.message}`);
                     console.error(error);

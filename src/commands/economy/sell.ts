@@ -19,7 +19,7 @@ const data: Partial<Command> = {
         .setDescription("sell an item or a stock")
         .addUserOption(o => o.setName("stock").setDescription("the stock to sell"))
         .addStringOption(o => o.setName("item").setDescription("the item to sell"))
-        .addNumberOption(o => o.setName("amount").setDescription("the amount to sell")),
+        .addNumberOption(o => o.setName("amount").setDescription("the amount to sell").setRequired(false)),
     cooldown_time: 0,
     is_admin: false,
 };
@@ -27,7 +27,7 @@ const data: Partial<Command> = {
 export default <CommandObj>{
     data,
     async execute(member: GuildMember, options: CommandOptions): Promise<CommandResponse> {
-        const amount = options.getNumber("amount", true);
+        const amount = options.getNumber("amount", false) ?? 1;
 
         const user = options.getUser("stock", false);
         if (user) return sellStock(member, amount, user);

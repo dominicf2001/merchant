@@ -19,4 +19,5 @@
 //        await updateStockPrices();
 //        await message.reply("Stocks ticked");
 //    },
+//
 //};

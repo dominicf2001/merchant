@@ -104,10 +104,10 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1743948384,
+        "lastModified": 1743954212,
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "81e3810967f658f7b5e428187effadcd577d690e",
+        "rev": "5812fc463135c86529cddb915ba7af855a5c2863",
         "type": "github"
       },
       "original": {

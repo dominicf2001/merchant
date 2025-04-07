@@ -12,7 +12,7 @@ const data: Partial<Command> = {
     metadata: new SlashCommandBuilder()
       .setName("work")
       .setDescription("Make some tendies"),
-    cooldown_time: 1800000,
+    cooldown_time: 600000,
     is_admin: false,
 };
 
