@@ -21,6 +21,10 @@ import {
     CommandResponse,
 } from "./utilities";
 import { DateTime } from "luxon";
+import { Interaction } from "chart.js";
+import { UsersUserId } from "./database/schemas/public/Users";
+import { UserStocksGuildId } from "./database/schemas/public/UserStocks";
+import { on } from "events";
 
 
 client.once(Events.ClientReady, async () => {
@@ -154,7 +158,47 @@ client.on(Events.InteractionCreate, async interaction => {
             console.error(error);
         }
     }
-})
+});
+
+client.on(Events.GuildMemberRemove, async removedMember => {
+    console.log("REMOVED");
+    const { Users, Stocks } = getDatastores(removedMember.guild.id);
+
+    const removedUserStocks = await Users.db.selectFrom("user_stocks")
+        .selectAll()
+        .where("guild_id", "=", Users.guildID as UserStocksGuildId)
+        .where("stock_id", "=", removedMember.id as UsersUserId)
+        .execute();
+
+    const removedUserStocksByBuyer = {};
+    for (const stock of removedUserStocks) {
+        if (removedUserStocksByBuyer[stock.user_id]) {
+            removedUserStocksByBuyer[stock.user_id].push(stock);
+        }
+        else {
+            removedUserStocksByBuyer[stock.user_id] = [stock];
+        }
+    }
+
+
+    const latestRemovedMemberStock = await Stocks.get(removedMember.id);
+    for (const buyerId in removedUserStocksByBuyer) {
+        const userStocks = removedUserStocksByBuyer[buyerId];
+
+        let quantity = 0;
+        for (const stock of userStocks) {
+            quantity += stock.quantity;
+        }
+
+        const totalSold: number = -(await Users.addStock(
+            buyerId,
+            removedMember.id,
+            -quantity,
+        ));
+        const totalReturn: number = latestRemovedMemberStock.price * totalSold;
+        await Users.addBalance(buyerId, totalReturn);
+    }
+});
 
 // CRON HANDLING
 function logToFile(message: string): void {

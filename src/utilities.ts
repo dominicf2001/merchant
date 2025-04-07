@@ -70,6 +70,7 @@ export const client: Client = new Client({
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildModeration,
         GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.GuildMembers,
     ],
 });
 client.login(TOKEN);

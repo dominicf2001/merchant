@@ -183,10 +183,10 @@ export abstract class DataStore<K, Data> {
     }
 
     protected abstract cache: Collection<K, NonNullable<any>>;
-    protected db: Kysely<Database>;
-    protected tableName: TableName;
-    protected tableID: TableID;
-    protected guildID: string;
+    public db: Kysely<Database>;
+    public tableName: TableName;
+    public tableID: TableID;
+    public guildID: string;
     isTesting: boolean;
 }
 
