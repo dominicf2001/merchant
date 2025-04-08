@@ -248,7 +248,9 @@ async function sendStockList(
 
     let i = 0;
     for (const stock of slicedStocks) {
-        const previousPrice = histories[i++][1]?.price ?? 0;
+        const stockHistory = histories.find(h => h.at(0).stock_id === stock.stock_id);
+
+        const previousPrice = stockHistory[1]?.price ?? 0;
         const currentPrice = stock.price;
         const stockUser = await Users.get(stock.stock_id);
         const arrow =
